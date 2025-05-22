@@ -2,8 +2,9 @@ import { defineStore, storeToRefs } from 'pinia';
 import { I18N, type NotificationConfig, type NotificationsStore } from 'orgnote-api';
 import { ref } from 'vue';
 import { Notify } from 'quasar';
-import { useI18n } from 'vue-i18n';
+import { i18n } from 'src/boot/i18n';
 import { useConfigStore } from './config';
+import { useScreenDetection } from 'src/composables/use-screen-detection';
 
 export const useNotificationsStore = defineStore<'notifications', NotificationsStore>(
   'notifications',
@@ -15,12 +16,10 @@ export const useNotificationsStore = defineStore<'notifications', NotificationsS
       }[]
     >([]);
 
-    const { t } = useI18n({
-      useScope: 'global',
-      inheritLocale: true,
-    });
-
     const { config } = storeToRefs(useConfigStore());
+
+    const screenDetection = useScreenDetection();
+    const position = screenDetection.tabletBelow.value ? 'bottom' : 'bottom-right';
 
     const notify = (notificationConfig: NotificationConfig): void => {
       Notify.create({
@@ -30,7 +29,8 @@ export const useNotificationsStore = defineStore<'notifications', NotificationsS
         type: notificationConfig.level || 'info',
         group: notificationConfig.group ?? notificationConfig.message,
         classes: 'notification',
-        closeBtn: notificationConfig.closable ? t(I18N.CLOSE) : null,
+        closeBtn: notificationConfig.closable ? i18n.global.t(I18N.CLOSE) : null,
+        position,
       });
 
       notifications.value.push({

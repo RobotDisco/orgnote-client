@@ -1,7 +1,7 @@
 import { I18N, type FileReaderStore } from 'orgnote-api';
 import { defineStore } from 'pinia';
-import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from './notifications';
+import { i18n } from 'src/boot/i18n';
 
 export const useFileReaderStore = defineStore<string, FileReaderStore>(
   'file-reader',
@@ -9,10 +9,7 @@ export const useFileReaderStore = defineStore<string, FileReaderStore>(
     const readers = new Map<string, (path: string) => Promise<void>>();
     const notifications = useNotificationsStore();
 
-    const { t } = useI18n({
-      useScope: 'global',
-      inheritLocale: true,
-    });
+    const { t } = i18n.global;
 
     /**
      * Adds a reader function for a specific file pattern
@@ -28,7 +25,7 @@ export const useFileReaderStore = defineStore<string, FileReaderStore>(
      * @param path - Array of path segments to the file
      */
     const openFile = async (path: string): Promise<void> => {
-      const reader = Object.keys(readers).find((pattern) => new RegExp(pattern).test(path));
+      const reader = Array.from(readers.keys()).find((pattern) => new RegExp(pattern).test(path));
 
       if (!reader) {
         notifications.notify({
@@ -38,7 +35,7 @@ export const useFileReaderStore = defineStore<string, FileReaderStore>(
         return;
       }
 
-      console.log('[line 31]: open path', path);
+      readers.get(reader)(path);
     };
 
     return {

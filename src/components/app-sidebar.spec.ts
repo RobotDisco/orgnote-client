@@ -36,7 +36,7 @@ test('does not render "mini" when mini prop is false', () => {
   expect(wrapper.find('.mini').exists()).toBe(false);
 });
 
-test('applies the correct class based on "opened" prop', () => {
+test.only('applies the correct class based on "opened" prop', () => {
   const wrapper = mount(AppSidebar, {
     props: { opened: true },
   });

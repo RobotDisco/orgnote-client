@@ -29,7 +29,7 @@ import NavTab from 'src/components/NavTab.vue';
 import NavTabs from 'src/components/NavTabs.vue';
 import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
 import CommandActionButton from 'src/containers/CommandActionButton.vue';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 
 const props = defineProps<{
   paneId: string;
@@ -40,8 +40,13 @@ const { activePane } = storeToRefs(pane);
 const currentPane = computed(() => pane.getPane(props.paneId));
 
 const router = computed(() => currentPane.value.pages[currentPane.value.activePageId].router);
+console.log('✎: [line 43][AppPane.vue] router: ', router.value);
 
 const currentRoute = computed(() => router.value.currentRoute.value);
+
+watch(currentRoute, () => {
+  console.log('[line 48]: currentRouteMeta', currentRoute.value);
+});
 
 const currentView = computed(() => {
   return currentRoute.value?.matched[0]?.components?.default;

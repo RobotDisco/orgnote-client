@@ -17,6 +17,11 @@ export const initPageRouter = async (): Promise<Router> => {
         name: RouteNames.InitialPage,
         component: () => import('src/pages/InitialPage.vue'),
       },
+      {
+        path: '/edit-note/:path',
+        name: RouteNames.EditNote,
+        component: () => import('src/pages/EditNote.vue'),
+      },
     ],
   });
   router.push({ name: RouteNames.InitialPage });
@@ -106,6 +111,12 @@ export const usePaneStore = defineStore<'panes', PaneStore>(
       };
     };
 
+    const activeRouter = computed(
+      () => activePane.value.pages[activePane.value.activePageId].router,
+    );
+
+    const activeRoute = computed(() => activeRouter.value.currentRoute.value);
+
     const store: PaneStore = {
       panes,
       activePane,
@@ -115,6 +126,8 @@ export const usePaneStore = defineStore<'panes', PaneStore>(
       addPage,
       selectPage,
       closePage,
+      activeRouter,
+      activeRoute,
     };
     return store;
   },

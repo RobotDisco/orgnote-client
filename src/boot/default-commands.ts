@@ -2,26 +2,22 @@ import { defineBoot } from '@quasar/app-vite/wrappers';
 import { getCompletionCommands } from 'src/commands/completion';
 import { getFileManagerCommands } from 'src/commands/file-manager';
 import { getGlobalCommands } from 'src/commands/global-commands';
+import { getNoteCommands } from 'src/commands/note-commands';
 import { getPagesCommands } from 'src/commands/pages';
 import { getRoutesCommands } from 'src/commands/router-commands';
 import { getSettingsommands as getSettingsCommands } from 'src/commands/settings-commands';
 import { useCommandsStore } from 'src/stores/command';
 
 export default defineBoot(async ({ router }) => {
-  const routeCommands = getRoutesCommands(router);
   const commandsStore = useCommandsStore();
-  const globalCommands = getGlobalCommands();
-  const settingsCommands = getSettingsCommands();
-  const completionCommnads = getCompletionCommands();
-  const pagesCommands = getPagesCommands();
-  const fileManagerCommands = getFileManagerCommands();
 
   commandsStore.add(
-    ...routeCommands,
-    ...globalCommands,
-    ...settingsCommands,
-    ...completionCommnads,
-    ...pagesCommands,
-    ...fileManagerCommands,
+    ...getRoutesCommands(router),
+    ...getGlobalCommands(),
+    ...getSettingsCommands(),
+    ...getCompletionCommands(),
+    ...getPagesCommands(),
+    ...getFileManagerCommands(),
+    ...getNoteCommands(),
   );
 });

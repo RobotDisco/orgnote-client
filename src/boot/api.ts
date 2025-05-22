@@ -45,11 +45,12 @@ import { useScreenDetection } from 'src/composables/use-screen-detection';
 import { useConfigStore } from 'src/stores/config';
 import { useNotificationsStore } from 'src/stores/notifications';
 import { useFileReaderStore } from 'src/stores/file-reader';
+import type { Router } from 'vue-router';
 
 let api: OrgNoteApi;
 let repositories: OrgNoteApi['infrastructure'];
 
-async function initApi(app: App): Promise<void> {
+async function initApi(app: App, router: Router): Promise<void> {
   repositories = await initRepositories();
   api = {
     infrastructure: {
@@ -102,6 +103,9 @@ async function initApi(app: App): Promise<void> {
       useConfirmationModal,
       useScreenDetection,
     },
+    vue: {
+      router,
+    },
   };
 }
 
@@ -109,10 +113,10 @@ const syncConfigurations = async (api: OrgNoteApi) => {
   await api.core.useConfig().sync();
 };
 
-export default defineBoot(async ({ app, store }) => {
+export default defineBoot(async ({ app, store, router }) => {
   const splashScreen = useSplashScreen();
   splashScreen.show();
-  await initApi(app);
+  await initApi(app, router);
   // await sleep(1000);
   store.use(() => ({ api: api as OrgNoteApi }));
   app.provide(ORGNOTE_API_PROVIDER_TOKEN, api);
