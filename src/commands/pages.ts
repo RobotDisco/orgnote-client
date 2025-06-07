@@ -4,13 +4,14 @@ import { DefaultCommands, I18N } from 'orgnote-api';
 export function getPagesCommands(): Command[] {
   const commands: Command[] = [
     {
-      command: DefaultCommands.NEW_PAGE,
+      command: DefaultCommands.NEW_TAB,
       group: 'pages',
       icon: 'sym_o_add_box',
-      title: I18N.ADD_NEW_PAGE,
-      handler: (api: OrgNoteApi, params) => {
+      title: I18N.ADD_NEW_TAB,
+      handler: async (api: OrgNoteApi, params) => {
         const pane = api.core.usePane();
-        pane.addPage(params.data);
+        const tab = await pane.addTab(params.data);
+        pane.selectTab(tab.paneId, tab.id);
       },
     },
   ];
