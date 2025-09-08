@@ -1,7 +1,14 @@
-import type { InitialPaneParams, Tab, Pane } from 'orgnote-api';
+import type {
+  InitialPaneParams,
+  Tab,
+  Pane,
+  PanesSnapshot,
+  PaneSnapshot,
+  TabSnapshot,
+} from 'orgnote-api';
 import { RouteNames, type PaneStore } from 'orgnote-api';
 import { defineStore } from 'pinia';
-import { UNTITLED_PAGE } from 'src/constants/untitled-page';
+import { getUniqueTabTitle } from 'src/utils/unique-tab-title';
 import { v4 } from 'uuid';
 import type { ShallowRef } from 'vue';
 import { computed, shallowRef } from 'vue';
@@ -40,14 +47,22 @@ export const usePaneStore = defineStore<'panes', PaneStore>(
       activePaneId.value ? panes.value[activePaneId.value].value : undefined,
     );
 
+    const getAllTabTitles = computed((): string[] => {
+      return Object.values(panes.value)
+        .flatMap((pane) => Object.values(pane.value.tabs.value))
+        .map((tab) => tab.title);
+    });
+
     const initNewTab = async (
       params?: Partial<Pick<Tab, 'title' | 'id' | 'paneId'>>,
     ): Promise<Tab> => {
       const id = params?.id || v4();
       const router = await initPaneRouter(id);
 
+      const title = params?.title || getUniqueTabTitle(getAllTabTitles.value);
+
       const newTab = {
-        title: params?.title || UNTITLED_PAGE,
+        title,
         paneId: params?.paneId ?? activePaneId.value,
         router,
         id,
@@ -108,40 +123,44 @@ export const usePaneStore = defineStore<'panes', PaneStore>(
 
     const closeTab = (paneId: string, tabId: string) => {
       const pane = panes.value[paneId];
-      if (!pane || !pane.value.tabs.value[tabId]) return;
+      if (!pane?.value.tabs.value[tabId]) return;
 
-      delete pane.value.tabs.value[tabId];
+      const isActiveTabDeleted = tabId === activeTab.value?.id && paneId === activePaneId.value;
+      const tabKeys = Object.keys(pane.value.tabs.value);
+      const tabIndex = tabKeys.indexOf(tabId);
+      const prevTabId = tabKeys[tabIndex - 1] ?? tabKeys[tabIndex + 1];
 
-      const pageIds = Object.keys(pane.value.tabs.value[tabId]);
-      if (pageIds.length === 0) {
-        const newPanes = { ...panes.value };
-        delete newPanes[paneId];
-        panes.value = newPanes;
+      const newTabs = { ...pane.value.tabs.value };
+      delete newTabs[tabId];
+      pane.value.tabs.value = newTabs;
 
-        if (activePaneId.value === paneId) {
-          const remainingPaneIds = Object.keys(newPanes);
-          activePaneId.value = remainingPaneIds.length ? remainingPaneIds[0] : null;
-        }
-        return;
+      // Если удаляли активную вкладку и есть другие вкладки - переключаемся
+      if (isActiveTabDeleted && prevTabId) {
+        pane.value.activeTabId = prevTabId;
       }
 
-      const newActiveTabId = pane.value.activeTabId === tabId ? pageIds[0] : pane.value.activeTabId;
-
-      panes.value[paneId].value = {
-        ...panes.value[paneId].value,
-        activeTabId: newActiveTabId,
-      };
+      // Если вкладок больше нет - удаляем панель
+      if (Object.keys(pane.value.tabs.value).length === 0) {
+        delete panes.value[paneId];
+        if (activePaneId.value === paneId) {
+          const remainingPanes = Object.keys(panes.value);
+          activePaneId.value = remainingPanes[0] ?? null;
+        }
+      }
     };
 
-    const activeTab = computed(() =>
-      activePane.value?.activeTabId
-        ? activePane.value.tabs.value[activePane.value.activeTabId]
-        : undefined,
-    );
+    const activeTab = computed(() => {
+      if (!activePane.value?.activeTabId) return undefined;
+
+      const tab = activePane.value.tabs.value[activePane.value.activeTabId];
+      return tab || undefined;
+    });
 
     const navigateTab = (paneId: string, tabId: string, params: RouteLocationRaw) => {
       const pane = panes.value[paneId];
-      const tab = pane.value?.tabs.value[tabId];
+      if (!pane?.value) return;
+
+      const tab = pane.value.tabs.value[tabId];
       if (!tab?.router) return;
 
       const routeParams: RouteLocationRaw =
@@ -159,6 +178,99 @@ export const usePaneStore = defineStore<'panes', PaneStore>(
       return navigateTab(activePaneId.value, activeTab.value.id, params);
     };
 
+    const createTabSnapshot = (tab: Tab): TabSnapshot => ({
+      id: tab.id,
+      title: tab.title,
+      paneId: tab.paneId,
+      routeLocation: {
+        path: tab.router.currentRoute.value.path,
+        params: { ...tab.router.currentRoute.value.params } as Record<string, string>,
+        query: { ...tab.router.currentRoute.value.query } as Record<string, string>,
+        hash: tab.router.currentRoute.value.hash,
+        name: tab.router.currentRoute.value.name?.toString(),
+      },
+    });
+
+    const createPaneSnapshot = (pane: Pane): PaneSnapshot => {
+      const tabSnapshots = Object.values(pane.tabs.value).map(createTabSnapshot);
+      return {
+        id: pane.id,
+        activeTabId: pane.activeTabId,
+        tabs: tabSnapshots,
+      };
+    };
+
+    const getPanesSnapshot = (): PanesSnapshot => {
+      const panesSnapshot = Object.values(panes.value).map((paneRef) =>
+        createPaneSnapshot(paneRef.value),
+      );
+      return {
+        panes: panesSnapshot,
+        activePaneId: activePaneId.value || '',
+        timestamp: Date.now(),
+      };
+    };
+
+    const restoreRouterState = async (
+      router: Router,
+      routeLocation: TabSnapshot['routeLocation'],
+    ): Promise<void> => {
+      if (routeLocation.name) {
+        await router.push({
+          name: routeLocation.name,
+          params: routeLocation.params,
+          query: routeLocation.query,
+          hash: routeLocation.hash,
+        });
+        return;
+      }
+      await router.push(routeLocation.path);
+    };
+
+    const restoreTabFromSnapshot = async (tabSnapshot: TabSnapshot): Promise<Tab> => {
+      const router = await initPaneRouter(tabSnapshot.id);
+      await restoreRouterState(router, tabSnapshot.routeLocation);
+      return {
+        id: tabSnapshot.id,
+        title: tabSnapshot.title,
+        paneId: tabSnapshot.paneId,
+        router,
+      };
+    };
+
+    const restorePaneFromSnapshot = async (
+      paneSnapshot: PaneSnapshot,
+    ): Promise<ShallowRef<Pane>> => {
+      const tabs: Record<string, Tab> = {};
+
+      for (const tabSnapshot of paneSnapshot.tabs) {
+        const tab = await restoreTabFromSnapshot(tabSnapshot);
+        tabs[tab.id] = tab;
+      }
+
+      return shallowRef<Pane>({
+        id: paneSnapshot.id,
+        activeTabId: paneSnapshot.activeTabId,
+        tabs: shallowRef(tabs),
+      });
+    };
+
+    const clearPanesState = (): void => {
+      panes.value = {};
+      activePaneId.value = null;
+    };
+
+    const restorePanesSnapshot = async (snapshot: PanesSnapshot): Promise<void> => {
+      clearPanesState();
+
+      for (const paneSnapshot of snapshot.panes) {
+        const pane = await restorePaneFromSnapshot(paneSnapshot);
+        panes.value[paneSnapshot.id] = pane;
+      }
+
+      activePaneId.value = snapshot.activePaneId;
+    };
+
     const paneStore: PaneStore = {
       panes,
       activePane,
@@ -171,6 +283,8 @@ export const usePaneStore = defineStore<'panes', PaneStore>(
       activeTab,
       navigateTab,
       navigate,
+      getPanesSnapshot,
+      restorePanesSnapshot,
     };
 
     return paneStore;

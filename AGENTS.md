@@ -199,6 +199,12 @@ if (!fileSystem) {
 }
 ```
 
+## Testing
+- We use vitest, never use `describe` and `it` keywords, only `test` keyword without nesting.
+- When you write code, try to cover all possible scenarios, negative and positive.  
+- Try to break code via test.  
+- We test only public behavior.  
+- Never try to adapt tests for existing code; every time, check if the code has a potential bug or not.
 ## Performance Guidelines
 
 ### Critical Performance Rules
