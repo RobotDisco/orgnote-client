@@ -10,9 +10,11 @@ import { RouteNames, type PaneStore } from 'orgnote-api';
 import { defineStore } from 'pinia';
 import { getUniqueTabTitle } from 'src/utils/unique-tab-title';
 import { v4 } from 'uuid';
+
+const DEFAULT_TAB_TITLE = 'Untitled';
 import type { ShallowRef } from 'vue';
 import { computed, shallowRef } from 'vue';
-import type { RouteLocationRaw, Router } from 'vue-router';
+import type { RouteLocationRaw, Router, RouteLocationNormalized } from 'vue-router';
 import { createMemoryHistory, createRouter } from 'vue-router';
 
 export const initPaneRouter = async (tabId: string): Promise<Router> => {
@@ -23,11 +25,23 @@ export const initPaneRouter = async (tabId: string): Promise<Router> => {
         path: '/:paneId',
         name: RouteNames.InitialPage,
         component: () => import('src/pages/InitialPage.vue'),
+        meta: {
+          titleGenerator: () => DEFAULT_TAB_TITLE,
+        },
       },
       {
-        path: '/:paneId/edit-note/:path',
+        path: '/:paneId/edit-note/:path(.*)',
         name: RouteNames.EditNote,
         component: () => import('src/pages/EditNote.vue'),
+        meta: {
+          titleGenerator: (route: RouteLocationNormalized) => {
+            const filePath = route.params.path as string;
+            if (!filePath) return DEFAULT_TAB_TITLE;
+
+            const fileName = filePath.split('/').pop();
+            return fileName || DEFAULT_TAB_TITLE;
+          },
+        },
       },
     ],
   });
@@ -35,8 +49,6 @@ export const initPaneRouter = async (tabId: string): Promise<Router> => {
   return router;
 };
 
-// TODO: feat/stable-beta check, isn't it more easy to use reactive properties instead of multiple nested shallowRef?
-// We already know this structure... probably it could be more convenient
 export const usePaneStore = defineStore<'panes', PaneStore>(
   'panes',
   () => {
@@ -134,12 +146,10 @@ export const usePaneStore = defineStore<'panes', PaneStore>(
       delete newTabs[tabId];
       pane.value.tabs.value = newTabs;
 
-      // Если удаляли активную вкладку и есть другие вкладки - переключаемся
       if (isActiveTabDeleted && prevTabId) {
         pane.value.activeTabId = prevTabId;
       }
 
-      // Если вкладок больше нет - удаляем панель
       if (Object.keys(pane.value.tabs.value).length === 0) {
         delete panes.value[paneId];
         if (activePaneId.value === paneId) {

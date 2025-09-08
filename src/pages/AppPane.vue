@@ -10,7 +10,7 @@
           :key="i"
           :active="tab.id === activePane.activeTabId"
         >
-          {{ tab.title }}
+          {{ generateTabTitle(tab.router.currentRoute.value) }}
         </nav-tab>
         <template #actions>
           <command-action-button :command="DefaultCommands.NEW_TAB" size="sm" />
@@ -29,6 +29,7 @@ import NavTabs from 'src/components/NavTabs.vue';
 import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
 import { TAB_ROUTER_KEY } from 'src/constants/context-providers';
 import CommandActionButton from 'src/containers/CommandActionButton.vue';
+import { generateTabTitle } from 'src/utils/generate-tab-title';
 import { shallowRef } from 'vue';
 import { provide } from 'vue';
 import { computed, watch } from 'vue';
@@ -56,10 +57,6 @@ watch(activeTab, initTabRouter);
 provide(TAB_ROUTER_KEY, tabRouter);
 
 const currentRoute = computed(() => tabRouter.value?.currentRoute.value);
-
-watch(currentRoute, () => {
-  console.log('[line 48]: currentRouteMeta', currentRoute.value);
-});
 
 const currentView = computed(() => {
   return currentRoute.value?.matched[0]?.components?.default;

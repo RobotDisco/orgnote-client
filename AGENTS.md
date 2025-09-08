@@ -103,6 +103,8 @@ fi
 11. **Don't overuse OOP** - Prefer functional approaches where appropriate
 12. **Write tests** - Ensure code reliability and maintainability
 13. **Best practices** - Respect established patterns and conventions
+14. **Never use comments** - Strive for clarity without comments
+15. **Never use any type** - Always use explicit types
 
 
 ### Code Style Configuration

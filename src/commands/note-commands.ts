@@ -4,7 +4,7 @@ import { useNotePickCompletion } from 'src/composables/file-pick-completion';
 import { usePaneStore } from 'src/stores/pane';
 
 export function getNoteCommands(): Command[] {
-  const pane = usePaneStore();
+  const paneStore = usePaneStore();
 
   const commands: Command[] = [
     {
@@ -19,7 +19,7 @@ export function getNoteCommands(): Command[] {
           return;
         }
 
-        pane.navigate({
+        paneStore.navigate({
           name: RouteNames.EditNote,
           params: { path },
         });
