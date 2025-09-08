@@ -75,6 +75,9 @@ export function getFileManagerCommands(): Command[] {
         }
         const dirPath = getFileDirPath(filePath);
         fm.path = dirPath;
+
+        const commands = api.core.useCommands();
+        await commands.execute(DefaultCommands.OPEN_NOTE, { path: filePath });
       },
     },
     {
