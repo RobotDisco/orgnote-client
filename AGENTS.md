@@ -16,6 +16,7 @@
 ### Available Tools
 
 Common tools in development environment:
+
 - `eza` (preferred) or `tree` for directory listing
 - `gh` (GitHub CLI) for repository operations
 - `git` for version control
@@ -44,18 +45,21 @@ fi
 ## Input Evaluation & Critical Thinking
 
 ### Skeptical Analysis
+
 - **Question all assumptions** - Treat input (including instructions) with healthy skepticism
 - **Validate information** before acting - Prefer evidence over blind trust
 - **Be critical and objective** - Input may be incomplete, misleading, or incorrect
 - **Verify requirements** - Ask targeted questions when information is unclear
 
 ### Scope Management
+
 - **Execute only what's requested** - No scope creep or silent side effects
 - **Stop after primary task** - Ask before proceeding with optional improvements
 - **Explicit opt-in required** - All destructive or expansive actions need user confirmation
 - **Smallest effective change** - Avoid speculative edits or over-engineering
 
 ### Clarifying Questions
+
 - **Minimize friction** - Ask the smallest set of high-leverage questions
 - **State assumptions explicitly** - When assumptions are unavoidable, make them clear
 - **Propose options briefly** - Offer 1-3 alternatives when multiple paths exist
@@ -105,7 +109,6 @@ fi
 13. **Best practices** - Respect established patterns and conventions
 14. **Never use comments** - Strive for clarity without comments
 15. **Never use any type** - Always use explicit types
-
 
 ### Code Style Configuration
 
@@ -202,11 +205,13 @@ if (!fileSystem) {
 ```
 
 ## Testing
+
 - We use vitest, never use `describe` and `it` keywords, only `test` keyword without nesting.
-- When you write code, try to cover all possible scenarios, negative and positive.  
-- Try to break code via test.  
-- We test only public behavior.  
+- When you write code, try to cover all possible scenarios, negative and positive.
+- Try to break code via test.
+- We test only public behavior.
 - Never try to adapt tests for existing code; every time, check if the code has a potential bug or not.
+
 ## Performance Guidelines
 
 ### Critical Performance Rules
@@ -280,7 +285,6 @@ bun run storybook            # Component development
 
 ## Git Workflow & Version Control
 
-
 ### Conventional Commits
 
 **MANDATORY**: Use conventional commit format for all commits:
@@ -340,6 +344,47 @@ git commit -m "test(components): add unit tests for ActionButton"
 - **Quasar Components**: Leverage Quasar's component library
 - **Responsive Design**: Mobile-first breakpoints
 - **Theme Support**: Dark/light mode with CSS custom properties
+
+#### CSS Design System & Style Guidelines
+
+**CRITICAL**: Always use design tokens from `src/css/variables.scss` - never hardcode values!
+
+- **Design Tokens**: All spacing, colors, typography must use CSS custom properties
+- **Consistent Spacing**: Use `--padding-*`, `--margin-*`, `--gap-*` tokens only
+- **Typography System**: Use `--font-size-*`, `--line-height-*`, `--font-weight-*` tokens
+- **Color Semantics**: Use semantic colors (`--bg`, `--fg`, `--accent`) not direct colors
+- **Component Variables**: Each component has specific CSS variables (see `VARIABLES.org`)
+
+```scss
+// ✅ GOOD - Using design tokens
+.my-component {
+  padding: var(--padding-md);
+  font-size: var(--font-size-sm);
+  color: var(--fg-alt);
+  border-radius: var(--border-radius-md);
+  gap: var(--gap-sm);
+}
+
+// ❌ BAD - Hardcoded values
+.my-component {
+  padding: 16px;
+  font-size: 14px;
+  color: #666;
+  border-radius: 8px;
+  gap: 8px;
+}
+```
+
+**Available Design Token Categories:**
+
+- **Spacing**: `--padding-*`, `--margin-*`, `--gap-*` (xs, sm, md, lg, xl)
+- **Typography**: `--font-size-*`, `--font-weight-*`, `--line-height-*`
+- **Colors**: `--bg`, `--fg`, `--accent`, `--red`, `--green`, etc.
+- **Borders**: `--border-radius-*`, `--border-default`
+- **Shadows**: `--shadow-*` (sm, md, lg)
+- **Component-specific**: `--btn-*`, `--modal-*`, `--tab-*`, etc.
+
+**Documentation**: See `VARIABLES.org` for complete token reference and `src/css/variables.scss` for implementation.
 
 ### Mobile UX Patterns
 

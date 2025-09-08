@@ -92,6 +92,7 @@ const { t } = useI18n({
 dialog {
   max-width: var(--modal-max-width);
   max-height: var(--modal-max-height);
+  margin: var(--modal-safe-margin) auto;
 
   border: var(--modal-border);
   border-radius: var(--modal-border-radius);
