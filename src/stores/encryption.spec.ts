@@ -10,15 +10,17 @@ vi.mock('orgnote-api/encryption', () => ({
   decryptNote: vi.fn(),
 }));
 
+// Mock the config store to provide encryption config
+vi.mock('src/stores/config', () => ({
+  useConfigStore: vi.fn(() => ({
+    config: {
+      encryption: { type: 'GpgPassword', password: 'test-password' },
+    },
+  })),
+}));
+
 beforeEach(() => {
   setActivePinia(createPinia());
-  vi.mock('src/stores/settings', () => ({
-    useSettingsStore: vi.fn(() => ({
-      config: {
-        encryption: { type: 'GpgPassword', password: 'test-password' },
-      },
-    })),
-  }));
 });
 
 test('encrypt calls encrypt with correct parameters', async () => {

@@ -36,12 +36,12 @@ test('does not render "mini" when mini prop is false', () => {
   expect(wrapper.find('.mini').exists()).toBe(false);
 });
 
-test.only('applies the correct class based on "opened" prop', () => {
+test('applies the correct class based on "opened" prop', () => {
   const wrapper = mount(AppSidebar, {
     props: { opened: true },
   });
 
-  expect(wrapper.classes()).toContain('opened');
+  expect(wrapper.find('.sidebar').classes()).toContain('opened');
 });
 
 test('does not apply "opened" class when prop is false', () => {
@@ -49,7 +49,7 @@ test('does not apply "opened" class when prop is false', () => {
     props: { opened: false },
   });
 
-  expect(wrapper.classes()).not.toContain('opened');
+  expect(wrapper.find('.sidebar').classes()).not.toContain('opened');
 });
 
 test('renders content section when "opened" is true', () => {
@@ -65,12 +65,12 @@ test('adds or removes "opened" class based on prop', async () => {
     props: { opened: true },
   });
 
-  expect(wrapper.classes()).toContain('opened');
+  expect(wrapper.find('.sidebar').classes()).toContain('opened');
 
   await wrapper.setProps({ opened: false });
   await nextTick();
 
-  expect(wrapper.classes()).not.toContain('opened');
+  expect(wrapper.find('.sidebar').classes()).not.toContain('opened');
 });
 
 // TODO: Styles does not applied for some reason, prbably it's correspond to happy-dom

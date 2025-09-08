@@ -20,7 +20,7 @@ test('able to mutate tokens', () => {
   store.tokens.push({ id: '2', token: 'xyz987' });
 
   expect(store.tokens).toHaveLength(2);
-  expect(store.tokens[0]).toEqual({ id: 1, token: 'abc123' });
+  expect(store.tokens[0]).toEqual({ id: '1', token: 'abc123' });
 });
 
 test('able to mutate settings', () => {
