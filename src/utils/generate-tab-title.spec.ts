@@ -96,7 +96,7 @@ test('returns Untitled when no titleGenerator in meta', () => {
 test('returns Untitled when titleGenerator is not a function', () => {
   const route = createMockRoute({
     meta: {
-      titleGenerator: 'not a function' as any,
+      titleGenerator: 'not a function' as unknown as (route: RouteLocationNormalized) => string,
     },
   });
 
