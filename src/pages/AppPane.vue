@@ -10,7 +10,7 @@
           :key="i"
           :active="tab.id === activePane.activeTabId"
         >
-          {{ generateTabTitle(tab.router.currentRoute.value) }}
+          {{ generateTabTitle(tab.router.currentRoute.value) || tab.title }}
         </nav-tab>
         <template #actions>
           <command-action-button :command="DefaultCommands.NEW_TAB" size="sm" />

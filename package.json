@@ -90,6 +90,7 @@
     "@vitejs/plugin-vue": "5.2.3",
     "@vue/eslint-config-prettier": "10.2.0",
     "@vue/eslint-config-typescript": "14.5.0",
+    "@vue/language-server": "2.2.12",
     "@vue/test-utils": "2.4.6",
     "autoprefixer": "10.4.21",
     "electron": "35.2.0",

@@ -11,6 +11,7 @@ const eng: { [key in I18N]?: string } = {
   [I18N.CLEAR_ALL_LOCAL_DATA]: 'clear all local data',
   [I18N.DELETE_ALL_NOTES]: 'delete all notes',
   [I18N.REMOVE_ACCOUNT]: 'remove account',
+  [I18N.SEARCH]: 'Search',
 };
 
 export default eng;
