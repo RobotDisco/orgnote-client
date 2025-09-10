@@ -1,5 +1,6 @@
 <template>
   <div class="nav-tabs">
+    <slot name="navigation" />
     <div class="content">
       <slot />
     </div>
