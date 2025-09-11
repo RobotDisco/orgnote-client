@@ -47,7 +47,6 @@ import { useNotificationsStore } from 'src/stores/notifications';
 import { useFileReaderStore } from 'src/stores/file-reader';
 import { useBufferStore } from 'src/stores/buffer';
 import type { Router } from 'vue-router';
-import type { BufferStoreDefinition } from 'orgnote-api';
 
 let api: OrgNoteApi;
 let repositories: OrgNoteApi['infrastructure'];
@@ -61,7 +60,7 @@ async function initApi(app: App, router: Router): Promise<void> {
     core: {
       useCommands: useCommandsStore,
       useCommandsGroup: useCommandsGroupStore,
-      useExtenions: useExtensionsStore,
+      useExtensions: useExtensionsStore,
       useFileSystem: useFileSystemStore,
       useEncryption: useEncryptionStore,
       useSettings: useSettingsStore,
@@ -73,8 +72,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useConfig: useConfigStore,
       useNotifications: useNotificationsStore,
       useFileReader: useFileReaderStore,
-      // Type assertion required due to Buffer type collision between Node.js Buffer and orgnote Buffer
-      useBuffers: useBufferStore as unknown as BufferStoreDefinition,
+      useBuffers: useBufferStore,
       app,
     },
     utils: {
@@ -124,7 +122,7 @@ export default defineBoot(async ({ app, store, router }) => {
   // await sleep(1000);
   store.use(() => ({ api: api as OrgNoteApi }));
   app.provide(ORGNOTE_API_PROVIDER_TOKEN, api);
-  app.provide(REPOSITORIES_PROVIDER_TOKEN, api.repositories);
+  app.provide(REPOSITORIES_PROVIDER_TOKEN, repositories);
   await syncConfigurations(api);
   splashScreen.hide();
 });

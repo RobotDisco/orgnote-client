@@ -1,29 +1,71 @@
 import { defineStore } from 'pinia';
-import { computed, ref, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { debounce } from 'src/utils/debounce';
-import type { Buffer as OrgBuffer } from 'orgnote-api';
-import { useFileSystemManagerStore } from './file-system-manager';
+import type { BufferStore, Buffer as OrgBuffer } from 'orgnote-api';
+import { api } from 'src/boot/api';
 
 const SAVE_DELAY_MS = 1000;
 
-export const useBufferStore = defineStore('buffers', () => {
-  const buffers = ref(new Map<string, OrgBuffer>());
+export const useBufferStore = defineStore<string, BufferStore>('buffers', (): BufferStore => {
+  const buffers = ref<Map<string, OrgBuffer>>(new Map());
+
+  const debouncedSavers = new Map<string, () => void>();
+
+  const _saveBuffer = async (buffer: OrgBuffer): Promise<void> => {
+    const fs = api.core.useFileSystemManager().currentFs;
+    if (!fs) return;
+    buffer.isSaving = true;
+    try {
+      await fs.writeFile(buffer.path, buffer.content);
+      buffer.metadata.originalContent = buffer.content;
+    } catch {
+      api.core
+        .useNotifications()
+        .notify({ message: `Failed to save: ${buffer.path}`, level: 'danger' });
+    }
+    buffer.isSaving = false;
+  };
+
+  const _loadBufferContent = async (buffer: OrgBuffer): Promise<void> => {
+    buffer.isLoading = true;
+    const fs = api.core.useFileSystemManager().currentFs;
+    if (!fs) {
+      buffer.isLoading = false;
+      return;
+    }
+    try {
+      const content = await fs.readFile(buffer.path);
+      buffer.content = content;
+      buffer.metadata.originalContent = content;
+    } catch {
+      api.core
+        .useNotifications()
+        .notify({ message: `Failed to load: ${buffer.path}`, level: 'danger' });
+    }
+    buffer.isLoading = false;
+  };
 
   const allBuffers = computed(() => Array.from(buffers.value.values()));
-  const recentBuffers = computed(() => [...allBuffers.value].slice(0, 10));
-  const currentBuffer = computed((): OrgBuffer | null => null);
+  const recentBuffers = computed(() =>
+    [...allBuffers.value]
+      .sort((a, b) => b.lastAccessed.getTime() - a.lastAccessed.getTime())
+      .slice(0, 10),
+  );
 
-  const fm = useFileSystemManagerStore();
+  const currentBuffer = computed((): OrgBuffer | null => {
+    const all = allBuffers.value;
+    return all.length > 0 ? all[0] : null;
+  });
 
   const getOrCreateBuffer = async (path: string): Promise<OrgBuffer> => {
-    if (buffers.value.has(path)) {
-      const buffer = buffers.value.get(path)! as unknown as OrgBuffer;
-      buffer.referenceCount++;
-      buffer.lastAccessed = new Date();
-      return buffer;
+    const existing = buffers.value.get(path);
+    if (existing) {
+      existing.referenceCount += 1;
+      existing.lastAccessed = new Date();
+      return existing;
     }
 
-    const buffer: OrgBuffer = {
+    const base: OrgBuffer = reactive({
       path,
       title: path.split('/').pop() || 'Untitled',
       content: '',
@@ -32,70 +74,60 @@ export const useBufferStore = defineStore('buffers', () => {
       lastAccessed: new Date(),
       referenceCount: 1,
       metadata: {},
-    };
+    });
 
-    try {
-      if (fm.currentFs) {
-        const fileContent = await fm.currentFs.readFile(path, 'utf8');
-        buffer.content = fileContent;
-      }
-    } catch (error) {
-      console.error('Failed to load file:', error);
-    } finally {
-      buffer.isLoading = false;
-    }
+    buffers.value.set(path, base);
 
-    const debouncedSave = debounce(async () => {
-      if (buffer.isSaving) return;
+    await _loadBufferContent(base);
 
-      buffer.isSaving = true;
-      try {
-        const { api } = await import('src/boot/api');
-        const fileSystem = api.core.useFileSystemManager().currentFs;
-        if (fileSystem) {
-          await fileSystem.writeFile(buffer.path, buffer.content);
-        }
-      } catch (error) {
-        console.error('Failed to save file:', error);
-      } finally {
-        buffer.isSaving = false;
-      }
-    }, SAVE_DELAY_MS);
+    const debouncedSave = debounce(() => _saveBuffer(base), SAVE_DELAY_MS);
+    debouncedSavers.set(path, debouncedSave);
+    watch(
+      () => base.content,
+      () => debouncedSavers.get(path)?.(),
+    );
 
-    watch(() => buffer.content, debouncedSave);
-
-    buffers.value.set(path, buffer);
-    return buffer;
+    return base;
   };
 
   const releaseBuffer = (path: string): void => {
     const buffer = buffers.value.get(path);
-    if (buffer) {
-      buffer.referenceCount = Math.max(0, buffer.referenceCount - 1);
-    }
-  };
-
-  const closeBuffer = async (path: string, force = false): Promise<boolean> => {
-    const buffer = buffers.value.get(path);
-    if (!buffer) return true;
-
-    if (!force) {
-      return false;
-    }
-
-    buffers.value.delete(path);
-    return true;
+    if (!buffer) return;
+    buffer.referenceCount = Math.max(0, buffer.referenceCount - 1);
   };
 
   const getBufferByPath = (path: string): OrgBuffer | null => {
-    return (buffers.value.get(path) as unknown as OrgBuffer) || null;
+    return buffers.value.get(path) || null;
   };
 
-  const saveAllBuffers = async (): Promise<void> => {};
+  const saveBuffer = async (path: string): Promise<void> => {
+    const buffer = getBufferByPath(path);
+    if (!buffer) return;
+    await _saveBuffer(buffer);
+  };
 
-  const cleanup = (): void => {};
+  const closeBuffer = async (path: string, force = false): Promise<boolean> => {
+    const buffer = getBufferByPath(path);
+    if (!buffer) return true;
+    const isDirty = buffer.content !== (buffer.metadata.originalContent || '');
+    if (isDirty && !force) return false;
+    await saveBuffer(path);
+    buffers.value.delete(path);
+    debouncedSavers.delete(path);
+    return true;
+  };
 
-  return {
+  const saveAllBuffers = async (): Promise<void> => {
+    await Promise.all(allBuffers.value.map((b) => _saveBuffer(b)));
+  };
+
+  const cleanup = (): void => {
+    for (const b of buffers.value.values()) {
+      if (b.referenceCount === 0) void closeBuffer(b.path, true);
+    }
+  };
+
+  const store: BufferStore = {
     buffers,
     currentBuffer,
     allBuffers,
@@ -107,4 +139,6 @@ export const useBufferStore = defineStore('buffers', () => {
     saveAllBuffers,
     cleanup,
   };
+
+  return store;
 });

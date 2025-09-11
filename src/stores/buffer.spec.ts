@@ -1,103 +1,107 @@
 import { setActivePinia, createPinia } from 'pinia';
 import { test, expect, beforeEach, vi } from 'vitest';
-import { useBufferStore } from './buffer';
 
-// Mock API для тестов
-const mockApi = {
-  core: {
-    useFileSystemManager: vi.fn(() => ({
-      currentFs: {
-        readFile: vi.fn().mockResolvedValue('test content'),
-        writeFile: vi.fn().mockResolvedValue(undefined),
-      },
-    })),
-    useNotifications: vi.fn(() => ({
-      notify: vi.fn(),
-    })),
-  },
-};
+const readFile = vi.fn().mockResolvedValue('test content');
+const writeFile = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('src/boot/api', () => ({
-  api: mockApi,
+  api: {
+    core: {
+      useFileSystemManager: vi.fn(() => ({
+        currentFs: {
+          readFile,
+          writeFile,
+        },
+      })),
+      useNotifications: vi.fn(() => ({
+        notify: vi.fn(),
+      })),
+    },
+  },
 }));
+
+import { useBufferStore } from './buffer';
 
 beforeEach(() => {
   setActivePinia(createPinia());
+  readFile.mockClear();
+  writeFile.mockClear();
 });
 
-test('создает новый buffer при первом обращении', async () => {
-  const bufferStore = useBufferStore();
-
-  const buffer = await bufferStore.getOrCreateBuffer('/test/file.org');
-
-  expect(buffer).toBeDefined();
-  expect(buffer.path).toBe('/test/file.org');
-  expect(buffer.title).toBe('file.org');
-  expect(buffer.referenceCount).toBe(1);
+test('creates a new buffer on first request', async () => {
+  const store = useBufferStore();
+  const buf = await store.getOrCreateBuffer('/test/file.org');
+  expect(buf).toBeDefined();
+  expect(buf.path).toBe('/test/file.org');
+  expect(buf.title).toBe('file.org');
+  expect(buf.referenceCount).toBe(1);
 });
 
-test('увеличивает referenceCount при повторном обращении', async () => {
-  const bufferStore = useBufferStore();
-
-  const buffer1 = await bufferStore.getOrCreateBuffer('/test/file.org');
-  const buffer2 = await bufferStore.getOrCreateBuffer('/test/file.org');
-
-  expect(buffer1.path).toBe(buffer2.path); // Тот же путь
-  expect(buffer1.referenceCount).toBe(2);
-  expect(buffer2.referenceCount).toBe(2);
+test('increments referenceCount on repeated access', async () => {
+  const store = useBufferStore();
+  const b1 = await store.getOrCreateBuffer('/test/file.org');
+  const b2 = await store.getOrCreateBuffer('/test/file.org');
+  expect(b1.path).toBe(b2.path);
+  expect(b1.referenceCount).toBe(2);
+  expect(b2.referenceCount).toBe(2);
 });
 
-test('возвращает buffer по пути', async () => {
-  const bufferStore = useBufferStore();
-
-  const buffer = await bufferStore.getOrCreateBuffer('/test/file.org');
-  const foundBuffer = bufferStore.getBufferByPath('/test/file.org');
-
-  expect(foundBuffer?.path).toBe(buffer.path);
-  expect(foundBuffer?.referenceCount).toBe(buffer.referenceCount);
+test('returns buffer by path', async () => {
+  const store = useBufferStore();
+  const b = await store.getOrCreateBuffer('/test/file.org');
+  const found = store.getBufferByPath('/test/file.org');
+  expect(found?.path).toBe(b.path);
 });
 
-test('уменьшает referenceCount при releaseBuffer', async () => {
-  const bufferStore = useBufferStore();
-
-  const buffer = await bufferStore.getOrCreateBuffer('/test/file.org');
-  expect(buffer.referenceCount).toBe(1);
-
-  bufferStore.releaseBuffer('/test/file.org');
-  expect(buffer.referenceCount).toBe(0);
+test('releaseBuffer decrements referenceCount', async () => {
+  const store = useBufferStore();
+  const b = await store.getOrCreateBuffer('/test/file.org');
+  expect(b.referenceCount).toBe(1);
+  store.releaseBuffer('/test/file.org');
+  expect(b.referenceCount).toBe(0);
 });
 
-test('показывает dirty buffers в computed', async () => {
-  const bufferStore = useBufferStore();
-
-  const buffer = await bufferStore.getOrCreateBuffer('/test/file.org');
-  expect(bufferStore.dirtyBuffers.length).toBe(0);
-
-  // Изменяем содержимое
-  buffer.content.value = 'modified content';
-  expect(bufferStore.dirtyBuffers.length).toBe(1);
-  expect(bufferStore.dirtyBuffers[0].path).toBe(buffer.path);
-  expect(bufferStore.dirtyBuffers[0].hasChanges).toBe(true);
+test('allBuffers returns all created buffers', async () => {
+  const store = useBufferStore();
+  expect(store.allBuffers.length).toBe(0);
+  await store.getOrCreateBuffer('/test/file1.org');
+  await store.getOrCreateBuffer('/test/file2.org');
+  expect(store.allBuffers.length).toBe(2);
 });
 
-test('показывает все буферы в allBuffers', async () => {
-  const bufferStore = useBufferStore();
-
-  expect(bufferStore.allBuffers.length).toBe(0);
-
-  await bufferStore.getOrCreateBuffer('/test/file1.org');
-  await bufferStore.getOrCreateBuffer('/test/file2.org');
-
-  expect(bufferStore.allBuffers.length).toBe(2);
-});
-
-test('закрывает buffer без несохраненных изменений', async () => {
-  const bufferStore = useBufferStore();
-
-  await bufferStore.getOrCreateBuffer('/test/file.org');
-  expect(bufferStore.allBuffers.length).toBe(1);
-
-  const closed = await bufferStore.closeBuffer('/test/file.org');
+test('closeBuffer returns true and removes buffer when no changes', async () => {
+  const store = useBufferStore();
+  await store.getOrCreateBuffer('/test/file.org');
+  expect(store.allBuffers.length).toBe(1);
+  const closed = await store.closeBuffer('/test/file.org');
   expect(closed).toBe(true);
-  expect(bufferStore.allBuffers.length).toBe(0);
+  expect(store.getBufferByPath('/test/file.org')).toBeNull();
+});
+
+test('closeBuffer returns false when unsaved changes and force=false', async () => {
+  const store = useBufferStore();
+  const b = await store.getOrCreateBuffer('/test/file.org');
+  b.content = 'modified content';
+  const closed = await store.closeBuffer('/test/file.org');
+  expect(closed).toBe(false);
+  expect(store.getBufferByPath('/test/file.org')).not.toBeNull();
+});
+
+test('closeBuffer returns true when unsaved changes and force=true', async () => {
+  const store = useBufferStore();
+  const b = await store.getOrCreateBuffer('/test/file.org');
+  b.content = 'modified content';
+  const closed = await store.closeBuffer('/test/file.org', true);
+  expect(closed).toBe(true);
+  expect(store.getBufferByPath('/test/file.org')).toBeNull();
+});
+
+test('saveAllBuffers calls file system write for all buffers', async () => {
+  const store = useBufferStore();
+  const b1 = await store.getOrCreateBuffer('/test/file1.org');
+  const b2 = await store.getOrCreateBuffer('/test/file2.org');
+  b1.content = 'data1';
+  b2.content = 'data2';
+  await store.saveAllBuffers();
+  expect(writeFile).toHaveBeenCalledTimes(2);
 });

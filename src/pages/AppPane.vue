@@ -34,7 +34,7 @@
       </nav-tabs>
     </template>
   </visibility-wrapper>
-  <component :is="currentView" />
+  <ScopedRouterView v-if="resolvedRouter" :router="resolvedRouter" />
 </template>
 
 <script lang="ts" setup>
@@ -50,6 +50,7 @@ import { shallowRef } from 'vue';
 import { provide } from 'vue';
 import { computed, watch } from 'vue';
 import type { Router } from 'vue-router';
+import ScopedRouterView from 'src/components/ScopedRouterView.vue';
 import { storeToRefs } from 'pinia';
 import { TAB_ROUTER_KEY } from 'src/constants/context-providers';
 
@@ -62,6 +63,7 @@ const { activeTab } = storeToRefs(pane);
 const activePane = pane.getPane(props.paneId);
 
 const tabRouter = shallowRef<Router | null>(null);
+const resolvedRouter = computed(() => tabRouter.value as Router | null);
 
 const initTabRouter = () => {
   tabRouter.value = activeTab.value.router;
@@ -75,32 +77,51 @@ provide(TAB_ROUTER_KEY, tabRouter);
 
 const currentRoute = computed(() => tabRouter.value?.currentRoute.value);
 
-const currentView = computed(() => {
-  return currentRoute.value?.matched[0]?.components?.default;
-});
+// Per-tab route history tracking
+const routeHistory = shallowRef<string[]>([]);
+const historyIndex = shallowRef(-1);
 
-// Simple history tracking
-const historyPosition = shallowRef(0);
-const historyLength = shallowRef(1);
+const initHistory = () => {
+  const full = tabRouter.value?.currentRoute.value.fullPath;
+  if (!full) return;
+  routeHistory.value = [full];
+  historyIndex.value = 0;
+};
 
-// Track navigation position
+initHistory();
+watch(activeTab, initHistory);
+
 watch(
   currentRoute,
   (newRoute, oldRoute) => {
-    if (newRoute && oldRoute && newRoute.fullPath !== oldRoute.fullPath) {
-      historyPosition.value++;
-      historyLength.value = historyPosition.value + 1;
+    if (!newRoute || !oldRoute) return;
+    if (newRoute.fullPath === oldRoute.fullPath) return;
+
+    const hist = routeHistory.value;
+    const idx = historyIndex.value;
+    const prev = idx > 0 ? hist[idx - 1] : null;
+    if (prev === newRoute.fullPath) {
+      historyIndex.value = idx - 1;
+      return;
     }
+    const next = idx < hist.length - 1 ? hist[idx + 1] : null;
+    if (next === newRoute.fullPath) {
+      historyIndex.value = idx + 1;
+      return;
+    }
+
+    routeHistory.value = hist.slice(0, idx + 1).concat(newRoute.fullPath);
+    historyIndex.value = idx + 1;
   },
   { flush: 'sync' },
 );
 
 const canGoBack = computed(() => {
-  return tabRouter.value !== null && historyPosition.value > 0;
+  return tabRouter.value !== null && historyIndex.value > 0;
 });
 
 const canGoForward = computed(() => {
-  return tabRouter.value !== null && historyPosition.value < historyLength.value - 1;
+  return tabRouter.value !== null && historyIndex.value < routeHistory.value.length - 1;
 });
 
 const handleNavigation = (direction: 'back' | 'forward') => {
@@ -114,12 +135,12 @@ const handleNavigation = (direction: 'back' | 'forward') => {
     }
 
     if (direction === 'back') {
+      if (!canGoBack.value) return;
       tabRouter.value.back();
-      historyPosition.value = Math.max(0, historyPosition.value - 1);
-    } else {
-      tabRouter.value.forward();
-      historyPosition.value = Math.min(historyLength.value - 1, historyPosition.value + 1);
+      return;
     }
+    if (!canGoForward.value) return;
+    tabRouter.value.forward();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     api.core.useNotifications().notify({

@@ -122,6 +122,7 @@ fi
 - **Prettier**: Configured for consistent formatting
 - **TypeScript**: Strict mode enabled, use `type` imports with `@typescript-eslint/consistent-type-imports`
 - **Husky**: Pre-commit hooks enforce code quality
+- **neverthrow** We use neverthrow for error handling instead of exceptions! Using exception is strongly prohibited
 
 ### Key Patterns
 

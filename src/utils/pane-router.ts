@@ -18,8 +18,15 @@ export const createPaneRouter = async (tabId: string): Promise<Router> => {
       },
       {
         path: '/:paneId/edit-note/:path(.*)',
-        name: RouteNames.EditNote,
-        component: () => import('src/pages/EditNote.vue'),
+        name: 'OpenFile',
+        component: () => import('src/pages/AppBuffer.vue'),
+        children: [
+          {
+            path: '',
+            name: RouteNames.EditNote,
+            component: () => import('src/pages/EditNote.vue'),
+          },
+        ],
         meta: {
           titleGenerator: (route: RouteLocationNormalized) => {
             const filePath = route.params.path as string;

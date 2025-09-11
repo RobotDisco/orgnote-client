@@ -2,111 +2,62 @@ import { api } from 'src/boot/api';
 import { computed, onMounted, onUnmounted, watch, type Ref } from 'vue';
 
 export function useNoteEditor(notePath: Ref<string | undefined>) {
-  const bufferStore = api.core.useBuffers();
+  const store = api.core.useBuffers();
 
   const currentBuffer = computed(() => {
-    return notePath.value ? bufferStore.getBufferByPath(notePath.value) : null;
+    if (!notePath.value) return null;
+    return store.getBufferByPath(notePath.value);
   });
 
-  // При монтировании создаем/получаем buffer
   onMounted(async () => {
-    if (notePath.value) {
-      await bufferStore.getOrCreateBuffer(notePath.value);
-    }
+    if (!notePath.value) return;
+    await store.getOrCreateBuffer(notePath.value);
   });
 
-  // При размонтировании освобождаем buffer
   onUnmounted(() => {
-    if (notePath.value) {
-      bufferStore.releaseBuffer(notePath.value);
-    }
+    if (!notePath.value) return;
+    store.releaseBuffer(notePath.value);
   });
 
-  // Отслеживаем изменения пути и создаем новые буферы
-  watch(notePath, async (newPath, oldPath) => {
-    if (oldPath) {
-      bufferStore.releaseBuffer(oldPath);
-    }
-    if (newPath) {
-      await bufferStore.getOrCreateBuffer(newPath);
-    }
+  watch(notePath, async (next, prev) => {
+    if (prev) store.releaseBuffer(prev);
+    if (next) await store.getOrCreateBuffer(next);
   });
 
   const noteText = computed({
     get: (): string => {
-      const buffer = currentBuffer.value;
-      if (!buffer) return '';
-
-      // Type assertion due to Buffer type collision
-      const typedBuffer = buffer as unknown as {
-        content: { value: string };
-      };
-      return typedBuffer.content.value;
+      const b = currentBuffer.value;
+      return b ? b.content : '';
     },
-    set: (value: string) => {
-      const buffer = currentBuffer.value;
-      if (!buffer) return;
-
-      // Type assertion due to Buffer type collision
-      const typedBuffer = buffer as unknown as {
-        content: { value: string };
-      };
-      typedBuffer.content.value = value;
+    set: (val: string) => {
+      const b = currentBuffer.value;
+      if (!b) return;
+      b.content = val;
     },
-  });
-
-  const hasChanges = computed((): boolean => {
-    const buffer = currentBuffer.value;
-    if (!buffer) return false;
-
-    // Type assertion due to Buffer type collision
-    const typedBuffer = buffer as unknown as {
-      hasChanges: { value: boolean };
-    };
-    return typedBuffer.hasChanges.value;
   });
 
   const isSaving = computed((): boolean => {
-    const buffer = currentBuffer.value;
-    if (!buffer) return false;
-
-    // Type assertion due to Buffer type collision
-    const typedBuffer = buffer as unknown as {
-      isSaving: { value: boolean };
-    };
-    return typedBuffer.isSaving.value;
+    const b = currentBuffer.value;
+    return b ? b.isSaving : false;
   });
 
   const isLoading = computed((): boolean => {
-    const buffer = currentBuffer.value;
-    if (!buffer) return false;
-
-    // Type assertion due to Buffer type collision
-    const typedBuffer = buffer as unknown as {
-      isLoading: { value: boolean };
-    };
-    return typedBuffer.isLoading.value;
+    const b = currentBuffer.value;
+    return b ? b.isLoading : false;
   });
 
-  // Вспомогательные методы
   const saveBuffer = async (): Promise<void> => {
-    if (notePath.value && currentBuffer.value) {
-      // BufferStore автоматически сохраняет файл через debounce
-      // Этот метод принудительно сохраняет файл сейчас
-      return bufferStore.saveAllBuffers();
-    }
+    if (!notePath.value || !currentBuffer.value) return;
+    return store.saveAllBuffers();
   };
 
   const closeBuffer = async (force = false): Promise<boolean> => {
-    if (notePath.value) {
-      return bufferStore.closeBuffer(notePath.value, force);
-    }
-    return true;
+    if (!notePath.value) return true;
+    return store.closeBuffer(notePath.value, force);
   };
 
   return {
     noteText,
-    hasChanges,
     isSaving,
     isLoading,
     saveBuffer,
