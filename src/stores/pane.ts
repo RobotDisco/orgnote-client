@@ -6,48 +6,15 @@ import type {
   PaneSnapshot,
   TabSnapshot,
 } from 'orgnote-api';
-import { RouteNames, type PaneStore } from 'orgnote-api';
+import type { PaneStore } from 'orgnote-api';
 import { defineStore } from 'pinia';
 import { getUniqueTabTitle } from 'src/utils/unique-tab-title';
 import { v4 } from 'uuid';
 
-const DEFAULT_TAB_TITLE = 'Untitled';
 import type { ShallowRef } from 'vue';
 import { computed, shallowRef } from 'vue';
-import type { RouteLocationRaw, Router, RouteLocationNormalized } from 'vue-router';
-import { createMemoryHistory, createRouter } from 'vue-router';
-
-export const initPaneRouter = async (tabId: string): Promise<Router> => {
-  const router = createRouter({
-    history: createMemoryHistory(),
-    routes: [
-      {
-        path: '/:paneId',
-        name: RouteNames.InitialPage,
-        component: () => import('src/pages/InitialPage.vue'),
-        meta: {
-          titleGenerator: () => null,
-        },
-      },
-      {
-        path: '/:paneId/edit-note/:path(.*)',
-        name: RouteNames.EditNote,
-        component: () => import('src/pages/EditNote.vue'),
-        meta: {
-          titleGenerator: (route: RouteLocationNormalized) => {
-            const filePath = route.params.path as string;
-            if (!filePath) return null;
-
-            const fileName = filePath.split('/').pop();
-            return fileName || DEFAULT_TAB_TITLE;
-          },
-        },
-      },
-    ],
-  });
-  await router.push({ name: RouteNames.InitialPage, params: { paneId: tabId } });
-  return router;
-};
+import type { RouteLocationRaw, Router } from 'vue-router';
+import { createPaneRouter } from 'src/utils/pane-router';
 
 export const usePaneStore = defineStore<'panes', PaneStore>(
   'panes',
@@ -69,7 +36,7 @@ export const usePaneStore = defineStore<'panes', PaneStore>(
       params?: Partial<Pick<Tab, 'title' | 'id' | 'paneId'>>,
     ): Promise<Tab> => {
       const id = params?.id || v4();
-      const router = await initPaneRouter(id);
+      const router = await createPaneRouter(id);
 
       const title = params?.title || getUniqueTabTitle(getAllTabTitles.value);
 
@@ -238,7 +205,7 @@ export const usePaneStore = defineStore<'panes', PaneStore>(
     };
 
     const restoreTabFromSnapshot = async (tabSnapshot: TabSnapshot): Promise<Tab> => {
-      const router = await initPaneRouter(tabSnapshot.id);
+      const router = await createPaneRouter(tabSnapshot.id);
       await restoreRouterState(router, tabSnapshot.routeLocation);
       return {
         id: tabSnapshot.id,

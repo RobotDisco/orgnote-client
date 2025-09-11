@@ -1,119 +1,116 @@
 import { api } from 'src/boot/api';
-import { debounce } from 'src/utils/debounce';
-import { computed, onUnmounted, ref, watch, type Ref } from 'vue';
-
-const SAVE_DELAY_MS = 1000;
+import { computed, onMounted, onUnmounted, watch, type Ref } from 'vue';
 
 export function useNoteEditor(notePath: Ref<string | undefined>) {
-  const fileSystemManager = api.core.useFileSystemManager();
-  const notifications = api.core.useNotifications();
+  const bufferStore = api.core.useBuffers();
 
-  const noteText = ref<string>('');
-  const originalText = ref<string>('');
-  const isSaving = ref<boolean>(false);
-
-  const hasChanges = computed(() => {
-    return originalText.value !== noteText.value;
+  const currentBuffer = computed(() => {
+    return notePath.value ? bufferStore.getBufferByPath(notePath.value) : null;
   });
 
-  const validatePath = (path: string): boolean => {
-    if (!path) return false;
-    if (path.includes('..')) {
-      notifications.notify({
-        message: 'Invalid file path',
-        level: 'danger',
-      });
-      return false;
+  // При монтировании создаем/получаем buffer
+  onMounted(async () => {
+    if (notePath.value) {
+      await bufferStore.getOrCreateBuffer(notePath.value);
+    }
+  });
+
+  // При размонтировании освобождаем buffer
+  onUnmounted(() => {
+    if (notePath.value) {
+      bufferStore.releaseBuffer(notePath.value);
+    }
+  });
+
+  // Отслеживаем изменения пути и создаем новые буферы
+  watch(notePath, async (newPath, oldPath) => {
+    if (oldPath) {
+      bufferStore.releaseBuffer(oldPath);
+    }
+    if (newPath) {
+      await bufferStore.getOrCreateBuffer(newPath);
+    }
+  });
+
+  const noteText = computed({
+    get: (): string => {
+      const buffer = currentBuffer.value;
+      if (!buffer) return '';
+
+      // Type assertion due to Buffer type collision
+      const typedBuffer = buffer as unknown as {
+        content: { value: string };
+      };
+      return typedBuffer.content.value;
+    },
+    set: (value: string) => {
+      const buffer = currentBuffer.value;
+      if (!buffer) return;
+
+      // Type assertion due to Buffer type collision
+      const typedBuffer = buffer as unknown as {
+        content: { value: string };
+      };
+      typedBuffer.content.value = value;
+    },
+  });
+
+  const hasChanges = computed((): boolean => {
+    const buffer = currentBuffer.value;
+    if (!buffer) return false;
+
+    // Type assertion due to Buffer type collision
+    const typedBuffer = buffer as unknown as {
+      hasChanges: { value: boolean };
+    };
+    return typedBuffer.hasChanges.value;
+  });
+
+  const isSaving = computed((): boolean => {
+    const buffer = currentBuffer.value;
+    if (!buffer) return false;
+
+    // Type assertion due to Buffer type collision
+    const typedBuffer = buffer as unknown as {
+      isSaving: { value: boolean };
+    };
+    return typedBuffer.isSaving.value;
+  });
+
+  const isLoading = computed((): boolean => {
+    const buffer = currentBuffer.value;
+    if (!buffer) return false;
+
+    // Type assertion due to Buffer type collision
+    const typedBuffer = buffer as unknown as {
+      isLoading: { value: boolean };
+    };
+    return typedBuffer.isLoading.value;
+  });
+
+  // Вспомогательные методы
+  const saveBuffer = async (): Promise<void> => {
+    if (notePath.value && currentBuffer.value) {
+      // BufferStore автоматически сохраняет файл через debounce
+      // Этот метод принудительно сохраняет файл сейчас
+      return bufferStore.saveAllBuffers();
+    }
+  };
+
+  const closeBuffer = async (force = false): Promise<boolean> => {
+    if (notePath.value) {
+      return bufferStore.closeBuffer(notePath.value, force);
     }
     return true;
   };
-
-  const readNote = async () => {
-    const currentPath = notePath.value;
-    if (!currentPath) {
-      noteText.value = '';
-      originalText.value = '';
-      return;
-    }
-
-    if (!validatePath(currentPath)) {
-      return;
-    }
-
-    const fileSystem = fileSystemManager.currentFs;
-    if (!fileSystem) {
-      notifications.notify({
-        message: 'No file system available',
-        level: 'danger',
-      });
-      return;
-    }
-
-    try {
-      const content = await fileSystem.readFile(currentPath, 'utf8');
-      noteText.value = content;
-      originalText.value = content;
-    } catch {
-      notifications.notify({
-        message: 'Failed to read file',
-        level: 'danger',
-      });
-      noteText.value = '';
-      originalText.value = '';
-    }
-  };
-
-  const saveNote = async () => {
-    const currentPath = notePath.value;
-    if (!currentPath || !hasChanges.value || isSaving.value) {
-      return;
-    }
-
-    if (!validatePath(currentPath)) {
-      return;
-    }
-
-    const fileSystem = fileSystemManager.currentFs;
-    if (!fileSystem) {
-      notifications.notify({
-        message: 'No file system available',
-        level: 'danger',
-      });
-      return;
-    }
-
-    try {
-      isSaving.value = true;
-      await fileSystem.writeFile(currentPath, noteText.value);
-      originalText.value = noteText.value;
-    } catch {
-      notifications.notify({
-        message: 'Failed to save file',
-        level: 'danger',
-      });
-    } finally {
-      isSaving.value = false;
-    }
-  };
-
-  const debouncedSave = debounce(saveNote, SAVE_DELAY_MS);
-
-  watch(notePath, readNote);
-  watch(noteText, () => {
-    if (hasChanges.value) {
-      debouncedSave();
-    }
-  });
-
-  onUnmounted(() => {
-    debouncedSave.cancel();
-  });
 
   return {
     noteText,
     hasChanges,
     isSaving,
-    readNote,
-    saveNote,
+    isLoading,
+    saveBuffer,
+    closeBuffer,
+    currentBuffer,
   };
 }

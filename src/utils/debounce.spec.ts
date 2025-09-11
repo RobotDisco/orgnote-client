@@ -19,10 +19,17 @@ test('debounce resets the timer if called repeatedly', async () => {
   const debouncedFunction = debounce(mockFunction, 100);
 
   debouncedFunction();
-  setTimeout(() => debouncedFunction(), 50); // Reset debounce timer
-  setTimeout(() => debouncedFunction(), 90); // Reset debounce timer again
 
-  await new Promise((resolve) => setTimeout(resolve, 200));
+  // Wait 50ms and call again to reset timer
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  debouncedFunction();
+
+  // Wait another 50ms and call again to reset timer
+  await new Promise((resolve) => setTimeout(resolve, 40));
+  debouncedFunction();
+
+  // Wait for the debounce delay to complete
+  await new Promise((resolve) => setTimeout(resolve, 150));
 
   expect(mockFunction).toHaveBeenCalledTimes(1);
 });

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**OrgNote** is a cross-platform note-taking application that provides full compatibility with Emacs Org mode and Org-roam. It's designed for students, knowledge workers, researchers, and anyone who needs powerful note organization capabilities across web, mobile, and desktop platforms.
+\*OrgNote\*\* is a cross-platform note-taking application that provides full compatibility with Emacs Org mode and Org-roam. It's designed for students, knowledge workers, researchers, and anyone who needs powerful note organization capabilities across web, mobile, and desktop platforms.
 
 ### Core Technologies
 
@@ -94,21 +94,27 @@ fi
 
 ### Strict Coding Rules
 
-1. **Mobile-first** - Always start with mobile design
-2. **SOLID principles** - Single responsibility, open/closed, Liskov substitution, interface segregation, dependency inversion
-3. **Pure small functions** - Maximum 1 responsibility per function
-4. **No control flow statements** - Avoid `else`, `while`, `switch` operators
-5. **DRY / KISS / YAGNI** - Don't repeat yourself, keep it simple, you ain't gonna need it
-6. **No comments in code** - Code should be self-documenting
-7. **TypeScript strict mode** - All code must pass strict type checking
-8. **Maximum nesting depth = 1** - No multiple layers of `if`, `for`, `try`, etc.
-9. **Early returns and guard clauses** - Prefer over deep nesting
-10. **Extract inner logic** - Break complex functions into smaller, single-responsibility functions
-11. **Don't overuse OOP** - Prefer functional approaches where appropriate
-12. **Write tests** - Ensure code reliability and maintainability
-13. **Best practices** - Respect established patterns and conventions
-14. **Never use comments** - Strive for clarity without comments
-15. **Never use any type** - Always use explicit types
+- **Mobile-first** - Always start with mobile design
+- **SOLID principles** - Single responsibility, open/closed, Liskov substitution, interface segregation, dependency inversion
+- **Pure small functions** - Maximum 1 responsibility per function
+- **No control flow statements** - Avoid `else`, `while`, `switch` operators
+- **DRY / KISS / YAGNI** - Don't repeat yourself, keep it simple, you ain't gonna need it
+
+- **No comments in code** - Code should be self-documenting
+- **TypeScript strict mode** - All code must pass strict type checking
+- **Maximum nesting depth = 1** - No multiple layers of `if`, `for`, `try`, etc.
+- **Early returns and guard clauses** - Prefer over deep nesting
+- **Extract inner logic** - Break complex functions into smaller, single-responsibility functions
+
+- **Don't overuse OOP** - Prefer functional approaches where appropriate
+- **Write tests** - Ensure code reliability and maintainability
+- **Best practices** - Respect established patterns and conventions
+- **Never use comments** - Strive for clarity without comments
+- **Never use any type** - Always use explicit types
+
+- The code uses ONLY English. Any other languages in the source code are strictly prohibited.
+- NEVER use `any` type
+- Disabling ESLint rules is strictly prohibited unless asked otherwise.
 
 ### Code Style Configuration
 
@@ -216,12 +222,12 @@ if (!fileSystem) {
 
 ### Critical Performance Rules
 
-1. **Avoid large tasks** - Break work into smaller chunks
-2. **Consider introducing queues** for heavy operations
-3. **Performance is critical** when working with text processing
-4. **Use lazy loading** for components and routes
-5. **Minimize bundle size** - Use code splitting where appropriate
-6. **Efficient state updates** - Avoid unnecessary reactivity triggers
+- **Avoid large tasks** - Break work into smaller chunks
+- **Consider introducing queues** for heavy operations
+- **Performance is critical** when working with text processing
+- **Use lazy loading** for components and routes
+- **Minimize bundle size** - Use code splitting where appropriate
+- **Efficient state updates** - Avoid unnecessary reactivity triggers
 
 ### Text Processing
 
@@ -234,10 +240,10 @@ if (!fileSystem) {
 
 ### Environment Setup
 
-1. Clone the repository
-2. Install dependencies: `bun install`
-3. Set up HTTPS certificates (see `CONTRIBUTION.org`)
-4. Configure environment variables (`.env` files)
+- Clone the repository
+- Install dependencies: `bun install`
+- Set up HTTPS certificates (see `CONTRIBUTION.org`)
+- Configure environment variables (`.env` files)
 
 ### Project Structure Analysis
 
@@ -497,21 +503,21 @@ const message = t('commands.file.create');
 
 ### ❌ Things to Avoid
 
-1. **Large synchronous operations** - Break into async chunks
-2. **Direct DOM manipulation** - Use Vue's reactive system
-3. **Tight coupling** - Use the plugin API for loose coupling
-4. **Platform assumptions** - Always check platform capabilities
-5. **Memory leaks** - Properly dispose of event listeners and watchers
-6. **Blocking UI** - Use loading states and background processing
+- **Large synchronous operations** - Break into async chunks
+- **Direct DOM manipulation** - Use Vue's reactive system
+- **Tight coupling** - Use the plugin API for loose coupling
+- **Platform assumptions** - Always check platform capabilities
+- **Memory leaks** - Properly dispose of event listeners and watchers
+- **Blocking UI** - Use loading states and background processing
 
 ### ✅ Best Practices
 
-1. **Use the API layer** - All functionality through `api` object
-2. **Error boundaries** - Handle errors gracefully with user feedback
-3. **Loading states** - Show progress for async operations
-4. **Optimistic updates** - Update UI immediately, sync in background
-5. **Defensive coding** - Check for null/undefined values
-6. **Performance monitoring** - Be aware of performance implications
+- **Use the API layer** - All functionality through `api` object
+- **Error boundaries** - Handle errors gracefully with user feedback
+- **Loading states** - Show progress for async operations
+- **Optimistic updates** - Update UI immediately, sync in background
+- **Defensive coding** - Check for null/undefined values
+- **Performance monitoring** - Be aware of performance implications
 
 ## Debugging & Development Tools
 

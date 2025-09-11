@@ -45,7 +45,9 @@ import { useScreenDetection } from 'src/composables/use-screen-detection';
 import { useConfigStore } from 'src/stores/config';
 import { useNotificationsStore } from 'src/stores/notifications';
 import { useFileReaderStore } from 'src/stores/file-reader';
+import { useBufferStore } from 'src/stores/buffer';
 import type { Router } from 'vue-router';
+import type { BufferStoreDefinition } from 'orgnote-api';
 
 let api: OrgNoteApi;
 let repositories: OrgNoteApi['infrastructure'];
@@ -71,6 +73,8 @@ async function initApi(app: App, router: Router): Promise<void> {
       useConfig: useConfigStore,
       useNotifications: useNotificationsStore,
       useFileReader: useFileReaderStore,
+      // Type assertion required due to Buffer type collision between Node.js Buffer and orgnote Buffer
+      useBuffers: useBufferStore as unknown as BufferStoreDefinition,
       app,
     },
     utils: {
