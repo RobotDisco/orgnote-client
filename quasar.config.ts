@@ -14,9 +14,11 @@ export default defineConfig((ctx) => {
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
+      'logger',
       'default-file-systems',
       'i18n',
       'api',
+      'report',
       'axios',
       'default-commands',
       'viewport-patch',

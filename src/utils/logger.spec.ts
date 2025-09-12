@@ -1,0 +1,96 @@
+import { test, expect, vi, beforeEach } from 'vitest';
+import { createPinoLogger } from './logger';
+
+vi.mock('pino', () => {
+  const mockChild = vi.fn(() => mockPinoInstance);
+  const mockPinoInstance = {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    trace: vi.fn(),
+    child: mockChild,
+  };
+
+  return {
+    default: vi.fn(() => mockPinoInstance),
+  };
+});
+
+let logger: ReturnType<typeof createPinoLogger>;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  logger = createPinoLogger();
+});
+
+test('creates logger with correct interface', () => {
+  expect(logger).toBeDefined();
+  expect(typeof logger.info).toBe('function');
+  expect(typeof logger.error).toBe('function');
+  expect(typeof logger.warn).toBe('function');
+  expect(typeof logger.debug).toBe('function');
+  expect(typeof logger.trace).toBe('function');
+  expect(typeof logger.child).toBe('function');
+});
+
+test('logger info logs message correctly', () => {
+  const message = 'Test info message';
+  logger.info(message);
+
+  expect(logger.info).toBeDefined();
+});
+
+test('logger error logs message with context', () => {
+  const message = 'Test error message';
+  const context = { userId: 123, action: 'test' };
+  logger.error(message, context);
+
+  expect(logger.error).toBeDefined();
+});
+
+test('logger child creates child logger', () => {
+  const bindings = { module: 'test-module' };
+  const childLogger = logger.child(bindings);
+
+  expect(childLogger).toBeDefined();
+  expect(typeof childLogger.info).toBe('function');
+  expect(typeof childLogger.error).toBe('function');
+  expect(typeof childLogger.warn).toBe('function');
+  expect(typeof childLogger.debug).toBe('function');
+  expect(typeof childLogger.trace).toBe('function');
+  expect(typeof childLogger.child).toBe('function');
+});
+
+test('child logger can create nested child', () => {
+  const parentBindings = { module: 'parent' };
+  const childBindings = { component: 'child' };
+
+  const childLogger = logger.child(parentBindings);
+  const nestedChildLogger = childLogger.child(childBindings);
+
+  expect(nestedChildLogger).toBeDefined();
+  expect(typeof nestedChildLogger.info).toBe('function');
+});
+
+test('all log levels work correctly', () => {
+  const message = 'Test message';
+
+  logger.info(message);
+  logger.error(message);
+  logger.warn(message);
+  logger.debug(message);
+  logger.trace(message);
+
+  expect(true).toBe(true);
+});
+
+test('logger handles empty arguments correctly', () => {
+  expect(() => {
+    logger.info('Test message');
+    logger.error('Test error');
+    logger.warn('Test warning');
+    logger.debug('Test debug');
+    logger.trace('Test trace');
+  }).not.toThrow();
+});

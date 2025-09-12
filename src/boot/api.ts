@@ -47,6 +47,7 @@ import { useNotificationsStore } from 'src/stores/notifications';
 import { useFileReaderStore } from 'src/stores/file-reader';
 import { useBufferStore } from 'src/stores/buffer';
 import type { Router } from 'vue-router';
+import { logger } from './logger';
 
 let api: OrgNoteApi;
 let repositories: OrgNoteApi['infrastructure'];
@@ -94,6 +95,8 @@ async function initApi(app: App, router: Router): Promise<void> {
 
       uploadFile,
       uploadFiles,
+
+      logger,
     },
     ui: {
       useSplashScreen,
@@ -116,15 +119,22 @@ const syncConfigurations = async (api: OrgNoteApi) => {
 };
 
 export default defineBoot(async ({ app, store, router }) => {
+  logger.info('Booting application and initializing API...');
   const splashScreen = useSplashScreen();
   splashScreen.show();
+  logger.info('Start initializing API');
   await initApi(app, router);
+  logger.info('API initialized');
   // await sleep(1000);
   store.use(() => ({ api: api as OrgNoteApi }));
   app.provide(ORGNOTE_API_PROVIDER_TOKEN, api);
   app.provide(REPOSITORIES_PROVIDER_TOKEN, repositories);
+  logger.info('Start synchronizing configurations');
   await syncConfigurations(api);
+  logger.info('Configurations synchronized');
+
   splashScreen.hide();
+  logger.info('Application boot process finished');
 });
 
 export { api, repositories };
