@@ -112,6 +112,12 @@ body {
   --menu-item-height-sm: 36px;
   --menu-item-height-md: 42px;
   --menu-item-height-lg: 50px;
+  --menu-item-active-color: var(--fg);
+  --menu-item-active-bg: var(--bg-active);
+
+  // File Manager
+  --file-item-active-bg: var(--bg-active);
+  --file-item-active-color: var(--accent);
 
   // Icons
   --icon-rounded-border-radius: var(--border-radius-sm);

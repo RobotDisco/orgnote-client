@@ -54,6 +54,7 @@
           :key="f.path"
           :file="f"
           :size="menuItemSize"
+          :active="isActiveFile(f)"
         />
       </card-wrapper>
     </div>
@@ -61,7 +62,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { StyleSize } from 'orgnote-api';
+import type { StyleSize, Buffer as OrgBuffer } from 'orgnote-api';
 import { DefaultCommands, getParentDir, I18N, join, withRoot, type DiskFile } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import FileManagerItem from './FileManagerItem.vue';
@@ -140,6 +141,7 @@ readDir();
 // };
 
 const fileReader = api.core.useFileReader();
+const buffers = api.core.useBuffers();
 
 const handleFileClick = async (f: DiskFile) => {
   if (f.type === 'directory') {
@@ -156,7 +158,18 @@ const moveUp = async () => {
   await readDir();
 };
 
-const iconSize = computed<StyleSize>(() => (props.compact ? 'md' : 'md'));
+const iconSize = computed<StyleSize>(() => (props.compact ? 'sm' : 'md'));
+
+const activePaths = computed<Set<string>>(() => {
+  const all = buffers.allBuffers as OrgBuffer[];
+  const list = all.filter((b: OrgBuffer) => b.referenceCount > 0).map((b: OrgBuffer) => b.path);
+  return new Set(list);
+});
+
+const isActiveFile = (file: DiskFile): boolean => {
+  if (file.type !== 'file') return false;
+  return activePaths.value.has(file.path);
+};
 
 const { t } = useI18n({
   useScope: 'global',

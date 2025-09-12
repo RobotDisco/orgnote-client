@@ -1,9 +1,8 @@
 <template>
-  <menu-item @contextmenu.stop.prevent="openContextMenu()" :size="size">
+  <menu-item @contextmenu.stop.prevent="openContextMenu()" :size="size" :active="active">
     <div class="file-info" ref="fileManageItemRef">
       <app-icon
         :name="file?.type === 'directory' || root ? 'sym_o_folder' : 'sym_o_draft'"
-        color="fg-alt"
         size="sm"
       />
       <div class="name">
@@ -46,6 +45,7 @@ const props = defineProps<{
   file?: DiskFile;
   root?: boolean;
   size?: StyleSize;
+  active?: boolean;
 }>();
 
 const contextMenuRef = ref<InstanceType<typeof ContextMenu>>();

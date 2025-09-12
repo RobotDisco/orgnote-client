@@ -1,7 +1,7 @@
 <template>
   <div
     class="menu-item"
-    :class="[{ disabled }, type, `prefer-${prefer}`, `size-${size}`]"
+    :class="[{ disabled }, type, `prefer-${prefer}`, `size-${size}`, { active }]"
     :style="{ '--menu-item-lines': lines, '--current-menu-item-height': itemHeight }"
   >
     <div class="header">
@@ -19,7 +19,12 @@
       </div>
       <div v-if="slots.right || narrow || selected" class="right">
         <slot name="right" />
-        <app-icon v-if="narrow" name="sym_o_arrow_forward_ios" size="xs" color="fg-alt" />
+        <app-icon
+          v-if="narrow"
+          name="sym_o_arrow_forward_ios"
+          size="xs"
+          :color="active ? 'accent' : 'fg-alt'"
+        />
         <app-icon v-else-if="selected" name="sym_o_check" color="accent" size="sm" />
       </div>
     </div>
@@ -148,6 +153,8 @@ const itemHeight = computed(() => itemHeightMap[props.size]);
 }
 
 .active {
-  color: var(--accent);
+  --fg: var(--menu-item-active-color);
+  color: var(--menu-item-active-color);
+  background-color: var(--menu-item-active-bg);
 }
 </style>
