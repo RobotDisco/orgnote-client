@@ -4,6 +4,13 @@ import pluginVue from 'eslint-plugin-vue';
 import pluginQuasar from '@quasar/app-vite/eslint';
 import vueTsEslintConfig from '@vue/eslint-config-typescript';
 import prettierSkipFormatting from '@vue/eslint-config-prettier/skip-formatting';
+import vueParser from 'vue-eslint-parser';
+import tsParser from '@typescript-eslint/parser';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default [
     {
@@ -50,6 +57,20 @@ export default [
             // are also extendable here. But we don't recommend using them directly.
         ],
     }),
+
+    // Enable typed linting for TS and Vue files (required for rules like @typescript-eslint/consistent-type-imports)
+    {
+        files: ['**/*.ts', '**/*.tsx', '**/*.vue'],
+        languageOptions: {
+            parser: vueParser,
+            parserOptions: {
+                parser: tsParser,
+                project: [path.join(__dirname, 'tsconfig.json')],
+                tsconfigRootDir: __dirname,
+                extraFileExtensions: ['.vue'],
+            },
+        },
+    },
 
     {
         languageOptions: {
