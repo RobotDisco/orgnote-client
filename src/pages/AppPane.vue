@@ -19,11 +19,11 @@
           />
         </template>
         <nav-tab
-          v-for="(tab, i) of Object.values(activePane.tabs.value)"
+          v-for="tab of Object.values(activePane.tabs.value)"
           @click="pane.selectTab(activePane.id, tab.id)"
           @close="pane.closeTab(activePane.id, tab.id)"
           icon="description"
-          :key="i"
+          :key="tab.id"
           :active="tab.id === activePane.activeTabId"
         >
           {{ generateTabTitle(tab.router.currentRoute.value) || tab.title }}
@@ -34,7 +34,11 @@
       </nav-tabs>
     </template>
   </visibility-wrapper>
-  <ScopedRouterView v-if="resolvedRouter" :router="resolvedRouter" />
+  <ScopedRouterView
+    v-if="resolvedRouter"
+    :router="resolvedRouter"
+    :key="activePane.activeTabId"
+  />
 </template>
 
 <script lang="ts" setup>
