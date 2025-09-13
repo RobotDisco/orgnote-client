@@ -43,7 +43,7 @@ input {
         width: $sw-height;
         top: 0;
         left: 0;
-        border-radius: $sw-height/2;
+        border-radius: calc($sw-height/2);
         background: rgba(76, 217, 100, 0);
         transition: 0.2s cubic-bezier(0.24, 0, 0.5, 1);
       }
