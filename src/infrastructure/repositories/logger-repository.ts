@@ -1,8 +1,6 @@
 import type Dexie from 'dexie';
 import type { LoggerRepository, LogRecord, LogFilter } from 'orgnote-api';
 import { migrator } from './migrator';
-import { fromPromise } from 'neverthrow';
-import type { ResultAsync } from 'neverthrow';
 
 export const LOGGER_REPOSITORY_NAME = 'logs';
 
@@ -14,8 +12,6 @@ export const LOGGER_MIGRATIONS = migrator<LogRecord>()
 export const createLoggerRepository = (db: Dexie): LoggerRepository => {
   const store = db.table<LogRecord, number>(LOGGER_REPOSITORY_NAME);
 
-  const toError = (e: unknown): Error => (e instanceof Error ? e : new Error(String(e)));
-
   const normalizeRecord = (r: LogRecord): LogRecord => ({
     id: r.id,
     ts: r.ts ?? new Date(),
@@ -25,14 +21,14 @@ export const createLoggerRepository = (db: Dexie): LoggerRepository => {
     context: r.context,
   });
 
-  const add = (record: LogRecord): ResultAsync<void, Error> => {
+  const add = async (record: LogRecord): Promise<void> => {
     const data = normalizeRecord(record);
-    return fromPromise(store.add(data), toError).map((): void => undefined);
+    await store.add(data);
   };
 
-  const bulkAdd = (records: LogRecord[]): ResultAsync<void, Error> => {
+  const bulkAdd = async (records: LogRecord[]): Promise<void> => {
     const data = records.map(normalizeRecord);
-    return fromPromise(store.bulkAdd(data), toError).map((): void => undefined);
+    await store.bulkAdd(data);
   };
 
   const applyFilter = (f: LogFilter) => {
@@ -47,33 +43,30 @@ export const createLoggerRepository = (db: Dexie): LoggerRepository => {
     return store.filter((r) => byLevel(r) && byFrom(r) && byTo(r) && byText(r));
   };
 
-  const query = (filter: LogFilter): ResultAsync<LogRecord[], Error> => {
+  const query = async (filter: LogFilter): Promise<LogRecord[]> => {
     const limit = filter.limit;
     const offset = filter.offset ?? 0;
 
     const collection = applyFilter(filter).reverse().sortBy('ts');
 
-    return fromPromise(
-      collection.then((arr) => {
-        const start = offset < 0 ? 0 : offset;
-        if (!limit || limit <= 0) return arr.slice(start);
-        return arr.slice(start, start + limit);
-      }),
-      toError,
-    );
+    return collection.then((arr) => {
+      const start = offset < 0 ? 0 : offset;
+      if (!limit || limit <= 0) return arr.slice(start);
+      return arr.slice(start, start + limit);
+    });
   };
 
-  const count = (filter?: Omit<LogFilter, 'limit' | 'offset'>): ResultAsync<number, Error> => {
-    if (!filter) return fromPromise(store.count(), toError);
-    return fromPromise(applyFilter(filter).count(), toError);
+  const count = async (filter?: Omit<LogFilter, 'limit' | 'offset'>): Promise<number> => {
+    if (!filter) return store.count();
+    return await applyFilter(filter).count();
   };
 
-  const clear = (): ResultAsync<void, Error> => {
-    return fromPromise(store.clear(), toError).map((): void => undefined);
+  const clear = (): Promise<void> => {
+    return store.clear();
   };
 
-  const purgeOlderThan = (date: Date): ResultAsync<void, Error> => {
-    return fromPromise(store.where('ts').below(date).delete(), toError).map((): void => undefined);
+  const purgeOlderThan = async (date: Date): Promise<void> => {
+    await store.where('ts').below(date).delete();
   };
 
   return {

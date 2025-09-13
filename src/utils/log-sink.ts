@@ -1,5 +1,5 @@
 import type { LoggerRepository, LogRecord } from 'orgnote-api';
-import { okAsync } from 'neverthrow';
+import { to } from './to-error';
 
 type LogSink = {
   write: (record: LogRecord) => void;
@@ -33,41 +33,73 @@ const createBufferedSink = (options: BufferedSinkOptions): LogSink => {
     flush();
   };
 
-  const flush = (): void => {
+  const flush = async (): Promise<void> => {
     if (!repository) return;
     if (queue.length === 0) return;
     const size = options.batchSize;
     const chunk = queue.splice(0, size);
-    repository.bulkAdd(chunk).map((): void => undefined);
+    const res = await to(repository.bulkAdd)(chunk);
+
+    if (res.isErr()) {
+      console.error('Failed to flush log records:', res.error);
+    }
   };
 
-  const drain = (): void => {
+  const drain = async (): Promise<void> => {
     if (!repository) return;
     if (queue.length === 0) return;
     const chunk = queue.splice(0, options.batchSize);
-    repository.bulkAdd(chunk).map(() => drain());
+    const res = await to(repository.bulkAdd)(chunk);
+
+    if (res.isErr()) {
+      console.error('Failed to flush log records:', res.error);
+    }
   };
 
-  const attachRepository = (repo: LoggerRepository): void => {
+  const clearOldRecords = async (): Promise<void> => {
+    const retentionMs = options.retentionDays * 24 * 60 * 60 * 1000;
+
+    const cutoff = new Date(Date.now() - retentionMs);
+
+    const purge = await to(repository.purgeOlderThan)(cutoff);
+
+    if (purge.isErr()) {
+      console.error('Failed to purge old log records:', purge.error);
+      return;
+    }
+  };
+
+  const clearThreshold = async (): Promise<void> => {
+    const cnt = await to(repository.count)();
+
+    if (cnt.isErr()) {
+      console.error('Failed to count log records:', cnt.error);
+      return;
+    }
+    const excess = cnt.value - options.maxRecords;
+    if (excess <= 0) return;
+
+    const records = await to(repository.query)({ limit: excess, offset: 0 });
+
+    if (records.isErr()) {
+      console.error('Failed to query log records:', records.error);
+      return;
+    }
+
+    if (records.value.length === 0) return;
+    const last = records.value[records.value.length - 1]?.ts;
+    if (!last) return;
+    const threshold = new Date(last.getTime() + 1);
+    return repository.purgeOlderThan(threshold);
+  };
+
+  const attachRepository = async (repo: LoggerRepository): Promise<void> => {
     repository = repo;
     schedule();
-    const retentionMs = options.retentionDays * 24 * 60 * 60 * 1000;
-    const cutoff = new Date(Date.now() - retentionMs);
-    repository
-      .purgeOlderThan(cutoff)
-      .andThen(() => repository.count())
-      .andThen((cnt) => {
-        const excess = cnt - options.maxRecords;
-        if (excess <= 0) return okAsync(undefined);
-        return repository.query({ limit: excess, offset: 0 }).andThen((records) => {
-          if (records.length === 0) return okAsync(undefined);
-          const last = records[records.length - 1]?.ts;
-          if (!last) return okAsync(undefined);
-          const threshold = new Date(last.getTime() + 1);
-          return repository.purgeOlderThan(threshold);
-        });
-      })
-      .map((): void => undefined);
+
+    await clearOldRecords();
+    await clearThreshold();
+
     drain();
   };
 
