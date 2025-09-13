@@ -47,7 +47,8 @@ import { useNotificationsStore } from 'src/stores/notifications';
 import { useFileReaderStore } from 'src/stores/file-reader';
 import { useBufferStore } from 'src/stores/buffer';
 import type { Router } from 'vue-router';
-import { logger } from './logger';
+import { logger, attachLogRepository } from './logger';
+import { LOGS_REPOSITORY_PROVIDER_TOKEN } from 'src/constants/app-providers';
 
 let api: OrgNoteApi;
 let repositories: OrgNoteApi['infrastructure'];
@@ -129,6 +130,8 @@ export default defineBoot(async ({ app, store, router }) => {
   store.use(() => ({ api: api as OrgNoteApi }));
   app.provide(ORGNOTE_API_PROVIDER_TOKEN, api);
   app.provide(REPOSITORIES_PROVIDER_TOKEN, repositories);
+  app.provide(LOGS_REPOSITORY_PROVIDER_TOKEN, repositories.logRepository);
+  attachLogRepository(repositories.logRepository);
   logger.info('Start synchronizing configurations');
   await syncConfigurations(api);
   logger.info('Configurations synchronized');

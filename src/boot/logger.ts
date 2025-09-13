@@ -1,5 +1,5 @@
 import { defineBoot } from '@quasar/app-vite/wrappers';
-import { createPinoLogger } from 'src/utils/logger';
+import { createPinoLogger, attachLogRepository as _attachLogRepository } from 'src/utils/logger';
 import type { OrgNoteApi } from 'orgnote-api';
 
 type Logger = OrgNoteApi['utils']['logger'];
@@ -16,4 +16,6 @@ export default defineBoot(() => {
   initLogger();
 });
 
-export { logger, initLogger };
+const attachLogRepository = _attachLogRepository;
+
+export { logger, initLogger, attachLogRepository };
