@@ -1,10 +1,12 @@
 import type { CommandHandlerParams, OrgNoteApi } from 'orgnote-api';
 import { DefaultCommands, type Command } from 'orgnote-api';
+import { reporter } from 'src/boot/report';
 import { createFileCompletion } from 'src/composables/create-file-completion';
 import { createFolderCompletion } from 'src/composables/create-folder-completion';
 import { deleteFileCompletion } from 'src/composables/delete-file-completion';
 import { useFileRenameCompletion } from 'src/composables/file-rename-completion';
 import { getFileDirPath } from 'src/utils/get-file-dir-path';
+import { to } from 'src/utils/to-error';
 import { defineAsyncComponent } from 'vue';
 
 const group = 'file manager';
@@ -53,13 +55,9 @@ export function getFileManagerCommands(): Command[] {
       group,
       icon: 'sym_o_create_new_folder',
       handler: async (api: OrgNoteApi) => {
-        try {
-          const newFolderPath = await createFolderCompletion(api);
-          const fm = api.core.useFileManager();
-          fm.path = newFolderPath;
-        } catch (e) {
-          // TODO: error handler
-          console.log('[line 60][FILE SYSTEM]: ', e);
+        const res = await to(createFolderCompletion, 'Failed to create folder')(api);
+        if (res.isErr()) {
+          reporter.reportError(res.error);
         }
       },
     },

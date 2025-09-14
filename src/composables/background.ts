@@ -9,8 +9,6 @@ export const useBackgroundSettings = () => {
   const { config } = useConfigStore();
 
   const setStatusBarBackground = async (bgColor?: string) => {
-    console.log('✎: [line 18][BACKGROUND!] StatusBar: ', StatusBar);
-
     const backgroundColor = getCssVar(bgColor ?? 'bg');
     if (!backgroundColor) {
       return;

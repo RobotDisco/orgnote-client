@@ -11,6 +11,8 @@ import { computed } from 'vue';
 import { BUILTIN_EXTENSIONS } from 'src/extensions';
 import { api } from 'src/boot/api';
 import { compileExtension } from 'src/utils/read-extension';
+import { reporter } from 'src/boot/report';
+import { to } from 'src/utils/to-error';
 
 export const useExtensionsStore = defineStore<'extension', ExtensionStore>('extension', () => {
   const extensions = ref<ExtensionMeta[]>([]);
@@ -42,19 +44,27 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
   // TODO: feat/stable-beta save mount extension
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const mountExtension = async (ext: StoredExtension): Promise<ActiveExtension | undefined> => {
-    const module = await getExtension(ext);
-    try {
-      module.onMounted(api);
-      await setExtensionActiveStatus(ext.manifest.name, true);
+    const safeGetExtensions = to(getExtension, 'Failed to load extension');
+    const safeSetExtensionActiveStatus = to(
+      setExtensionActiveStatus,
+      'Failed to set extension status',
+    );
 
-      return {
+    const res = await safeGetExtensions(ext)
+      .andThen((module) => to(module.onMounted, 'Failed to mount extension')(api).map(() => module))
+      .andThen((module) => safeSetExtensionActiveStatus(ext.manifest.name, true).map(() => module))
+      .map((module) => ({
+        // как получить тут module?
         active: true,
         manifest: ext.manifest,
         module,
-      };
-    } catch {
-      console.error('✎: [line 42][extensions.ts] ext: ', ext);
-      return;
+      }))
+      .mapErr((e) => {
+        reporter.reportError(e);
+      });
+
+    if (res.isOk()) {
+      return res.value;
     }
   };
 
@@ -81,7 +91,7 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
   const disableExtension = async (extensionName: string) => {
     const ext = await deactivateExtension(extensionName);
     if (!ext) {
-      console.warn(`Extension ${extensionName} not found`);
+      reporter.reportWarning(`Extension ${extensionName} not found`);
       return;
     }
     // TODO: feat/stable-beta UI hook for disable theme.

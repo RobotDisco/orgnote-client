@@ -58,7 +58,6 @@ beforeEach(() => {
 
 test('setStatusBarBackground sets the background color and style for dark theme', async () => {
   const bgSettings = useBackgroundSettings();
-  console.log('✎: [line 61][background.spec.ts] bgSettings: ', bgSettings);
   await bgSettings.setStatusBarBackground('bg');
   expect(StatusBar.setBackgroundColor).toHaveBeenCalledWith({ color: '#FFFFFF' });
 });

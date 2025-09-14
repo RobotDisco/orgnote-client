@@ -1,5 +1,6 @@
 import { splitPath, type DiskFile, type FileSystem, type FileSystemParams } from 'orgnote-api';
 import { AndroidSaf } from 'src/plugins/saf.plugin';
+import { to } from 'src/utils/to-error';
 
 export const ANDROID_SAF_FS_NAME = 'SAF android file system';
 
@@ -59,12 +60,13 @@ export const useAndroidFs = (): FileSystem => {
   };
 
   const readFile: FileSystem['readFile'] = async (path, encoding = 'utf8') => {
-    try {
-      const res = await AndroidSaf.readFile({ uri: rootUri, path: splitPath(path) });
-      return (encoding === 'utf8' ? res.data : new TextEncoder().encode(res.data)) as never;
-    } catch (e) {
-      console.log('✎: [line 38][ANDROID FS] e: ', e);
+    const file = await to(AndroidSaf.readFile)({ uri: rootUri, path: splitPath(path) });
+    if (file.isErr()) {
+      throw file.error;
     }
+    return (
+      encoding === 'utf8' ? file.value.data : new TextEncoder().encode(file.value.data)
+    ) as never;
   };
 
   const writeFile: FileSystem['writeFile'] = async (path, content) => {
@@ -100,21 +102,11 @@ export const useAndroidFs = (): FileSystem => {
   };
 
   const isDirExist: FileSystem['isDirExist'] = async (path) => {
-    try {
-      const info = await fileInfo(path);
-      return info.type === 'directory';
-    } catch {
-      return false;
-    }
+    return (await to(fileInfo)(path)).map((i) => i.type === 'directory').unwrapOr(false);
   };
 
   const isFileExist: FileSystem['isFileExist'] = async (path) => {
-    try {
-      const info = await fileInfo(path);
-      return info.type === 'file';
-    } catch {
-      return false;
-    }
+    return (await to(fileInfo)(path)).map((i) => i.type === 'file').unwrapOr(false);
   };
 
   const utimeSync: FileSystem['utimeSync'] = async (path, _, mtime) => {

@@ -1,19 +1,22 @@
 import { defineBoot } from '@quasar/app-vite/wrappers';
-import type { OrgNoteApi } from 'orgnote-api';
-import { api } from './api';
-import { createReportInstance } from 'src/utils/report';
-import type { ErrorReporter } from 'src/utils/error-reporter';
+import type { ErrorReporter, ErrorReporterNotifications } from 'src/utils/error-reporter';
+import { createErrorReporter } from 'src/utils/error-reporter';
+import { logger } from './logger';
+import { createPinoLogger } from 'src/utils/logger';
+import { useNotificationsStore } from 'src/stores/notifications';
 
-let report: ErrorReporter;
+const noopNotifications: ErrorReporterNotifications = { notify: () => {} };
+const fallbackLogger = createPinoLogger();
+let reporter: ErrorReporter = createErrorReporter(fallbackLogger, noopNotifications);
 
-const initReport = (orgApi: OrgNoteApi): ErrorReporter => {
-  report = createReportInstance(orgApi);
-  return report;
+const initReport = (): ErrorReporter => {
+  const notifications = useNotificationsStore();
+  reporter = createErrorReporter(logger, notifications);
+  return reporter;
 };
 
 export default defineBoot(() => {
-  initReport(api);
+  initReport();
 });
 
-export { report, initReport };
-
+export { reporter, initReport };

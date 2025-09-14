@@ -50,10 +50,10 @@ test('report logs error and shows notification', () => {
   });
 });
 
-test('report handles different log levels', () => {
+test('report handles options.level', () => {
   const error = new Error('Test warning');
   
-  errorReporter.report(error, 'warn');
+  errorReporter.report(error, { level: 'warn' });
   
   expect(mockLogger.warn).toHaveBeenCalledWith('Test warning', {
     cause: error.cause,
@@ -97,11 +97,11 @@ test('reportResult works with neverthrow-like Result', () => {
   });
 });
 
-test('reportResult handles different log levels', () => {
+test('reportResult handles options.level', () => {
   const resultError = { error: 'Warning condition' };
   const message = 'Warning';
   
-  errorReporter.reportResult(resultError, message, 'warn');
+  errorReporter.reportResult(resultError, message, { level: 'warn' });
   
   expect(mockLogger.warn).toHaveBeenCalledWith(message, {
     cause: 'Warning condition',
@@ -156,4 +156,64 @@ test('reportInfo is shortcut for info level', () => {
     message: 'Info message',
     level: 'info',
   });
+});
+
+test('report accepts unknown: string', () => {
+  errorReporter.report('String error');
+  expect(mockLogger.error).toHaveBeenCalledWith('String error', { cause: 'String error' });
+  expect(mockNotifications.notify).toHaveBeenCalledWith({ message: 'String error', level: 'danger' });
+});
+
+test('report accepts unknown: object with message', () => {
+  const obj = { message: 'Boom', code: 123 } as const;
+  errorReporter.report(obj);
+  expect(mockLogger.error).toHaveBeenCalledWith('Boom', { cause: obj });
+  expect(mockNotifications.notify).toHaveBeenCalledWith({ message: 'Boom', level: 'danger' });
+});
+
+test('report accepts unknown: primitive without message', () => {
+  errorReporter.report(404);
+  expect(mockLogger.error).toHaveBeenCalledWith('Unknown error', { cause: 404 });
+  expect(mockNotifications.notify).toHaveBeenCalledWith({ message: 'Unknown error', level: 'danger' });
+});
+
+test('reportWarning works with unknown', () => {
+  errorReporter.reportWarning('Warn str');
+  expect(mockLogger.warn).toHaveBeenCalledWith('Warn str', { cause: 'Warn str' });
+  expect(mockNotifications.notify).toHaveBeenCalledWith({ message: 'Warn str', level: 'warning' });
+});
+
+test('reportInfo works with unknown', () => {
+  errorReporter.reportInfo('Info str');
+  expect(mockLogger.info).toHaveBeenCalledWith('Info str', { cause: 'Info str' });
+  expect(mockNotifications.notify).toHaveBeenCalledWith({ message: 'Info str', level: 'info' });
+});
+
+test('report uses provided notification message and level', () => {
+  const err = new Error('Original');
+  errorReporter.report(err, { notification: { message: 'Custom', level: 'info' } as NotificationConfig });
+  expect(mockLogger.error).toHaveBeenCalledWith('Original', { cause: err.cause, stack: err.stack });
+  expect(mockNotifications.notify).toHaveBeenCalledWith({ message: 'Custom', level: 'info' });
+});
+
+test('report fills missing notification fields and respects options.level', () => {
+  const err = new Error('Warn original');
+  errorReporter.report(err, { level: 'warn', notification: { caption: 'Cap' } as NotificationConfig });
+  expect(mockLogger.warn).toHaveBeenCalledWith('Warn original', { cause: err.cause, stack: err.stack });
+  expect(mockNotifications.notify).toHaveBeenCalledWith({ message: 'Warn original', level: 'warning', caption: 'Cap' });
+});
+
+test('reportError accepts NotificationConfig sugar', () => {
+  const err = new Error('Sugar');
+  errorReporter.reportError(err, { message: 'Shown', level: 'danger' } as NotificationConfig);
+  expect(mockLogger.error).toHaveBeenCalledWith('Sugar', { cause: err.cause, stack: err.stack });
+  expect(mockNotifications.notify).toHaveBeenCalledWith({ message: 'Shown', level: 'danger' });
+});
+
+test('reportResult accepts notification override', () => {
+  const resultError = { error: 'reason' };
+  const message = 'Failed';
+  errorReporter.reportResult(resultError, message, { notification: { message: 'Shown', level: 'info' } as NotificationConfig });
+  expect(mockLogger.error).toHaveBeenCalledWith('Failed', { cause: 'reason', stack: expect.any(String) });
+  expect(mockNotifications.notify).toHaveBeenCalledWith({ message: 'Shown', level: 'info' });
 });

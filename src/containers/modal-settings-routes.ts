@@ -96,7 +96,6 @@ export function createSettingsRouter() {
     }
     screenWidth.value = window.innerWidth;
     const mobile = screenWidth.value < maxMobileWidth;
-    console.log('✎: [line 55][modal-settings-routes.ts] mobile: ', mobile, isMobile.value);
     if (mobile === isMobile.value) {
       return;
     }
@@ -115,6 +114,5 @@ export function createSettingsRouter() {
 
   handleResize();
 
-  console.log('[line 73]: ', router.getRoutes());
   return router;
 }

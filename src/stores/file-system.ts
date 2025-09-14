@@ -11,6 +11,8 @@ import { storeToRefs } from 'pinia';
 import { useFileSystemManagerStore } from './file-system-manager';
 import { watch } from 'vue';
 import { useSettingsStore } from './settings';
+import { reporter } from 'src/boot/report';
+import { to } from 'src/utils/to-error';
 
 export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
   'file-system',
@@ -120,13 +122,12 @@ export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
       if (isDirExist) {
         return;
       }
-      try {
-        await currentFs.value.mkdir(dirPath);
-      } catch (e) {
-        // TODO: feat/stable-beta  logger here
-        console.warn('✎: [line 133][file-system.ts<stores>] e: ', e);
-        throw e;
-      }
+
+      const safeMkdir = to(currentFs.value.mkdir, `Failed to create ${filePath} directory`);
+
+      await safeMkdir(dirPath).mapErr((e) => {
+        reporter.reportError(e);
+      });
     };
 
     const mkdir = async (path: string | string[]): Promise<void> => {

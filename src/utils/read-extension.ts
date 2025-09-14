@@ -6,6 +6,7 @@ import {
 } from 'orgnote-api';
 import { parse } from 'valibot';
 import { formatValidationErrors } from './format-validation-errors';
+import { to } from './to-error';
 
 export async function readExtension(file: File): Promise<StoredExtension> {
   return await readExtensionFromString(await file.text());
@@ -46,10 +47,9 @@ export async function compileExtension(content: string): Promise<Extension> {
 }
 
 function validateManifest(manifest: ExtensionManifest): void {
-  try {
-    parse(EXTENSION_MANIFEST_SCHEMA, manifest);
-  } catch (e) {
-    const errorMsg = formatValidationErrors(e as Error);
-    throw new Error(errorMsg.join('\n'), { cause: e });
+  const res = to(parse)(EXTENSION_MANIFEST_SCHEMA, manifest);
+  if (res.isErr()) {
+    const errorMsg = formatValidationErrors(res.error);
+    throw new Error(errorMsg.join('\n'), { cause: res.error });
   }
 }

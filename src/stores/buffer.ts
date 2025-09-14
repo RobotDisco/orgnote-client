@@ -3,6 +3,8 @@ import { computed, reactive, ref, watch } from 'vue';
 import { debounce } from 'src/utils/debounce';
 import type { BufferStore, Buffer as OrgBuffer } from 'orgnote-api';
 import { api } from 'src/boot/api';
+import { to } from 'src/utils/to-error';
+import { reporter } from 'src/boot/report';
 
 const SAVE_DELAY_MS = 1000;
 
@@ -15,15 +17,16 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     const fs = api.core.useFileSystemManager().currentFs;
     if (!fs) return;
     buffer.isSaving = true;
-    try {
-      await fs.writeFile(buffer.path, buffer.content);
+
+    const w = await to(fs.writeFile)(buffer.path, buffer.content).map(() => {
       buffer.metadata.originalContent = buffer.content;
-    } catch {
-      api.core
-        .useNotifications()
-        .notify({ message: `Failed to save: ${buffer.path}`, level: 'danger' });
-    }
+    });
+
     buffer.isSaving = false;
+
+    if (w.isErr()) {
+      reporter.reportError(new Error(`Failed to save: ${buffer.path}`, { cause: w.error }));
+    }
   };
 
   const _loadBufferContent = async (buffer: OrgBuffer): Promise<void> => {
@@ -33,15 +36,18 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
       buffer.isLoading = false;
       return;
     }
-    try {
-      const content = await fs.readFile(buffer.path);
+
+    const safeRead = to(fs.readFile, 'Failed to load buffer content');
+
+    const res = await safeRead(buffer.path).map((content) => {
       buffer.content = content;
       buffer.metadata.originalContent = content;
-    } catch {
-      api.core
-        .useNotifications()
-        .notify({ message: `Failed to load: ${buffer.path}`, level: 'danger' });
+    });
+
+    if (res.isErr()) {
+      reporter.reportError(new Error(`Failed to load: ${buffer.path}`, { cause: res.error }));
     }
+
     buffer.isLoading = false;
   };
 

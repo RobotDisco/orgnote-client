@@ -1,10 +1,7 @@
 import { defineBoot } from '@quasar/app-vite/wrappers';
 import type { OrgNoteApi } from 'orgnote-api';
-import {
-  ORGNOTE_API_PROVIDER_TOKEN,
-  REPOSITORIES_PROVIDER_TOKEN,
-} from 'src/constants/app-providers';
-import { initRepositories } from 'src/infrastructure/repositories';
+import { ORGNOTE_API_PROVIDER_TOKEN } from 'src/constants/app-providers';
+import { repositories } from './repositories';
 import { useCommandsGroupStore } from 'src/stores/command-group';
 import { useCommandsStore } from 'src/stores/command';
 import { useExtensionsStore } from 'src/stores/extension';
@@ -47,14 +44,10 @@ import { useNotificationsStore } from 'src/stores/notifications';
 import { useFileReaderStore } from 'src/stores/file-reader';
 import { useBufferStore } from 'src/stores/buffer';
 import type { Router } from 'vue-router';
-import { logger, attachLogRepository } from './logger';
-import { LOGS_REPOSITORY_PROVIDER_TOKEN } from 'src/constants/app-providers';
+import { logger } from './logger';
 
 let api: OrgNoteApi;
-let repositories: OrgNoteApi['infrastructure'];
-
 async function initApi(app: App, router: Router): Promise<void> {
-  repositories = await initRepositories();
   api = {
     infrastructure: {
       ...repositories,
@@ -129,9 +122,6 @@ export default defineBoot(async ({ app, store, router }) => {
   // await sleep(1000);
   store.use(() => ({ api: api as OrgNoteApi }));
   app.provide(ORGNOTE_API_PROVIDER_TOKEN, api);
-  app.provide(REPOSITORIES_PROVIDER_TOKEN, repositories);
-  app.provide(LOGS_REPOSITORY_PROVIDER_TOKEN, repositories.logRepository);
-  attachLogRepository(repositories.logRepository);
   logger.info('Start synchronizing configurations');
   await syncConfigurations(api);
   logger.info('Configurations synchronized');
@@ -140,4 +130,4 @@ export default defineBoot(async ({ app, store, router }) => {
   logger.info('Application boot process finished');
 });
 
-export { api, repositories };
+export { api };

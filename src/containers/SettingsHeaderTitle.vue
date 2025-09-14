@@ -19,8 +19,6 @@ import { computed, inject } from 'vue';
 import type { Router } from 'vue-router';
 
 const settingsRouter = inject<Router>(SETTINGS_ROUTER_PROVIDER_TOKEN);
-console.log('✎: [line 25][SettingsHeaderTitle.vue] settingsRouter: ', settingsRouter.getRoutes());
-
 const currentRouteName = computed(() => settingsRouter?.currentRoute.value?.name?.toString());
 </script>
 

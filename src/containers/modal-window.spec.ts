@@ -14,11 +14,16 @@ vi.mock('src/boot/api', () => ({
   },
 }));
 
-vi.mock('vue-i18n', () => ({
-  useI18n: vi.fn(() => ({
-    t: vi.fn((key) => key),
-  })),
-}));
+vi.mock('vue-i18n', async () => {
+  const actual = await vi.importActual<typeof import('vue-i18n')>('vue-i18n');
+
+  return {
+    ...actual,
+    useI18n: vi.fn(() => ({
+      t: vi.fn((key) => key),
+    })),
+  };
+});
 
 let wrapper: ReturnType<typeof mount>;
 const mockModal = {
