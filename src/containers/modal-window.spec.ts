@@ -1,4 +1,5 @@
 import { test, expect, beforeEach, vi, afterEach } from 'vitest';
+import type * as VueI18n from 'vue-i18n';
 import { mount } from '@vue/test-utils';
 import ModalWindow from './ModalWindow.vue';
 import { createTestingPinia } from '@pinia/testing';
@@ -15,7 +16,7 @@ vi.mock('src/boot/api', () => ({
 }));
 
 vi.mock('vue-i18n', async () => {
-  const actual = await vi.importActual<typeof import('vue-i18n')>('vue-i18n');
+  const actual = (await vi.importActual('vue-i18n')) as typeof VueI18n;
 
   return {
     ...actual,
