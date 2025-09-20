@@ -1,7 +1,7 @@
 <template>
   <div class="settings-title">
     <visibility-wrapper v-if="currentRouteName !== RouteNames.SettingsPage" desktop-below>
-      <navigation-history :router="settingsRouter" />
+      <navigation-history :router="settingsRouter" :on-return-back="handleReturnBack" />
     </visibility-wrapper>
     <h1 class="title capitalize">
       {{ camelCaseToWords(currentRouteName) }}
@@ -20,6 +20,18 @@ import type { Router } from 'vue-router';
 
 const settingsRouter = inject<Router>(SETTINGS_ROUTER_PROVIDER_TOKEN);
 const currentRouteName = computed(() => settingsRouter?.currentRoute.value?.name?.toString());
+
+const handleReturnBack = async () => {
+  if (!settingsRouter) return;
+
+  const canGoBack = settingsRouter.options.history.state.back;
+  if (canGoBack) {
+    settingsRouter.back();
+    return;
+  }
+
+  settingsRouter.push({ name: RouteNames.SettingsPage });
+};
 </script>
 
 <style lang="scss" scoped>

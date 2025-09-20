@@ -10,11 +10,17 @@ import ActionButton from './ActionButton.vue';
 const props = defineProps<{
   to?: string;
   router?: Router;
+  onReturnBack?: () => void;
 }>();
 
 const router = props.router ?? useRouter();
 
 const returnBack = () => {
+  if (props.onReturnBack) {
+    props.onReturnBack();
+    return;
+  }
+
   if (props.to) {
     router.push(props.to);
   } else {
