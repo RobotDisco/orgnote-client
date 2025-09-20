@@ -1,13 +1,8 @@
 import type Dexie from 'dexie';
 import type { FileInfo, FileInfoRepository } from 'orgnote-api';
-import type { IFuseOptions } from 'fuse.js';
 import Fuse from 'fuse.js';
 import { migrator } from './migrator';
-
-const fuseOptions: IFuseOptions<FileInfo> = {
-  threshold: 0.4,
-  keys: ['fileName', 'filePath'],
-};
+import { DEFAULT_CONFIG } from 'src/constants/config';
 
 export const FILE_REPOSITORY_NAME = 'files';
 export const FILE_MIGRATIONS = migrator<FileInfo>()
@@ -53,7 +48,10 @@ export const createFileRepository = (db: Dexie): FileInfoRepository => {
 
   const search = async (query: string): Promise<FileInfo[]> => {
     const allFiles = await store.toArray();
-    const fuse = new Fuse(allFiles, fuseOptions);
+    const fuse = new Fuse(allFiles, {
+      threshold: DEFAULT_CONFIG.completion.fuseThreshold,
+      keys: ['fileName', 'filePath'],
+    });
     return fuse.search(query).map((result) => result.item);
   };
 

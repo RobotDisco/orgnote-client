@@ -1,12 +1,6 @@
-import type { IFuseOptions } from 'fuse.js';
 import Fuse from 'fuse.js';
 import type { DiskFile, OrgNoteApi, CompletionSearchResult } from 'orgnote-api';
 import { getParentDir } from 'orgnote-api';
-
-const fuseOptions: IFuseOptions<DiskFile> = {
-  threshold: 0.4,
-  keys: ['path'],
-};
 
 export const dirItemsGetter = async (
   api: OrgNoteApi,
@@ -25,7 +19,8 @@ export const dirItemsGetter = async (
   const parentPath = filter.endsWith('/') ? filter : getParentDir(filter);
   const dirItems = await fs.readDir(parentPath);
   const dirs = includeFiles ? dirItems : dirItems.filter((f) => f.type === 'directory');
-  const fuse = new Fuse(dirs, fuseOptions);
+  const threshold = api.core.useConfig().config.completion.fuseThreshold;
+  const fuse = new Fuse(dirs, { threshold, keys: ['path'] });
   const matchedDirs = fuse.search(filter).map((r) => r.item);
   const completion = api.core.useCompletion();
 

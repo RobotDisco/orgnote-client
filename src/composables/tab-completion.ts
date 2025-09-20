@@ -1,4 +1,3 @@
-import type { IFuseOptions } from 'fuse.js';
 import Fuse from 'fuse.js';
 import type { ShallowRef } from 'vue';
 import type {
@@ -10,13 +9,6 @@ import type {
   Tab,
 } from 'orgnote-api';
 import { I18N } from 'orgnote-api';
-
-const FUSE_SEARCH_THRESHOLD = 0.4;
-
-const fuseOptions: IFuseOptions<CompletionCandidate<Tab>> = {
-  threshold: FUSE_SEARCH_THRESHOLD,
-  keys: ['title'],
-};
 
 const transformPanesToCompletionCandidates = (
   panes: ShallowRef<Pane>[],
@@ -37,8 +29,11 @@ const transformPanesToCompletionCandidates = (
   });
 };
 
-const createTabSearcher = (tabs: CompletionCandidate<Tab>[]): CandidateGetterFn<Tab> => {
-  const fuse = new Fuse(tabs, fuseOptions);
+const createTabSearcher = (
+  tabs: CompletionCandidate<Tab>[],
+  threshold: number,
+): CandidateGetterFn<Tab> => {
+  const fuse = new Fuse(tabs, { threshold, keys: ['title'] });
 
   return (filter: string): CompletionSearchResult<Tab> => {
     const result = filter ? fuse.search(filter).map((r) => r.item) : tabs;
@@ -55,7 +50,8 @@ export const useTabCompletion = async (api: OrgNoteApi): Promise<void> => {
   const paneStore = api.core.usePane();
   const panes = Object.values(paneStore.panes);
   const tabs = transformPanesToCompletionCandidates(panes, paneStore.selectTab);
-  const itemsGetter = createTabSearcher(tabs);
+  const threshold = api.core.useConfig().config.completion.fuseThreshold;
+  const itemsGetter = createTabSearcher(tabs, threshold);
 
   completion.open<Tab>({
     itemsGetter,

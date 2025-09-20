@@ -1,11 +1,11 @@
 import type { CompletionCandidate, CompletionSearchResult, OrgNoteApi } from 'orgnote-api';
 import { DefaultCommands, I18N, type Command } from 'orgnote-api';
-import type { IFuseOptions } from 'fuse.js';
 import Fuse from 'fuse.js';
 
 const toggleCommandsHandler = (api: OrgNoteApi) => {
   const completion = api.core.useCompletion();
   const cmds = api.core.useCommands();
+  const threshold = api.core.useConfig().config.completion.fuseThreshold;
 
   const getCommands = (commands: Command[]): CompletionCandidate<Command>[] => {
     return commands.reduce<CompletionCandidate<Command>[]>((acc, cmd) => {
@@ -21,14 +21,12 @@ const toggleCommandsHandler = (api: OrgNoteApi) => {
     }, []);
   };
 
-  const fuseOptions: IFuseOptions<CompletionCandidate<Command>> = {
-    threshold: 0.4,
-    keys: ['title', 'description', 'group', 'command'],
-  };
-
   const itemsGetter = (filter: string) => {
     const commands = getCommands(cmds.commands);
-    const fuse = new Fuse(commands, fuseOptions);
+    const fuse = new Fuse(commands, {
+      threshold,
+      keys: ['title', 'description', 'group', 'command'],
+    });
     const result = filter ? fuse.search(filter).map((r) => r.item) : commands;
 
     const res: CompletionSearchResult<Command> = {

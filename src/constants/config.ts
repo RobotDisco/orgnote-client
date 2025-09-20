@@ -15,6 +15,7 @@ export const DEFAULT_CONFIG: OrgNoteConfig = {
   completion: {
     showGroup: false,
     defaultCompletionLimit: 500,
+    fuseThreshold: 0.4,
   },
   synchronization: {
     type: 'api',
