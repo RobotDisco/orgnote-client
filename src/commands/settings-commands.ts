@@ -6,7 +6,7 @@ import { SETTINGS_ROUTER_PROVIDER_TOKEN } from 'src/constants/app-providers';
 import TheSettings from 'src/containers/TheSettings.vue';
 import { defineAsyncComponent } from 'vue';
 
-export function getSettingsommands(): Command[] {
+export function getSettingsCommands(): Command[] {
   const confirmationModal = api.ui.useConfirmationModal();
 
   const isActiveRoute = (routeName: RouteNames): boolean => {
@@ -26,6 +26,7 @@ export function getSettingsommands(): Command[] {
     modal.open(TheSettings, {
       title: 'settings',
       closable: true,
+      wide: true,
       headerTitleComponent: defineAsyncComponent(
         () => import('src/containers/SettingsHeaderTitle.vue'),
       ),

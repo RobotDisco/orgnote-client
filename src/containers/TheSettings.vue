@@ -54,6 +54,8 @@ navigate(props.initialRoute);
 
   & {
     flex: 1;
+    width: 100%;
+    min-width: 0;
   }
 
   & > div {
@@ -67,6 +69,8 @@ navigate(props.initialRoute);
 
   & {
     flex: 1;
+    width: 100%;
+    min-width: 0;
   }
 }
 </style>

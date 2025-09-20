@@ -24,7 +24,7 @@ withDefaults(
   }
 
   & {
-    height: 100%;
+    min-height: 0;
     padding-bottom: env(safe-area-inset-bottom);
     box-sizing: border-box;
   }

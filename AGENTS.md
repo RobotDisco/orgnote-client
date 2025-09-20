@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-\*OrgNote\*\* is a cross-platform note-taking application that provides full compatibility with Emacs Org mode and Org-roam. It's designed for students, knowledge workers, researchers, and anyone who needs powerful note organization capabilities across web, mobile, and desktop platforms.
+OrgNote is a cross-platform note-taking application that provides full compatibility with Emacs Org mode and Org-roam. It's designed for students, knowledge workers, researchers, and anyone who needs powerful note organization capabilities across web, mobile, and desktop platforms.
 
 ### Core Technologies
 
@@ -26,7 +26,7 @@ Common tools in development environment:
 
 ## Repository Inspection (Once Per Session)
 
-**CRITICAL**: Run this analysis at the start of each development session:
+**CRITICAL**: Run this analysis at the start of each development session (not for review!):
 
 ```bash
 # Preferred: Use eza for better visualization
@@ -247,7 +247,6 @@ if (!fileSystem) {
 - Configure environment variables (`.env` files)
 
 ### Project Structure Analysis
-
 **CRITICAL**: Run directory analysis once per session to understand the codebase structure:
 
 ```bash
@@ -362,7 +361,7 @@ git commit -m "test(components): add unit tests for ActionButton"
 - **Color Semantics**: Use semantic colors (`--bg`, `--fg`, `--accent`) not direct colors
 - **Component Variables**: Each component has specific CSS variables (see `VARIABLES.org`)
 
-```scss
+```css
 // ✅ GOOD - Using design tokens
 .my-component {
   padding: var(--padding-md);
@@ -583,3 +582,47 @@ src/
 ---
 
 Remember: Every feature should be evaluated for mobile-first design, plugin compatibility, and performance impact. When in doubt, prioritize user experience and code maintainability over feature complexity.
+
+# Review
+
+
+## Review scope
+
+-   Only review changed files that have not yet been committed
+-   Focus on files from `git diff HEAD --name-only`
+-   Enforce KISS, DRY, SOLID and industry best practices with zero tolerance for over-engineering
+
+
+## Review rules (strict enforcement)
+
+-   No comments of any kind - remove or rewrite code so comments aren't needed
+-   No large functions: max 20–30 LOC or 1 clear responsibility - split otherwise
+-   No `else` statements: use guard clauses / early returns / fail fast
+-   No `switch=/=case`: prefer polymorphism, strategy/command pattern, or data maps
+-   No dead code, no TODOs, no unused params/imports, no magic numbers (extract constants)
+-   Pure, side-effect-free logic where feasible; isolate I/O
+-   Clear module boundaries; small files; private by default
+-   Immutable data where practical
+
+
+## Allowed refactoring tools
+
+-   Guard clauses, early returns
+-   Small pure helpers; extract functions/modules
+-   Strategy/factory/command patterns in place of branching
+-   Lookup tables / dispatch maps
+-   Immutable data structures
+
+
+## Review output format
+
+1.  Summary — one concise paragraph of biggest issues and overall direction
+2.  Critical Issues — list with short fixes
+3.  Major Issues — list with short fixes
+4.  Minor / Style — list with short fixes
+5.  Secure & Robust — input validation, error handling, resource handling
+6.  Proposed Refactor — bullet plan of small, safe steps (≤5 steps)
+7.  Tests to Add — concrete test cases (names + what they assert)
+8.  Patch Sketch — minimal diff-like pseudocode showing key changes (no comments)
+9.  Always answer in the language in which the question was asked
+

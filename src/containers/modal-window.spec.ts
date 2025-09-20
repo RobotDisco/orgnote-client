@@ -58,6 +58,32 @@ test('renders no dialogs when modals is empty', async () => {
   expect(dialogs.length).toBe(0);
 });
 
+test('modal-wide class applied when config.wide enabled', async () => {
+  mockModal.modals.value = [
+    {
+      component: { template: '<div>WideModal</div>' },
+      config: { wide: true },
+    },
+  ];
+  await wrapper.vm.$nextTick();
+
+  const dialog = wrapper.find('dialog');
+  expect(dialog.classes()).toContain('modal-wide');
+});
+
+test('modal-wide class absent when config.wide disabled', async () => {
+  mockModal.modals.value = [
+    {
+      component: { template: '<div>NormalModal</div>' },
+      config: { wide: false },
+    },
+  ];
+  await wrapper.vm.$nextTick();
+
+  const dialog = wrapper.find('dialog');
+  expect(dialog.classes()).not.toContain('modal-wide');
+});
+
 test('renders a single dialog when modals has 1 item', async () => {
   mockModal.modals.value.push({
     component: { template: '<div>ModalOne</div>' },

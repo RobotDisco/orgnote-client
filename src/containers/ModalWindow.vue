@@ -7,6 +7,7 @@
         mini: m.config?.mini,
         [`position-${m.config?.position ?? 'center'}`]: m.config.position,
         'full-screen': m.config?.fullScreen,
+        'modal-wide': m.config?.wide,
       }"
       :ref="
         (el) => {
@@ -90,6 +91,7 @@ const { t } = useI18n({
 
 <style lang="scss" scoped>
 dialog {
+  @include flexify(column, flex-start, stretch);
   max-width: var(--modal-max-width);
   max-height: var(--modal-max-height);
   margin: var(--modal-safe-margin) auto;
@@ -107,6 +109,16 @@ dialog {
   &::backdrop {
     background-color: var(--modal-backdrop-bg);
   }
+}
+
+.modal-wide {
+  width: var(--modal-max-width);
+}
+
+:deep(.safe-area) {
+  @include flexify(column, flex-start, stretch);
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 @include desktop-below {
@@ -155,7 +167,8 @@ dialog.full-screen {
 
   & {
     width: 100%;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow: hidden;
   }
 
@@ -170,8 +183,8 @@ dialog.full-screen {
 
 .content {
   display: flex;
-  overflow: hidden;
-  max-height: var(--viewport-height);
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 </style>

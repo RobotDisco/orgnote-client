@@ -5,7 +5,7 @@ import { getGlobalCommands } from 'src/commands/global-commands';
 import { getNoteCommands } from 'src/commands/note-commands';
 import { getPagesCommands } from 'src/commands/pages';
 import { getRoutesCommands } from 'src/commands/router-commands';
-import { getSettingsommands as getSettingsCommands } from 'src/commands/settings-commands';
+import { getSettingsCommands } from 'src/commands/settings-commands';
 import { useCommandsStore } from 'src/stores/command';
 
 export default defineBoot(async ({ router }) => {
