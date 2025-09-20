@@ -95,7 +95,7 @@ const props = defineProps<{
 }>();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { config } = api.core.useSettings() as Record<string, any>;
+const { config } = api.core.useConfig() as Record<string, any>;
 const getNestedPath = (path: string) => `${props.path}.${path}`;
 
 const editInputRef = ref<typeof AppInput | null>(null);
