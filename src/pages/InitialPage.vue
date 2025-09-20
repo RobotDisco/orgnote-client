@@ -4,7 +4,7 @@
     <action-buttons vertical>
       <command-action-button :command="DefaultCommands.CREATE_NOTE" include-text />
       <command-action-button :command="DefaultCommands.SEARCH" include-text />
-      <command-action-button :command="DefaultCommands.CLOSE_PAGE" include-text />
+      <command-action-button :command="DefaultCommands.CLOSE_TAB" include-text />
     </action-buttons>
   </page-wrapper>
 </template>
