@@ -142,6 +142,7 @@ readDir();
 
 const fileReader = api.core.useFileReader();
 const buffers = api.core.useBuffers();
+const sidebar = api.ui.useSidebar();
 
 const handleFileClick = async (f: DiskFile) => {
   if (f.type === 'directory') {
@@ -151,6 +152,14 @@ const handleFileClick = async (f: DiskFile) => {
   }
 
   fileReader.openFile(f.path);
+  closeMobileSidebar();
+};
+
+const { tabletBelow } = api.ui.useScreenDetection();
+const closeMobileSidebar = () => {
+  if (tabletBelow.value) {
+    sidebar.close();
+  }
 };
 
 const moveUp = async () => {
