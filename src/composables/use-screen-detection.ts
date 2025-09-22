@@ -1,39 +1,35 @@
+import { computed, effectScope } from 'vue';
+import { useWindowSize } from '@vueuse/core';
 import { getNumericCssVar } from 'src/utils/css-utils';
-import { ref, onMounted, onUnmounted, computed } from 'vue';
 
-// TODO: feat/stable-beta add to API
-export function useScreenDetection() {
-  const screenWidth = ref(window.innerWidth);
+export function createScreenDetection() {
+  const { width } = useWindowSize({ includeScrollbar: true });
+  const hasWindow = typeof window !== 'undefined';
+  const tablet = hasWindow ? getNumericCssVar('--tablet') : 0;
+  const desktop = hasWindow ? getNumericCssVar('--desktop') : 0;
 
-  const breakpoints = {
-    tablet: getNumericCssVar('--tablet'),
-    desktop: getNumericCssVar('--desktop'),
-  };
-
-  const desktopAbove = computed(() => screenWidth.value > breakpoints.desktop);
-  const desktopBelow = computed(() => screenWidth.value < breakpoints.desktop);
-  const tabletBelow = computed(() => screenWidth.value < breakpoints.tablet);
-  const tabletAbove = computed(() => screenWidth.value >= breakpoints.tablet);
-  const mobile = computed(() => screenWidth.value < breakpoints.tablet);
-
-  const updateScreenWidth = () => {
-    screenWidth.value = window.innerWidth;
-  };
-
-  onMounted(() => {
-    window.addEventListener('resize', updateScreenWidth);
-  });
-
-  onUnmounted(() => {
-    window.removeEventListener('resize', updateScreenWidth);
-  });
+  const desktopAbove = computed(() => width.value > desktop);
+  const desktopBelow = computed(() => width.value < desktop);
+  const tabletBelow = computed(() => width.value < tablet);
+  const tabletAbove = computed(() => width.value >= tablet);
+  const mobile = computed(() => width.value < tablet);
 
   return {
-    screenWidth,
+    screenWidth: width,
     desktopAbove,
     desktopBelow,
     tabletBelow,
     tabletAbove,
     mobile,
   };
+}
+
+let _screen: ReturnType<typeof createScreenDetection> | null = null;
+let _scope: ReturnType<typeof effectScope> | null = null;
+
+export function useScreenDetection() {
+  if (_screen) return _screen;
+  _scope = effectScope(true);
+  _screen = _scope.run(createScreenDetection)!;
+  return _screen;
 }

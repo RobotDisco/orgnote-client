@@ -8,6 +8,7 @@ export const useToolbarStore = defineStore<'toolbar', ToolbarStore>('toolbar', (
     DefaultCommands.CREATE_NOTE,
     DefaultCommands.SEARCH,
     DefaultCommands.TOGGLE_COMMANDS,
+    DefaultCommands.SHOW_TAB_SWITCHER,
   ]);
 
   const addCommand = (command: CommandName) => {

@@ -43,6 +43,7 @@ const emits = defineEmits<{
     height: var(--tab-height);
     box-sizing: border-box;
     position: relative;
+    user-select: none;
   }
 
   &:not(.active):hover {

@@ -1,10 +1,11 @@
-import type {
-  InitialPaneParams,
-  Tab,
-  Pane,
-  PanesSnapshot,
-  PaneSnapshot,
-  TabSnapshot,
+import {
+  type InitialPaneParams,
+  type Tab,
+  type Pane,
+  type PanesSnapshot,
+  type PaneSnapshot,
+  type TabSnapshot,
+  RouteNames,
 } from 'orgnote-api';
 import type { PaneStore } from 'orgnote-api';
 import { defineStore } from 'pinia';
@@ -100,29 +101,69 @@ export const usePaneStore = defineStore<'panes', PaneStore>(
       };
     };
 
+    const resetLastTabRoute = (tab: Tab, paneId: string) => {
+      if (!tab?.router) return;
+      tab.router.push({ name: RouteNames.InitialPage, params: { paneId } });
+    };
+
+    const isLastTabInPane = (pane: ShallowRef<Pane>): boolean => {
+      return Object.keys(pane.value.tabs.value).length === 1;
+    };
+
+    const findNextActiveTab = (tabKeys: string[], deletedTabIndex: number): string | undefined => {
+      return tabKeys[deletedTabIndex - 1] ?? tabKeys[deletedTabIndex + 1];
+    };
+
+    const removeTabFromPane = (pane: ShallowRef<Pane>, tabId: string) => {
+      const newTabs = { ...pane.value.tabs.value };
+      delete newTabs[tabId];
+      pane.value.tabs.value = newTabs;
+    };
+
+    const updateActiveTab = (pane: ShallowRef<Pane>, newActiveTabId: string) => {
+      pane.value.activeTabId = newActiveTabId;
+    };
+
+    const handleActiveTabDeletion = (
+      pane: ShallowRef<Pane>,
+      tabKeys: string[],
+      tabIndex: number,
+    ) => {
+      const nextActiveTabId = findNextActiveTab(tabKeys, tabIndex);
+      if (!nextActiveTabId) return;
+      updateActiveTab(pane, nextActiveTabId);
+    };
+
+    const cleanupEmptyPane = (paneId: string) => {
+      delete panes.value[paneId];
+      if (activePaneId.value !== paneId) return;
+
+      const remainingPanes = Object.keys(panes.value);
+      activePaneId.value = remainingPanes[0] ?? null;
+    };
+
     const closeTab = (paneId: string, tabId: string) => {
       const pane = panes.value[paneId];
       if (!pane?.value.tabs.value[tabId]) return;
 
-      const isActiveTabDeleted = tabId === activeTab.value?.id && paneId === activePaneId.value;
+      if (isLastTabInPane(pane)) {
+        const tab = pane.value.tabs.value[tabId];
+        resetLastTabRoute(tab, paneId);
+        return;
+      }
+
       const tabKeys = Object.keys(pane.value.tabs.value);
       const tabIndex = tabKeys.indexOf(tabId);
-      const prevTabId = tabKeys[tabIndex - 1] ?? tabKeys[tabIndex + 1];
+      const isActiveTabDeleted = tabId === activeTab.value?.id && paneId === activePaneId.value;
 
-      const newTabs = { ...pane.value.tabs.value };
-      delete newTabs[tabId];
-      pane.value.tabs.value = newTabs;
+      removeTabFromPane(pane, tabId);
 
-      if (isActiveTabDeleted && prevTabId) {
-        pane.value.activeTabId = prevTabId;
+      if (isActiveTabDeleted) {
+        handleActiveTabDeletion(pane, tabKeys, tabIndex);
       }
 
       if (Object.keys(pane.value.tabs.value).length === 0) {
-        delete panes.value[paneId];
-        if (activePaneId.value === paneId) {
-          const remainingPanes = Object.keys(panes.value);
-          activePaneId.value = remainingPanes[0] ?? null;
-        }
+        cleanupEmptyPane(paneId);
       }
     };
 

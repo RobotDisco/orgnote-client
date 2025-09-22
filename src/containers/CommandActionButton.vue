@@ -1,12 +1,14 @@
 <template>
   <action-button
     @click="execute"
-    v-if="command"
+    v-if="command && !command.hide?.(api)"
     :icon="extractDynamicValue(command.icon)"
     :size="size"
     classes="action-btn"
   >
-    <template v-if="includeText" #text>{{ camelCaseToWords(command.command) }}</template>
+    <template v-if="includeText || text" #text>{{
+      text || camelCaseToWords(command.command)
+    }}</template>
   </action-button>
 </template>
 
@@ -17,12 +19,14 @@ import { useCommandsStore } from 'src/stores/command';
 import { computed } from 'vue';
 import { extractDynamicValue } from 'src/utils/extract-dynamic-value';
 import { camelCaseToWords } from 'src/utils/camel-case-to-words';
+import { api } from 'src/boot/api';
 
 const props = withDefaults(
   defineProps<{
     command: CommandName;
     size?: StyleSize;
     includeText?: boolean;
+    text?: string;
     data?: unknown;
   }>(),
   {

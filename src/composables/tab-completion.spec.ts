@@ -3,6 +3,14 @@ import { useTabCompletion } from './tab-completion';
 import type { OrgNoteApi } from 'orgnote-api';
 import type { Router } from 'vue-router';
 
+const mockConfig = {
+  config: {
+    completion: {
+      fuseThreshold: 0.3,
+    },
+  },
+};
+
 test('useTabCompletion opens completion with correct configuration', async () => {
   const mockCompletion = {
     open: vi.fn(),
@@ -41,6 +49,7 @@ test('useTabCompletion opens completion with correct configuration', async () =>
     core: {
       useCompletion: () => mockCompletion,
       usePane: () => mockPaneStore,
+      useConfig: () => mockConfig,
     } as unknown as OrgNoteApi['core'],
   };
 
@@ -92,6 +101,7 @@ test('useTabCompletion itemsGetter returns all tabs when no filter', async () =>
     core: {
       useCompletion: () => mockCompletion,
       usePane: () => mockPaneStore,
+      useConfig: () => mockConfig,
     } as unknown as OrgNoteApi['core'],
   };
 
@@ -145,6 +155,7 @@ test('useTabCompletion itemsGetter filters tabs correctly', async () => {
     core: {
       useCompletion: () => mockCompletion,
       usePane: () => mockPaneStore,
+      useConfig: () => mockConfig,
     } as unknown as OrgNoteApi['core'],
   };
 
@@ -191,6 +202,7 @@ test('useTabCompletion item commandHandler calls selectTab with correct paramete
     core: {
       useCompletion: () => mockCompletion,
       usePane: () => mockPaneStore,
+      useConfig: () => mockConfig,
     } as unknown as OrgNoteApi['core'],
   };
 
@@ -219,6 +231,7 @@ test('useTabCompletion handles empty panes gracefully', async () => {
     core: {
       useCompletion: () => mockCompletion,
       usePane: () => mockPaneStore,
+      useConfig: () => mockConfig,
     } as unknown as OrgNoteApi['core'],
   };
 

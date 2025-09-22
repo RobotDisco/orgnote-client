@@ -2,7 +2,7 @@
   <menu-item
     @click="execute(props.command)"
     :icon="extractDynamicValue(command.icon)"
-    :active="command?.isActive?.()"
+    :active="command?.isActive?.(api)"
     :narrow="command?.context?.narrow"
   >
     <div class="capitalize text-bold">{{ t(command.command) }}</div>

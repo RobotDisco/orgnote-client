@@ -16,6 +16,7 @@ export const createPaneRouter = async (tabId: string): Promise<Router> => {
           titleGenerator: () => null,
         },
       },
+
       {
         path: '/:paneId/edit-note',
         name: 'OpenFile',

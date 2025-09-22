@@ -38,6 +38,7 @@ body {
 
   // Default borders
   --border-default: 1px solid var(--fg-alt);
+  --border-accent: 1px solid var(--accent);
 
   // Shadows
   --shadow-sm: 0px 1px 2px rgba(0, 0, 0, 0.1);
@@ -165,6 +166,24 @@ body {
   --tab-active-color: var(--fg);
   --tab-active-background: var(--bg-alt2);
 
+  // Tab overview
+  --tab-preview-active-border: 2px solid var(--accent);
+  --tab-preview-border: 2px solid var(--fg-alt);
+  --tab-preview-overlay-bg: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.6),
+    rgba(0, 0, 0, 0.3),
+    rgba(0, 0, 0, 0)
+  );
+  --tab-preview-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --tab-preview-overlay-padding: 0 var(--padding-md);
+  --tab-preview-header-height: 40px;
+
+  // Tab overview grid
+  --tab-overview-container-padding: var(--padding-md);
+  --tab-overview-grid-gap: var(--gap-lg);
+  --tab-overview-grid-columns: 3;
+
   // Context menu
   --context-menu-item-padding: var(--padding-md);
   --context-menu-item-hover-bg: var(--bg-alt2);
@@ -174,11 +193,20 @@ body {
   body {
     --modal-max-width: 100%;
     --modal-max-height: 100%;
-    // --modal-padding: var(--padding-md);
     --modal-border: none;
-    // --modal-border-radius: 0;
+
     --footer-height: 60px;
     --modal-mini-padding-bottom: 32px;
+
+    --tab-overview-container-padding: var(--padding-sm);
+    --tab-overview-grid-gap: var(--gap-md);
+    --tab-overview-grid-columns: 3;
+  }
+}
+
+@include mobile {
+  body {
+    --tab-overview-grid-columns: 2;
   }
 }
 

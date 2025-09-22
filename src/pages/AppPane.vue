@@ -33,12 +33,31 @@
         </template>
       </nav-tabs>
     </template>
+    <template #mobile-only>
+      <div class="mobile-tab-header">
+        <action-button
+          icon="keyboard_arrow_left"
+          size="sm"
+          color="fg-alt"
+          :disabled="!canGoBack"
+          @click="handleNavigation('back')"
+        />
+        <action-button
+          icon="keyboard_arrow_right"
+          size="sm"
+          color="fg-alt"
+          :disabled="!canGoForward"
+          @click="handleNavigation('forward')"
+        />
+        <div class="mobile-tab-title">
+          {{ generateTabTitle(activeTab?.router.currentRoute.value) || activeTab?.title }}
+        </div>
+        <command-action-button :command="DefaultCommands.SHOW_TAB_SWITCHER" size="sm" />
+        <command-action-button :command="DefaultCommands.NEW_TAB" size="sm" />
+      </div>
+    </template>
   </visibility-wrapper>
-  <ScopedRouterView
-    v-if="resolvedRouter"
-    :router="resolvedRouter"
-    :key="activePane.activeTabId"
-  />
+  <ScopedRouterView v-if="resolvedRouter" :router="resolvedRouter" :key="activePane.activeTabId" />
 </template>
 
 <script lang="ts" setup>
@@ -54,6 +73,7 @@ import { shallowRef } from 'vue';
 import { provide } from 'vue';
 import { computed, watch } from 'vue';
 import type { Router } from 'vue-router';
+
 import ScopedRouterView from 'src/components/ScopedRouterView.vue';
 import { storeToRefs } from 'pinia';
 import { TAB_ROUTER_KEY } from 'src/constants/context-providers';
@@ -154,3 +174,25 @@ const handleNavigation = (direction: 'back' | 'forward') => {
   }
 };
 </script>
+
+<style scoped>
+.mobile-tab-header {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: var(--padding-sm) var(--padding-md);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mobile-tab-title {
+  flex: 1;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--fg);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+</style>

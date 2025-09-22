@@ -1,7 +1,24 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { usePaneStore } from './pane';
 import { createPinia, setActivePinia } from 'pinia';
 import type { PanesSnapshot } from 'orgnote-api';
+
+const mockRouter = {
+  push: vi.fn(),
+  currentRoute: {
+    value: {
+      path: '/',
+      params: {},
+      query: {},
+      hash: '',
+      name: 'InitialPage',
+    },
+  },
+};
+
+vi.mock('src/utils/pane-router', () => ({
+  createPaneRouter: vi.fn(() => Promise.resolve(mockRouter)),
+}));
 
 test('should create unique tab titles', async () => {
   setActivePinia(createPinia());
@@ -69,7 +86,7 @@ test('should close inactive tab without changing active tab', async () => {
   expect(paneStore.activeTab?.id).toBe(firstTabId);
 });
 
-test('should remove pane when closing last tab', async () => {
+test('should not remove pane when closing last tab but reset route', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
@@ -82,8 +99,9 @@ test('should remove pane when closing last tab', async () => {
 
   paneStore.closeTab(paneId, tabId);
 
-  expect(paneStore.panes[paneId]).toBeUndefined();
-  expect(paneStore.activePaneId).toBe(null);
+  expect(paneStore.panes[paneId]).toBeDefined();
+  expect(paneStore.activePaneId).toBe(paneId);
+  expect(mockRouter.push).toHaveBeenCalledWith({ name: 'InitialPage', params: { paneId } });
 });
 
 test('should handle closing non-existent tab', async () => {
@@ -139,9 +157,9 @@ test('should restore panes from snapshot', async () => {
 
   const snapshot = paneStore.getPanesSnapshot();
 
-  paneStore.closeTab(originalPane.id, originalPane.activeTabId);
   paneStore.closeTab(originalPane.id, secondTab!.id);
-  expect(Object.keys(paneStore.panes)).toHaveLength(0);
+  expect(Object.keys(paneStore.panes)).toHaveLength(1);
+  expect(Object.keys(paneStore.activePane!.tabs.value)).toHaveLength(1);
 
   await paneStore.restorePanesSnapshot(snapshot);
 

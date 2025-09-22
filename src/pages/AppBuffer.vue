@@ -19,6 +19,7 @@ const extractPath = (r: RouteLocationNormalizedLoaded): string | undefined => {
   if (typeof p === 'string' && p.length > 0) return p;
   if (Array.isArray(p) && p.length > 0) return p.join('/');
   const fp = r.fullPath || r.path;
+  if (!fp) return undefined;
   const marker = '/edit-note/';
   const idx = fp.indexOf(marker);
   if (idx >= 0) return fp.slice(idx + marker.length) || undefined;
@@ -31,7 +32,7 @@ const filePath = computed(() => {
     | undefined;
   const resolved = fromInjected ? extractPath(fromInjected) : undefined;
   if (resolved) return resolved;
-  return extractPath(route as RouteLocationNormalizedLoaded);
+  return route ? extractPath(route as RouteLocationNormalizedLoaded) : undefined;
 });
 
 const activeBuffer = ref<OrgBuffer | null>(null);

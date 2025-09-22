@@ -19,6 +19,7 @@ export const useSidebarStore = defineStore<'sidebar', SidebarStore>('sidebar', (
     DefaultCommands.CREATE_NOTE,
     DefaultCommands.SEARCH,
     DefaultCommands.OPEN_DASHBOARD,
+    DefaultCommands.SHOW_TAB_SWITCHER,
     DefaultCommands.OPEN_GRAPH,
   ]);
   const footerCommands = ref<CommandName[]>([

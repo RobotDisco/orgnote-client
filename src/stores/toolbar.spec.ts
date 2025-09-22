@@ -15,6 +15,7 @@ test('initial state', () => {
     DefaultCommands.CREATE_NOTE,
     DefaultCommands.SEARCH,
     DefaultCommands.TOGGLE_COMMANDS,
+    DefaultCommands.SHOW_TAB_SWITCHER,
   ]);
 });
 
@@ -25,7 +26,7 @@ test('addCommand adds a new command to the toolbar', () => {
   store.addCommand(newCommand);
 
   expect(store.commands).toContain(newCommand);
-  expect(store.commands.length).toBe(5);
+  expect(store.commands.length).toBe(6);
 });
 
 test('addCommand does not add duplicate commands', () => {
@@ -46,7 +47,7 @@ test('removeCommand removes an existing command from the toolbar', () => {
   store.removeCommand(commandToRemove);
 
   expect(store.commands).not.toContain(commandToRemove);
-  expect(store.commands.length).toBe(3);
+  expect(store.commands.length).toBe(4);
 });
 
 test('removeCommand does nothing if the command does not exist', () => {
