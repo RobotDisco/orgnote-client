@@ -11,7 +11,9 @@
         hover-color="violet"
       />
     </div>
-    <ScopedRouterView v-if="tab.router" :router="tab.router" class="scaled-router-view" />
+    <div class="preview-content">
+      <ScopedRouterView v-if="tab.router" :router="tab.router" class="scaled-router-view" />
+    </div>
   </div>
 </template>
 
@@ -87,5 +89,10 @@ defineEmits<{
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   flex: 1;
   margin-right: var(--margin-sm);
+}
+
+.preview-content {
+  pointer-events: none;
+  user-select: none;
 }
 </style>
