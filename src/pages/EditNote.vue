@@ -20,6 +20,7 @@ const currentNotePath = computed(() => {
 });
 
 const buffers = api.core.useBuffers();
+
 const buffer = computed<OrgBuffer | null>(() => {
   const path = currentNotePath.value;
   if (!path) return null;

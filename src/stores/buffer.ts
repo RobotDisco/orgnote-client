@@ -1,54 +1,103 @@
 import { defineStore } from 'pinia';
 import { computed, reactive, ref, watch } from 'vue';
 import { debounce } from 'src/utils/debounce';
-import type { BufferStore, Buffer as OrgBuffer } from 'orgnote-api';
+import { isOrgGpgFile, type BufferStore, type Buffer as OrgBuffer } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import { to } from 'src/utils/to-error';
 import { reporter } from 'src/boot/report';
+import type { ResultAsync } from 'neverthrow';
+import { errAsync, okAsync } from 'neverthrow';
 
 const SAVE_DELAY_MS = 1000;
+
+class EncryptionConfigRequiredError extends Error {
+  constructor() {
+    super('Encryption configuration is required to handle encrypted files.');
+  }
+}
 
 export const useBufferStore = defineStore<string, BufferStore>('buffers', (): BufferStore => {
   const buffers = ref<Map<string, OrgBuffer>>(new Map());
 
   const debouncedSavers = new Map<string, () => void>();
+  const fm = api.core.useFileSystemManager();
+  const encryption = api.core.useEncryption();
+  const config = api.core.useConfig();
 
   const _saveBuffer = async (buffer: OrgBuffer): Promise<void> => {
-    const fs = api.core.useFileSystemManager().currentFs;
-    if (!fs) return;
     buffer.isSaving = true;
-
-    const w = await to(fs.writeFile)(buffer.path, buffer.content).map(() => {
-      buffer.metadata.originalContent = buffer.content;
-    });
-
+    await writeBufferFile(buffer);
     buffer.isSaving = false;
+  };
+
+  const writeBufferFile = async (buffer: OrgBuffer): Promise<void> => {
+    if (!fm.currentFs) {
+      reporter.reportError(new Error('No file system selected'));
+      return;
+    }
+
+    const w = await encryptContent(buffer.path, buffer.content)
+      .andThen((content) => to(fm.currentFs.writeFile)(buffer.path, content))
+      .map(() => {
+        buffer.metadata.originalContent = buffer.content;
+      });
 
     if (w.isErr()) {
       reporter.reportError(new Error(`Failed to save: ${buffer.path}`, { cause: w.error }));
     }
   };
 
+  const encryptContent = (filePath: string, content: string): ResultAsync<string, Error> => {
+    if (!isOrgGpgFile(filePath)) {
+      return okAsync(content);
+    }
+    if (isEncryptionConfigValid()) {
+      return to(encryption.encrypt)(content);
+    }
+    return errAsync(new EncryptionConfigRequiredError());
+  };
+
   const _loadBufferContent = async (buffer: OrgBuffer): Promise<void> => {
     buffer.isLoading = true;
-    const fs = api.core.useFileSystemManager().currentFs;
-    if (!fs) {
-      buffer.isLoading = false;
+    await readBufferFile(buffer);
+    buffer.isLoading = false;
+  };
+
+  const readBufferFile = async (buffer: OrgBuffer): Promise<void> => {
+    if (!fm.currentFs) {
+      reporter.reportError(new Error('No file system selected'));
       return;
     }
 
-    const safeRead = to(fs.readFile, 'Failed to load buffer content');
+    const safeRead = to(fm.currentFs.readFile, 'Failed to load buffer content');
 
-    const res = await safeRead(buffer.path).map((content) => {
-      buffer.content = content;
-      buffer.metadata.originalContent = content;
-    });
+    const res = await safeRead(buffer.path)
+      .andThen((content) => decryptContent(buffer.path, content))
+      .map((content) => {
+        buffer.content = content;
+        buffer.metadata.originalContent = content;
+      });
 
     if (res.isErr()) {
-      reporter.reportError(new Error(`Failed to load: ${buffer.path}`, { cause: res.error }));
+      const errMsg = `Failed to load: ${buffer.path}`;
+      reporter.reportError(new Error(errMsg, { cause: res.error }));
+      buffer.errors.push(errMsg, res.error.message);
+    }
+  };
+
+  const decryptContent = (filePath: string, content: string): ResultAsync<string, Error> => {
+    if (!content || !isOrgGpgFile(filePath)) {
+      return okAsync(content);
     }
 
-    buffer.isLoading = false;
+    if (isEncryptionConfigValid()) {
+      return to(encryption.decrypt)(content);
+    }
+    return errAsync(new EncryptionConfigRequiredError());
+  };
+
+  const isEncryptionConfigValid = (): boolean => {
+    return config.config.encryption.type !== 'disabled';
   };
 
   const allBuffers = computed(() => Array.from(buffers.value.values()));
@@ -76,6 +125,7 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
       title: path.split('/').pop() || 'Untitled',
       content: '',
       isSaving: false,
+      errors: [],
       isLoading: true,
       lastAccessed: new Date(),
       referenceCount: 1,

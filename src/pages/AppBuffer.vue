@@ -1,5 +1,6 @@
 <template>
-  <router-view />
+  <error-display v-if="activeBuffer?.errors.length" :errors="activeBuffer.errors" />
+  <router-view v-else />
 </template>
 
 <script lang="ts" setup>
@@ -9,6 +10,7 @@ import { computed, watch, onUnmounted, ref, inject, type ShallowRef } from 'vue'
 import type { Buffer as OrgBuffer } from 'orgnote-api';
 import { TAB_ROUTER_KEY } from 'src/constants/context-providers';
 import type { Router } from 'vue-router';
+import ErrorDisplay from 'src/components/ErrorDisplay.vue';
 
 const buffers = api.core.useBuffers();
 const route = useRoute();

@@ -20,11 +20,12 @@ import AnimationWrapper from './AnimationWrapper.vue';
 import { computed, ref, useSlots } from 'vue';
 import { ICON_CHANGE_DURATION } from 'src/constants/animations';
 import { getCssVariableName } from 'src/utils/css-utils';
+import { copyToClipboard } from 'src/utils/clipboard';
 import type { StyleSize, ThemeVariable } from 'orgnote-api';
 
 const props = withDefaults(
   defineProps<{
-    icon: string;
+    icon?: string;
     active?: boolean;
     size?: StyleSize;
     color?: ThemeVariable;
@@ -34,12 +35,16 @@ const props = withDefaults(
     hoverColor?: ThemeVariable;
     border?: boolean;
     classes?: string;
+    copyText?: string;
   }>(),
   {
     active: false,
     size: 'md',
     color: 'fg',
     classes: '',
+    icon: 'sym_o_content_copy',
+    fireIcon: 'sym_o_local_fire_department',
+    fireColor: 'red',
   },
 );
 
@@ -48,7 +53,11 @@ const fired = ref<boolean>(false);
 const activeIcon = computed(() => (fired.value ? props.fireIcon : props.icon));
 const activeColor = computed(() => (fired.value ? (props.fireColor ?? props.color) : props.color));
 
-const onButtonClick = () => {
+const onButtonClick = async () => {
+  if (props.copyText) {
+    await copyToClipboard(props.copyText);
+  }
+
   if (!props.fireIcon) {
     return;
   }
