@@ -42,8 +42,6 @@ const props = withDefaults(
     size: 'md',
     color: 'fg',
     classes: '',
-    icon: 'sym_o_content_copy',
-    fireIcon: 'sym_o_local_fire_department',
     fireColor: 'red',
   },
 );

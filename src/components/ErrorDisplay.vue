@@ -1,7 +1,14 @@
 <template>
   <div class="error-display" :class="{ centered }">
     <div class="error-container">
-      <action-button :copy-text="errorText" size="sm" class="copy-button" border />
+      <action-button
+        :copy-text="errorText"
+        icon="sym_o_content_copy"
+        fire-icon="sym_o_local_fire_department"
+        size="sm"
+        class="copy-button"
+        border
+      />
       <div v-if="Array.isArray(errors)" class="error-content">
         <div v-for="(error, index) in errors" :key="index" class="error-message">
           {{ error }}
