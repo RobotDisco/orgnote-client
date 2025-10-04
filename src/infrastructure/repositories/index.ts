@@ -9,6 +9,11 @@ import {
   LOGGER_MIGRATIONS,
   LOGGER_REPOSITORY_NAME,
 } from './logger-repository';
+import {
+  createPaneSnapshotRepository,
+  PANE_SNAPSHOT_MIGRATIONS,
+  PANE_SNAPSHOT_REPOSITORY_NAME,
+} from './pane-snapshot-repository';
 import type Dexie from 'dexie';
 
 let database: Dexie | null = null;
@@ -20,11 +25,13 @@ export async function initRepositories(): Promise<OrgNoteApi['infrastructure']> 
     { storeName: NOTE_REPOSITORY_NAME, migrations: NOTE_MIGRATIONS },
     { storeName: FILE_REPOSITORY_NAME, migrations: FILE_MIGRATIONS },
     { storeName: LOGGER_REPOSITORY_NAME, migrations: LOGGER_MIGRATIONS },
+    { storeName: PANE_SNAPSHOT_REPOSITORY_NAME, migrations: PANE_SNAPSHOT_MIGRATIONS },
   ]);
   database = db;
   return {
     fileInfoRepository: createFileRepository(db),
     noteInfoRepository: createNoteInfoRepository(db),
     logRepository: createLoggerRepository(db),
+    paneSnapshotRepository: createPaneSnapshotRepository(db),
   };
 }

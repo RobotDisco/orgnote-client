@@ -198,7 +198,7 @@ test('should handle restoring empty snapshot', async () => {
   await paneStore.restorePanesSnapshot(emptySnapshot);
 
   expect(Object.keys(paneStore.panes)).toHaveLength(0);
-  expect(paneStore.activePaneId).toBe('');
+  expect(paneStore.activePaneId).toBeNull();
 });
 
 test('should handle selectTab with non-existent pane', async () => {
