@@ -7,13 +7,14 @@ interface DebouncedFunction<F extends (...args: Parameters<F>) => ReturnType<F>>
 
 export function debounce<F extends (...args: Parameters<F>) => ReturnType<F>>(
   func: F,
-  waitFor = 100,
+  waitFor: number | (() => number) = 100,
 ): DebouncedFunction<F> {
   let timeout: Timer;
 
   const debouncedFunction = (...args: Parameters<F>): void => {
     clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), waitFor);
+    const delay = typeof waitFor === 'function' ? waitFor() : waitFor;
+    timeout = setTimeout(() => func(...args), delay);
   };
 
   debouncedFunction.cancel = () => {
