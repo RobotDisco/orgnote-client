@@ -8,11 +8,13 @@ import vueParser from 'vue-eslint-parser';
 import tsParser from '@typescript-eslint/parser';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import sonarjs from 'eslint-plugin-sonarjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default [
+    sonarjs.configs.recommended,
     {
         /**
          * Ignore the following files.
