@@ -119,7 +119,6 @@ export default defineBoot(async ({ app, store, router }) => {
   logger.info('Start initializing API');
   await initApi(app, router);
   logger.info('API initialized');
-  // await sleep(1000);
   store.use(() => ({ api: api as OrgNoteApi }));
   app.provide(ORGNOTE_API_PROVIDER_TOKEN, api);
   logger.info('Start synchronizing configurations');

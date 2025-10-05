@@ -14,7 +14,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default [
-    sonarjs.configs.recommended,
+    {
+        plugins: { sonarjs },
+        rules: {
+            // TODO: feat/stable-beta enable before merge
+            'sonarjs/no-commented-code': 'off',
+        },
+    },
     {
         /**
          * Ignore the following files.
