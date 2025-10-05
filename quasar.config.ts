@@ -20,6 +20,10 @@ export default defineConfig((ctx) => {
       'default-file-systems',
       'i18n',
       'api',
+      {
+        server: false,
+        path: 'pane-snapshot',
+      },
       'axios',
       'default-commands',
       'viewport-patch',

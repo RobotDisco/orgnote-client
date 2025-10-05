@@ -6,6 +6,8 @@ import type { Mock } from 'vitest';
 import { vi, test, expect, beforeEach } from 'vitest';
 import { getCssVar } from 'src/utils/css-utils';
 
+let themeMeta: HTMLMetaElement;
+
 vi.mock('@capacitor/status-bar', () => {
   return {
     StatusBar: {
@@ -49,11 +51,23 @@ vi.mock('src/utils/css-utils', () => ({
   getCssVar: vi.fn((name) => (name === 'bg' ? '#FFFFFF' : null)),
 }));
 
+const createThemeMeta = (): HTMLMetaElement => {
+  const meta = document.createElement('meta');
+  meta.name = 'theme-color';
+  return meta;
+};
+
+const clearThemeMetas = (): void => {
+  document.head.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove());
+};
+
 beforeEach(() => {
-  vi.resetModules();
   setActivePinia(createPinia());
   process.env.CLIENT = 'true';
   vi.clearAllMocks();
+  clearThemeMetas();
+  themeMeta = createThemeMeta();
+  document.head.appendChild(themeMeta);
 });
 
 test('setStatusBarBackground sets the background color and style for dark theme', async () => {
@@ -94,24 +108,6 @@ test('setBottomBarBackground does nothing if color is not found', async () => {
   await bgSettings.setBottomBarBackground('custom-color');
 
   expect(NavigationBar.setColor).not.toHaveBeenCalled();
-});
-
-vi.mock('src/utils/css-utils', () => ({
-  getCssVar: vi.fn((name) => (name === 'bg' ? '#FFFFFF' : null)),
-}));
-
-let themeMeta: HTMLMetaElement;
-
-beforeEach(() => {
-  vi.clearAllMocks();
-
-  // Очистка мета-тегов перед каждым тестом
-  document.head.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove());
-
-  // Создание базового мета-тега для тестов
-  themeMeta = document.createElement('meta');
-  themeMeta.name = 'theme-color';
-  document.head.appendChild(themeMeta);
 });
 
 test('setThemeColor updates existing meta tag with the correct color', () => {

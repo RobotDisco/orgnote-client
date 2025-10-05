@@ -3,7 +3,7 @@ import type * as VueI18n from 'vue-i18n';
 import { mount } from '@vue/test-utils';
 import ModalWindow from './ModalWindow.vue';
 import { createTestingPinia } from '@pinia/testing';
-import { ref } from 'vue';
+import { ref, markRaw } from 'vue';
 import ActionButton from 'src/components/ActionButton.vue';
 import { nextTick } from 'vue';
 
@@ -61,7 +61,7 @@ test('renders no dialogs when modals is empty', async () => {
 test('modal-wide class applied when config.wide enabled', async () => {
   mockModal.modals.value = [
     {
-      component: { template: '<div>WideModal</div>' },
+      component: markRaw({ template: '<div>WideModal</div>' }),
       config: { wide: true },
     },
   ];
@@ -74,7 +74,7 @@ test('modal-wide class applied when config.wide enabled', async () => {
 test('modal-wide class absent when config.wide disabled', async () => {
   mockModal.modals.value = [
     {
-      component: { template: '<div>NormalModal</div>' },
+      component: markRaw({ template: '<div>NormalModal</div>' }),
       config: { wide: false },
     },
   ];
@@ -86,7 +86,7 @@ test('modal-wide class absent when config.wide disabled', async () => {
 
 test('renders a single dialog when modals has 1 item', async () => {
   mockModal.modals.value.push({
-    component: { template: '<div>ModalOne</div>' },
+    component: markRaw({ template: '<div>ModalOne</div>' }),
     config: { title: 'Modal One', closable: true },
   });
   await wrapper.vm.$nextTick();
@@ -96,8 +96,8 @@ test('renders a single dialog when modals has 1 item', async () => {
 
 test('renders multiple dialogs when multiple items in modals', async () => {
   mockModal.modals.value.push(
-    { component: { template: '<div>ModalOne</div>' }, config: {} },
-    { component: { template: '<div>ModalTwo</div>' }, config: {} },
+    { component: markRaw({ template: '<div>ModalOne</div>' }), config: {} },
+    { component: markRaw({ template: '<div>ModalTwo</div>' }), config: {} },
   );
   await wrapper.vm.$nextTick();
   const dialogs = wrapper.findAll('dialog');
@@ -108,7 +108,7 @@ test('newly added modal calls showModal()', async () => {
   mockModal.modals.value = [
     ...mockModal.modals.value,
     {
-      component: { template: '<div>ModalOne</div>' },
+      component: markRaw({ template: '<div>ModalOne</div>' }),
       config: { title: 'Modal One' },
     },
   ];
@@ -123,7 +123,7 @@ test('newly added modal calls showModal()', async () => {
 });
 
 test('renders component in topmost modal', async () => {
-  const TestComponent = { template: '<div>Test Component</div>' };
+  const TestComponent = markRaw({ template: '<div>Test Component</div>' });
   mockModal.modals.value = [{ component: TestComponent, config: {} }];
   await wrapper.vm.$nextTick();
   expect(wrapper.findComponent(TestComponent).exists()).toBe(true);
@@ -131,8 +131,8 @@ test('renders component in topmost modal', async () => {
 
 test('renders title from config.title', async () => {
   mockModal.modals.value = [
-    { component: { template: '<div>First</div>' }, config: { title: 'First Title' } },
-    { component: { template: '<div>Second</div>' }, config: { title: 'Second Title' } },
+    { component: markRaw({ template: '<div>First</div>' }), config: { title: 'First Title' } },
+    { component: markRaw({ template: '<div>Second</div>' }), config: { title: 'Second Title' } },
   ];
   await wrapper.vm.$nextTick();
   const allTitles = wrapper.findAll('h1.title');
@@ -143,7 +143,10 @@ test('renders title from config.title', async () => {
 
 test('renders close button when config.closable is true', async () => {
   mockModal.modals.value = [
-    { component: { template: '<div>SomeModal</div>' }, config: { closable: true, title: 'p' } },
+    {
+      component: markRaw({ template: '<div>SomeModal</div>' }),
+      config: { closable: true, title: 'p' },
+    },
   ];
   await wrapper.vm.$nextTick();
   await nextTick();
@@ -153,7 +156,7 @@ test('renders close button when config.closable is true', async () => {
 
 test('does not render close button when config.closable is false', async () => {
   mockModal.modals.value = [
-    { component: { template: '<div>ModalNoClose</div>' }, config: { closable: false } },
+    { component: markRaw({ template: '<div>ModalNoClose</div>' }), config: { closable: false } },
   ];
   await wrapper.vm.$nextTick();
   const closeButton = wrapper.find('action-button-stub');
@@ -163,7 +166,7 @@ test('does not render close button when config.closable is false', async () => {
 // TODO: feat/stable-beta fix it
 test.skip('closes the topmost modal when clicking outside modal content', async () => {
   mockModal.modals.value = [
-    { component: { template: '<div>ModalOutsideClick</div>' }, config: {} },
+    { component: markRaw({ template: '<div>ModalOutsideClick</div>' }), config: {} },
   ];
   await wrapper.vm.$nextTick();
   const dialog = wrapper.find('dialog');
@@ -172,7 +175,9 @@ test.skip('closes the topmost modal when clicking outside modal content', async 
 });
 
 test('does not close modal when clicking inside modal content', async () => {
-  mockModal.modals.value = [{ component: { template: '<div>SomeModal</div>' }, config: {} }];
+  mockModal.modals.value = [
+    { component: markRaw({ template: '<div>SomeModal</div>' }), config: {} },
+  ];
   await wrapper.vm.$nextTick();
   const modalContent = wrapper.find('.modal-content');
   await modalContent.trigger('click');
@@ -181,8 +186,8 @@ test('does not close modal when clicking inside modal content', async () => {
 
 test('removing a modal from modals closes/removes that dialog', async () => {
   mockModal.modals.value = [
-    { component: { template: '<div>First Modal</div>' }, config: {} },
-    { component: { template: '<div>Second Modal</div>' }, config: {} },
+    { component: markRaw({ template: '<div>First Modal</div>' }), config: {} },
+    { component: markRaw({ template: '<div>Second Modal</div>' }), config: {} },
   ];
   await wrapper.vm.$nextTick();
   let dialogs = wrapper.findAll('dialog');

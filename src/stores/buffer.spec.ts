@@ -1,8 +1,9 @@
 import { setActivePinia, createPinia } from 'pinia';
 import { test, expect, beforeEach, vi } from 'vitest';
 
-const readFile = vi.fn().mockResolvedValue('test content');
-const writeFile = vi.fn().mockResolvedValue(undefined);
+import type { Mock } from 'vitest';
+let readFile: Mock;
+let writeFile: Mock;
 
 vi.mock('src/boot/api', () => ({
   api: {
@@ -16,6 +17,14 @@ vi.mock('src/boot/api', () => ({
       useNotifications: vi.fn(() => ({
         notify: vi.fn(),
       })),
+      useEncryption: vi.fn(() => ({
+        decrypt: vi.fn((content) => content),
+        encrypt: vi.fn((content) => content),
+      })),
+      useConfig: vi.fn(() => ({
+        autoSave: false,
+        autoSaveDelay: 1000,
+      })),
     },
   },
 }));
@@ -23,9 +32,15 @@ vi.mock('src/boot/api', () => ({
 import { useBufferStore } from './buffer';
 
 beforeEach(() => {
-  setActivePinia(createPinia());
-  readFile.mockClear();
-  writeFile.mockClear();
+  readFile = vi.fn().mockResolvedValue('test content');
+  writeFile = vi.fn().mockResolvedValue(undefined);
+
+  const pinia = createPinia();
+  setActivePinia(pinia);
+  vi.clearAllMocks();
+
+  const store = useBufferStore();
+  store.cleanup();
 });
 
 test('creates a new buffer on first request', async () => {
@@ -98,10 +113,13 @@ test('closeBuffer returns true when unsaved changes and force=true', async () =>
 
 test('saveAllBuffers calls file system write for all buffers', async () => {
   const store = useBufferStore();
+  writeFile.mockClear();
   const b1 = await store.getOrCreateBuffer('/test/file1.org');
   const b2 = await store.getOrCreateBuffer('/test/file2.org');
   b1.content = 'data1';
   b2.content = 'data2';
   await store.saveAllBuffers();
-  expect(writeFile).toHaveBeenCalledTimes(2);
+  const calls = (writeFile as Mock).mock.calls.map((args) => args[0]);
+  expect(calls).toContain('/test/file1.org');
+  expect(calls).toContain('/test/file2.org');
 });

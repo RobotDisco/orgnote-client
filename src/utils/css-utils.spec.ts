@@ -14,7 +14,7 @@ import {
 beforeEach(() => vi.clearAllMocks());
 
 test('returns CSS variable value when it exists', () => {
-  vi.spyOn(document.defaultView, 'getComputedStyle').mockReturnValue({
+  vi.spyOn(globalThis, 'getComputedStyle').mockReturnValue({
     getPropertyValue: vi.fn().mockReturnValue('10px'),
   } as unknown as CSSStyleDeclaration);
 
@@ -24,7 +24,7 @@ test('returns CSS variable value when it exists', () => {
 
 test('returns empty string for non-existent CSS variable', () => {
   const bodyStyleSpy = vi.spyOn(document.body.style, 'getPropertyValue').mockReturnValue('');
-  vi.spyOn(document.defaultView, 'getComputedStyle').mockReturnValue({
+  vi.spyOn(globalThis, 'getComputedStyle').mockReturnValue({
     getPropertyValue: vi.fn().mockReturnValue(''),
   } as unknown as CSSStyleDeclaration);
 
@@ -36,7 +36,7 @@ test('returns empty string for non-existent CSS variable', () => {
 test('returns theme variables as an object', () => {
   const bodyStyleSpy = vi.spyOn(document.body.style, 'getPropertyValue');
 
-  vi.spyOn(document.defaultView, 'getComputedStyle').mockReturnValue({
+  vi.spyOn(globalThis, 'getComputedStyle').mockReturnValue({
     getPropertyValue: vi.fn().mockImplementation((varName) => {
       if (varName === '--theme-color') return '#ffffff';
       if (varName === '--theme-font') return 'Arial';
@@ -57,7 +57,7 @@ test('returns empty object when theme variables do not exist', () => {
 });
 
 test('parses numeric CSS variable correctly', () => {
-  vi.spyOn(document.defaultView, 'getComputedStyle').mockReturnValue({
+  vi.spyOn(globalThis, 'getComputedStyle').mockReturnValue({
     getPropertyValue: vi.fn().mockReturnValue('42px'),
   } as unknown as CSSStyleDeclaration);
 

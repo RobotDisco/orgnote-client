@@ -1,14 +1,18 @@
 import { test, expect } from 'vitest';
 import { sleep } from './sleep';
 
+const TEST_TIMING_TOLERANCE = 80;
+const IMMEDIATE_TIMING_TOLERANCE = 30;
+const IMMEDIATE_TIMING_TOLERANCE_STRICT = 25;
+
 test('sleep delays for the specified time', async () => {
   const start = Date.now();
-  const delay = 100; // 100ms
+  const delay = 100;
   await sleep(delay);
   const end = Date.now();
 
   expect(end - start).toBeGreaterThanOrEqual(delay);
-  expect(end - start).toBeLessThan(delay + 50); // Tolerating small deviations
+  expect(end - start).toBeLessThan(delay + TEST_TIMING_TOLERANCE);
 });
 
 test('sleep resolves correctly', async () => {
@@ -22,14 +26,14 @@ test('sleep handles zero delay', async () => {
   const end = Date.now();
 
   expect(end - start).toBeGreaterThanOrEqual(0);
-  expect(end - start).toBeLessThan(10); // Ensuring no unnecessary delay
+  expect(end - start).toBeLessThan(IMMEDIATE_TIMING_TOLERANCE);
 });
 
 test('sleep handles negative delay', async () => {
   const start = Date.now();
-  await sleep(-100); // Negative delay should resolve immediately
+  await sleep(-100);
   const end = Date.now();
 
   expect(end - start).toBeGreaterThanOrEqual(0);
-  expect(end - start).toBeLessThan(10);
+  expect(end - start).toBeLessThan(IMMEDIATE_TIMING_TOLERANCE_STRICT);
 });

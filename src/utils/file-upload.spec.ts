@@ -1,13 +1,18 @@
 import { uploadFile, uploadFiles } from './file-upload';
 import { test, expect, vi, type Mock } from 'vitest';
 
-vi.stubGlobal('document', {
-  createElement: vi.fn(),
-  body: {
-    appendChild: vi.fn(),
-    removeChild: vi.fn(),
-  },
-});
+const createInputMatcher = (input: HTMLInputElement) => (tagName: string) =>
+  tagName === 'input' ? input : document.createElement(tagName as never);
+
+const spyDom = (input: HTMLInputElement) => {
+  const matcher = createInputMatcher(input);
+  const createSpy = vi
+    .spyOn(document, 'createElement')
+    .mockImplementation(matcher as typeof document.createElement);
+  const appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(() => input);
+  const removeSpy = vi.spyOn(document.body, 'removeChild').mockImplementation(() => input);
+  return { createSpy, appendSpy, removeSpy };
+};
 
 test('uploadFiles should resolve with a FileList when files are selected', async () => {
   const mockFile = new File(['content'], 'file.txt', { type: 'text/plain' });
@@ -35,15 +40,15 @@ test('uploadFiles should resolve with a FileList when files are selected', async
     }
   });
 
-  (document.createElement as Mock).mockReturnValue(mockInput);
+  const { appendSpy, removeSpy } = spyDom(mockInput);
 
   const params = { accept: 'image/*', multiple: true };
   const result = await uploadFiles(params);
 
   expect(result).toBe(mockFileList);
   expect(mockInput.click).toHaveBeenCalled();
-  expect(document.body.appendChild).toHaveBeenCalledWith(mockInput);
-  expect(document.body.removeChild).toHaveBeenCalledWith(mockInput);
+  expect(appendSpy).toHaveBeenCalledWith(mockInput);
+  expect(removeSpy).toHaveBeenCalledWith(mockInput);
 });
 
 test('uploadFiles should reject with an error if no files are selected', async () => {
@@ -64,14 +69,14 @@ test('uploadFiles should reject with an error if no files are selected', async (
     }
   });
 
-  (document.createElement as Mock).mockReturnValue(mockInput);
+  const { appendSpy, removeSpy } = spyDom(mockInput);
 
   const params = { accept: '' };
 
   await expect(uploadFiles(params)).rejects.toThrowError('No files selected');
   expect(mockInput.click).toHaveBeenCalled();
-  expect(document.body.appendChild).toHaveBeenCalledWith(mockInput);
-  expect(document.body.removeChild).toHaveBeenCalledWith(mockInput);
+  expect(appendSpy).toHaveBeenCalledWith(mockInput);
+  expect(removeSpy).toHaveBeenCalledWith(mockInput);
 });
 
 test('uploadFile should resolve with the first file when one file is selected', async () => {
@@ -99,15 +104,15 @@ test('uploadFile should resolve with the first file when one file is selected', 
     }
   });
 
-  (document.createElement as Mock).mockReturnValue(mockInput);
+  const { appendSpy, removeSpy } = spyDom(mockInput);
 
   const params = { accept: '' };
   const result = await uploadFile(params);
 
   expect(result).toBe(mockFile);
   expect(mockInput.click).toHaveBeenCalled();
-  expect(document.body.appendChild).toHaveBeenCalledWith(mockInput);
-  expect(document.body.removeChild).toHaveBeenCalledWith(mockInput);
+  expect(appendSpy).toHaveBeenCalledWith(mockInput);
+  expect(removeSpy).toHaveBeenCalledWith(mockInput);
 });
 
 test('uploadFile should throw an error if no file is selected', async () => {
@@ -128,12 +133,12 @@ test('uploadFile should throw an error if no file is selected', async () => {
     }
   });
 
-  (document.createElement as Mock).mockReturnValue(mockInput);
+  const { appendSpy, removeSpy } = spyDom(mockInput);
 
   const params = { accept: '' };
 
   await expect(uploadFile(params)).rejects.toThrowError('No files selected');
   expect(mockInput.click).toHaveBeenCalled();
-  expect(document.body.appendChild).toHaveBeenCalledWith(mockInput);
-  expect(document.body.removeChild).toHaveBeenCalledWith(mockInput);
+  expect(appendSpy).toHaveBeenCalledWith(mockInput);
+  expect(removeSpy).toHaveBeenCalledWith(mockInput);
 });

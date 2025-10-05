@@ -12,6 +12,10 @@ vi.mock('src/pages/EditNote.vue', () => ({
   default: { name: 'EditNote' },
 }));
 
+vi.mock('src/pages/AppBuffer.vue', () => ({
+  default: { name: 'AppBuffer' },
+}));
+
 let router: Router;
 const testTabId = 'test-tab-123';
 

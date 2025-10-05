@@ -1,5 +1,7 @@
 import type { OrgNoteConfig } from 'orgnote-api';
 
+export const DEFAULT_PANE_PERSISTENCE_SAVE_DELAY = 500;
+
 export const DEFAULT_CONFIG: OrgNoteConfig = {
   editor: {
     showSpecialSymbols: false,
@@ -28,7 +30,7 @@ export const DEFAULT_CONFIG: OrgNoteConfig = {
     enableAnimations: true,
     notificationTimeout: 5000,
     persistantPanes: true,
-    persistantPanesSaveDelay: 500,
+    persistantPanesSaveDelay: DEFAULT_PANE_PERSISTENCE_SAVE_DELAY,
   },
   extensions: {
     sources: ['https://github.com/Artawower/orgnote-extensions'],

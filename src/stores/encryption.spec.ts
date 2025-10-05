@@ -2,6 +2,7 @@ import { setActivePinia, createPinia } from 'pinia';
 import { useEncryptionStore } from 'src/stores/encryption';
 import { vi, test, beforeEach, expect, type Mock } from 'vitest';
 import { encryptNote, decryptNote, encrypt, decrypt } from 'orgnote-api/encryption';
+import { useConfigStore } from 'src/stores/config';
 
 vi.mock('orgnote-api/encryption', () => ({
   encrypt: vi.fn(),
@@ -10,17 +11,11 @@ vi.mock('orgnote-api/encryption', () => ({
   decryptNote: vi.fn(),
 }));
 
-// Mock the config store to provide encryption config
-vi.mock('src/stores/config', () => ({
-  useConfigStore: vi.fn(() => ({
-    config: {
-      encryption: { type: 'GpgPassword', password: 'test-password' },
-    },
-  })),
-}));
-
 beforeEach(() => {
   setActivePinia(createPinia());
+
+  const configStore = useConfigStore();
+  configStore.config.encryption = { type: 'gpgPassword', password: 'test-password' };
 });
 
 test('encrypt calls encrypt with correct parameters', async () => {
@@ -33,7 +28,7 @@ test('encrypt calls encrypt with correct parameters', async () => {
   expect(encrypt).toHaveBeenCalledWith({
     content: 'test-data',
     format: 'binary',
-    type: 'GpgPassword',
+    type: 'gpgPassword',
     password: 'test-password',
   });
   expect(result).toBe(mockEncryptResponse);
@@ -49,7 +44,7 @@ test('decrypt calls decrypt with correct parameters', async () => {
   expect(decrypt).toHaveBeenCalledWith({
     content: 'encrypted-data',
     format: 'utf8',
-    type: 'GpgPassword',
+    type: 'gpgPassword',
     password: 'test-password',
   });
   expect(result).toBe(mockDecryptResponse);
@@ -72,7 +67,7 @@ test('encryptNote calls encryptNote with correct parameters', async () => {
 
   expect(encryptNote).toHaveBeenCalledWith(noteInfo, {
     content: 'note-content',
-    type: 'GpgPassword',
+    type: 'gpgPassword',
     password: 'test-password',
   });
   expect(result).toEqual(mockEncryptNoteResponse);
@@ -95,7 +90,7 @@ test('decryptNote calls decryptNote with correct parameters', async () => {
 
   expect(decryptNote).toHaveBeenCalledWith(noteInfo, {
     content: 'encrypted-note-content',
-    type: 'GpgPassword',
+    type: 'gpgPassword',
     password: 'test-password',
   });
   expect(result).toEqual(mockDecryptNoteResponse);

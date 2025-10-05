@@ -16,13 +16,14 @@ import type { ShallowRef } from 'vue';
 import { computed, shallowRef } from 'vue';
 import type { RouteLocationRaw, Router } from 'vue-router';
 import { createPaneRouter } from 'src/utils/pane-router';
+import { api } from 'src/boot/api';
 
 export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
   const panes = shallowRef<Record<string, ShallowRef<Pane>>>({});
   const activePaneId = shallowRef<string | null>(null);
 
   const activePane = computed(() =>
-    activePaneId.value ? panes.value[activePaneId.value].value : undefined,
+    activePaneId.value ? panes.value[activePaneId.value]?.value : undefined,
   );
 
   const getAllTabTitles = computed((): string[] => {
@@ -281,10 +282,13 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
     activePaneId.value = snapshot.activePaneId || null;
   };
 
-  const savePanes = async (): Promise<void> => {
-    const { api } = await import('src/boot/api');
+  const shouldPersistPanes = async (): Promise<boolean> => {
     const config = api.core.useConfig();
-    if (!config.config.value?.ui.persistantPanes) {
+    return Boolean(config.config?.ui.persistantPanes);
+  };
+
+  const savePanes = async (): Promise<void> => {
+    if (!(await shouldPersistPanes())) {
       return;
     }
 
@@ -294,9 +298,7 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
   };
 
   const restorePanes = async (): Promise<void> => {
-    const { api } = await import('src/boot/api');
-    const config = api.core.useConfig();
-    if (!config.config.value?.ui.persistantPanes) {
+    if (!(await shouldPersistPanes())) {
       return;
     }
 

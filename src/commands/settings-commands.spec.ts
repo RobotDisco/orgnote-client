@@ -51,13 +51,11 @@ vi.mock('src/containers/TheSettings.vue', () => ({
   default: { name: 'TheSettings' },
 }));
 
-vi.mock('vue', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...(actual as Record<string, unknown>),
-    defineAsyncComponent: vi.fn((factory) => factory()),
-  };
-});
+const mockDefineAsyncComponent = <T>(factory: () => T): T => factory();
+
+vi.mock('vue', () => ({
+  defineAsyncComponent: vi.fn(mockDefineAsyncComponent),
+}));
 
 beforeEach(() => {
   vi.clearAllMocks();
