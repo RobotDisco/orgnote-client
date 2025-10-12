@@ -187,6 +187,11 @@ body {
   // Context menu
   --context-menu-item-padding: var(--padding-md);
   --context-menu-item-hover-bg: var(--bg-alt2);
+
+  // Drop zone
+  --drop-zone-border: 4px dashed var(--accent);
+  --drop-zone-background: none;
+  --drop-zone-opacity: 0.3;
 }
 
 @include desktop-below {
