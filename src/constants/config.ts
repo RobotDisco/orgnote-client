@@ -31,6 +31,7 @@ export const DEFAULT_CONFIG: OrgNoteConfig = {
     notificationTimeout: 5000,
     persistantPanes: true,
     persistantPanesSaveDelay: DEFAULT_PANE_PERSISTENCE_SAVE_DELAY,
+    dropZoneEdgeRatio: 0.25,
   },
   extensions: {
     sources: ['https://github.com/Artawower/orgnote-extensions'],
