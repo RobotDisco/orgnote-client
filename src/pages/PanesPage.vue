@@ -5,11 +5,11 @@
         <app-pane v-if="activePaneId" :pane-id="activePaneId" />
       </template>
       <template #desktop-above>
-        <splitpanes>
-          <pane v-for="(_, i) of panes" :key="i">
-            <app-pane :pane-id="`${i}`" />
-          </pane>
-        </splitpanes>
+        <layout-renderer :layout="layout">
+          <template #default="{ paneId }">
+            <app-pane :pane-id="paneId" />
+          </template>
+        </layout-renderer>
       </template>
     </visibility-wrapper>
   </page-wrapper>
@@ -17,22 +17,22 @@
 
 <script lang="ts" setup>
 import PageWrapper from 'src/components/PageWrapper.vue';
-import { Splitpanes, Pane } from 'splitpanes';
-import 'splitpanes/dist/splitpanes.css';
 import AppPane from './AppPane.vue';
 import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
+import LayoutRenderer from 'src/components/LayoutRenderer.vue';
 import { storeToRefs } from 'pinia';
 import { api } from 'src/boot/api';
 import { onMounted } from 'vue';
 
 const paneManager = api.core.usePane();
-const { panes, activePaneId } = storeToRefs(paneManager);
+const { activePaneId, layout } = storeToRefs(paneManager);
 
 const initInitialPane = async () => {
   if (activePaneId.value) {
     return;
   }
   await paneManager.initNewPane();
+  paneManager.initLayout();
 };
 
 onMounted(initInitialPane);
@@ -41,15 +41,5 @@ onMounted(initInitialPane);
 <style lang="scss" scoped>
 .panes-page {
   @include fit();
-}
-
-::v-deep(.splitpanes--vertical > .splitpanes__splitter) {
-  min-width: var(--splitter-size);
-  background: var(--splitter-background);
-}
-
-::v-deep(.splitpanes--horizontal > .splitpanes__splitter) {
-  min-height: var(--splitter-size);
-  background: var(--splitter-background);
 }
 </style>
