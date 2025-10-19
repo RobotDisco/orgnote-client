@@ -124,7 +124,7 @@ export default defineConfig((ctx) => {
       },
       port: 3001,
       open: {
-        app: { name: 'google chrome' },
+        app: { name: 'arc' },
       },
     },
 
