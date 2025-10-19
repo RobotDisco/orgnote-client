@@ -3,6 +3,7 @@ import type { DiskFile, FileSystem } from 'orgnote-api';
 import { ErrorDirectoryNotFound, ErrorFileNotFound, getFileName, splitPath } from 'orgnote-api';
 import { extractFileNameFromPath } from 'src/utils/extract-file-name-from-path';
 import { getFileDirPath } from 'src/utils/get-file-dir-path';
+import { desktopOnly } from 'src/utils/platform-specific';
 
 type File = DiskFile & { content?: string | Uint8Array };
 
@@ -200,6 +201,10 @@ export const useSimpleFs = (): FileSystem => {
     };
   };
 
+  const wipe: FileSystem['wipe'] = async () => {
+    desktopOnly(indexedDB.deleteDatabase.bind(indexedDB))(SIMPLE_FS_NAME);
+  };
+
   return {
     readFile: readFile,
     fileInfo: fileInfo,
@@ -213,5 +218,6 @@ export const useSimpleFs = (): FileSystem => {
     isFileExist: isFileExist,
     utimeSync: utimeSync,
     init,
+    wipe,
   };
 };

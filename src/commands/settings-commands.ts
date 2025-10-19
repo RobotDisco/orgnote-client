@@ -1,9 +1,11 @@
 import type { Command } from 'orgnote-api';
 import { DefaultCommands, RouteNames, I18N } from 'orgnote-api';
 import { api } from 'src/boot/api';
+import { reporter } from 'src/boot/report';
 import { useRouteActive } from 'src/composables/use-route-active';
 import { SETTINGS_ROUTER_PROVIDER_TOKEN } from 'src/constants/app-providers';
 import TheSettings from 'src/containers/TheSettings.vue';
+import { to } from 'src/utils/to-error';
 import { defineAsyncComponent } from 'vue';
 
 export function getSettingsCommands(): Command[] {
@@ -158,12 +160,30 @@ export function getSettingsCommands(): Command[] {
       command: DefaultCommands.DELETE_ALL_DATA,
       icon: 'sym_o_delete',
       group: 'settings',
-      handler: async () => {
+      handler: async (api) => {
         const confirm = await confirmationModal.confirm({
           title: I18N.CLEAR_ALL_LOCAL_DATA,
           message: I18N.CONFIRM_DELETE_ALL_DATA,
         });
-        console.log('✎: [line 155][settings-commands.ts] confirm: ', confirm);
+
+        if (!confirm) {
+          return;
+        }
+        const fileSystem = api.core.useFileSystem();
+        const clearResult = await to(
+          () => fileSystem.removeAllFiles(),
+          'Failed to clear file system',
+        )();
+
+        if (clearResult.isErr()) {
+          reporter.reportError(clearResult.error);
+          return;
+        }
+
+        localStorage.clear();
+        sessionStorage.clear();
+
+        setTimeout(() => window.location.reload());
       },
     },
     {
