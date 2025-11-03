@@ -1,25 +1,25 @@
 import type Dexie from 'dexie';
-import type { PaneSnapshotRepository, PanesSnapshot, StoredPaneSnapshot } from 'orgnote-api';
 import { migrator } from './migrator';
 import { v4 } from 'uuid';
+import type { LayoutSnapshot, LayoutSnapshotRepository, StoredLayoutSnapshot } from 'orgnote-api';
 
 export const PANE_SNAPSHOT_REPOSITORY_NAME = 'paneSnapshots';
-export const PANE_SNAPSHOT_MIGRATIONS = migrator<StoredPaneSnapshot>()
+export const PANE_SNAPSHOT_MIGRATIONS = migrator<StoredLayoutSnapshot>()
   .v(1)
   .indexes('&id,createdAt')
   .build();
 
-export const createPaneSnapshotRepository = (db: Dexie): PaneSnapshotRepository => {
-  const store = db.table<StoredPaneSnapshot, string>(PANE_SNAPSHOT_REPOSITORY_NAME);
+export const createLayoutSnapshotRepository = (db: Dexie): LayoutSnapshotRepository => {
+  const store = db.table<StoredLayoutSnapshot, string>(PANE_SNAPSHOT_REPOSITORY_NAME);
 
-  const list = async (limit?: number): Promise<StoredPaneSnapshot[]> => {
+  const list = async (limit?: number): Promise<StoredLayoutSnapshot[]> => {
     const collection = store.orderBy('createdAt').reverse();
     if (!limit || limit <= 0) return collection.toArray();
     return collection.limit(limit).toArray();
   };
 
-  const save = async (snapshot: PanesSnapshot): Promise<void> => {
-    const record: StoredPaneSnapshot = {
+  const save = async (snapshot: LayoutSnapshot): Promise<void> => {
+    const record: StoredLayoutSnapshot = {
       id: v4(),
       createdAt: new Date().toISOString(),
       snapshot,
@@ -27,10 +27,10 @@ export const createPaneSnapshotRepository = (db: Dexie): PaneSnapshotRepository 
     await store.put(record);
   };
 
-  const getLatest = async (): Promise<StoredPaneSnapshot | null> => {
+  const getLatest = async (): Promise<StoredLayoutSnapshot | undefined> => {
     const snapshots = await list(1);
     const [latest] = snapshots;
-    if (!latest) return null;
+    if (!latest) return;
     return latest;
   };
 

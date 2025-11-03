@@ -19,7 +19,7 @@ export function getNoteCommands(): Command[] {
           return;
         }
 
-        paneStore.navigate({
+        await paneStore.navigate({
           name: RouteNames.EditNote,
           params: { path },
         });

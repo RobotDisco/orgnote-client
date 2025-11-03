@@ -14,7 +14,6 @@ OrgNote is a cross-platform note-taking application that provides full compatibi
 - **Package Manager**: Bun (preferred) / npm
 
 ### Available Tools
-
 Common tools in development environment:
 
 - `eza` (preferred) or `tree` for directory listing
@@ -105,6 +104,7 @@ fi
 - **Maximum nesting depth = 1** - No multiple layers of `if`, `for`, `try`, etc.
 - **Early returns and guard clauses** - Prefer over deep nesting
 - **Extract inner logic** - Break complex functions into smaller, single-responsibility functions
+- **Top-Down Function Ordering** - Functions and methods should be ordered from high-level to low-level abstraction. High-level functions (that call others) go first, low-level functions (utilities, helpers) go last. Code should read like a book: from general to specific
 
 - **Don't overuse OOP** - Prefer functional approaches where appropriate
 - **Write tests** - Ensure code reliability and maintainability
@@ -123,6 +123,53 @@ fi
 - **TypeScript**: Strict mode enabled, use `type` imports with `@typescript-eslint/consistent-type-imports`
 - **Husky**: Pre-commit hooks enforce code quality
 - **neverthrow** We use neverthrow for error handling instead of exceptions! Using exception is strongly prohibited
+
+### null vs undefined
+
+**CRITICAL**: Prefer `undefined` over `null` for internal application state
+
+- **Default choice**: Use `undefined` for "no value" cases
+- **Avoid explicit null**: Don't write `return null` when `return` (undefined) is sufficient
+- **Type annotations**: Prefer `T | undefined` over `T | null`
+- **Use null ONLY when**:
+  - Serializing to JSON (API responses, localStorage with JSON)
+  - External API contract requires null
+  - Need three distinct states: uninitialized (undefined) / loaded-empty (null) / has-data (T)
+
+```typescript
+// ✅ Good - undefined is natural
+const findUser = (id: string): User | undefined => {
+  if (!users[id]) return;
+  return users[id];
+};
+
+const activeTab = computed((): Tab | undefined => {
+  if (!pane.value?.activeTabId) return;
+  return pane.value.tabs[pane.value.activeTabId];
+});
+
+// ❌ Bad - explicit null is unnecessary
+const findUser = (id: string): User | null => {
+  if (!users[id]) return null;
+  return users[id];
+};
+
+const activeTab = computed((): Tab | null => {
+  if (!pane.value?.activeTabId) return null;
+  return pane.value.tabs[pane.value.activeTabId] ?? null;
+});
+
+// ✅ Exception - JSON API requires null
+type ApiResponse = {
+  data: User | null;  // null means "not found", absence means error
+};
+
+// ✅ Exception - three states needed
+const data = ref<Data | null | undefined>(undefined);
+// undefined = not loaded yet
+// null = loaded but empty
+// Data = has data
+```
 
 ### Key Patterns
 
@@ -147,6 +194,23 @@ const validateFile = (file: File): boolean => {
     return false;
   }
 };
+
+// ✅ Good - Top-Down ordering (high-level first, utilities last)
+const processUserData = (userId: string) => {
+  const user = fetchUser(userId);
+  const validated = validateUser(user);
+  return saveUser(validated);
+};
+
+const fetchUser = (id: string) => {...};
+const validateUser = (user: User) => {...};
+const saveUser = (user: User) => {...};
+
+// ❌ Bad - utilities defined before high-level functions
+const fetchUser = (id: string) => {...};
+const processUserData = (userId: string) => {
+  const user = fetchUser(userId);  // reader has to jump back
+};
 ```
 
 ## State Management
@@ -154,26 +218,6 @@ const validateFile = (file: File): boolean => {
 ### Pinia Stores
 
 The application uses Pinia stores organized in `src/stores/`:
-
-**Core Stores:**
-
-- `command.ts` - Command system management
-- `command-group.ts` - Command groupings and categories
-- `completion.ts` - Auto-completion functionality
-- `config.ts` - Application configuration
-- `encryption.ts` - File encryption/decryption
-- `extension.ts` - Plugin/extension management
-- `file-manager.ts` - File operations and management
-- `file-system.ts` - File system abstraction layer
-- `file-system-manager.ts` - Multiple file system coordination
-- `file-reader.ts` - File reading operations
-- `modal.ts` - Modal dialog management
-- `notifications.ts` - User notifications
-- `pane.ts` - UI pane management
-- `settings.ts` - User preferences
-- `settings-ui.ts` - UI-specific settings
-- `sidebar.ts` - Sidebar state
-- `toolbar.ts` - Toolbar configuration
 
 ### State Access Pattern
 

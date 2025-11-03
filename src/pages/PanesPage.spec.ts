@@ -1,6 +1,7 @@
 import { expect, test, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { usePaneStore } from 'src/stores/pane';
+import { useLayoutStore } from 'src/stores/layout';
 
 vi.mock('src/utils/pane-router', () => ({
   createPaneRouter: vi.fn(() =>
@@ -22,14 +23,43 @@ vi.mock('src/utils/pane-router', () => ({
   ),
 }));
 
+vi.mock('src/boot/logger', () => ({
+  logger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 vi.mock('src/boot/api', () => ({
   api: {
     core: {
       usePane: () => usePaneStore(),
+      useLayout: () => useLayoutStore(),
       useNotifications: () => ({
         notify: vi.fn(),
         error: vi.fn(),
       }),
+      useConfig: () => ({
+        config: {
+          ui: {
+            persistantPanes: false,
+            persistantPanesSaveDelay: 1000,
+          },
+        },
+      }),
+    },
+    utils: {
+      logger: {
+        error: vi.fn(),
+      },
+    },
+    infrastructure: {
+      paneSnapshotRepository: {
+        save: vi.fn(),
+        restore: vi.fn(),
+      },
     },
   },
 }));
@@ -37,18 +67,19 @@ vi.mock('src/boot/api', () => ({
 test('PanesPage should pass correct UUID pane IDs when layout has split panes', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
+  const layoutStore = useLayoutStore();
 
-  const firstPane = await paneStore.initNewPane({ title: 'First Pane' });
+  const firstPane = await paneStore.createPane();
+  await paneStore.addTab(firstPane.id, { title: 'First Pane' });
   const firstPaneId = firstPane.id;
-  paneStore.initLayout();
+  paneStore.setActivePane(firstPaneId);
+  await layoutStore.initLayout();
 
-  await paneStore.splitPaneInLayout(firstPaneId, 'right');
+  const secondPaneId = await layoutStore.splitPaneInLayout(firstPaneId, 'right');
 
-  const layout = paneStore.layout;
-  expect(layout.type).toBe('split');
-
-  const secondPaneId =
-    layout.type === 'split' && layout.children[1].type === 'pane' ? layout.children[1].paneId : '';
+  const layout = layoutStore.layout;
+  expect(layout).toBeDefined();
+  expect(layout?.type).toBe('split');
 
   expect(firstPaneId).not.toBe('0');
   expect(firstPaneId).not.toBe('1');
@@ -62,9 +93,10 @@ test('PanesPage store should have valid pane IDs accessible via getPane', async 
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const pane = await paneStore.initNewPane({ title: 'Test Pane' });
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id, { title: 'Test Pane' });
   const paneId = pane.id;
-  paneStore.initLayout();
+  paneStore.activePaneId = paneId;
 
   expect(paneStore.panes[paneId]).toBeDefined();
   expect(paneStore.panes[paneId].value.id).toBe(paneId);
@@ -77,31 +109,36 @@ test('PanesPage store should have valid pane IDs accessible via getPane', async 
 test('PanesPage store should initialize layout when pane is created', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
+  const layoutStore = useLayoutStore();
 
-  const initialLayout = paneStore.layout;
-  expect(initialLayout.type).toBe('pane');
-  expect((initialLayout as { paneId?: string }).paneId).toBe('');
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id, { title: 'Test Pane' });
+  paneStore.setActivePane(pane.id);
+  await layoutStore.initLayout();
 
-  const pane = await paneStore.initNewPane({ title: 'Test Pane' });
-  paneStore.initLayout();
-
-  const updatedLayout = paneStore.layout;
-  expect(updatedLayout.type).toBe('pane');
-  expect((updatedLayout as { paneId?: string }).paneId).toBe(pane.id);
+  const updatedLayout = layoutStore.layout;
+  expect(updatedLayout).toBeDefined();
+  expect(updatedLayout?.type).toBe('pane');
+  if (updatedLayout?.type === 'pane') {
+    expect(updatedLayout.paneId).toBe(pane.id);
+  }
   expect((updatedLayout as { paneId?: string }).paneId).not.toBe('');
 });
 
 test('PanesPage workflow should call initLayout after initNewPane', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
+  const layoutStore = useLayoutStore();
 
   const initialActivePaneId = paneStore.activePaneId;
   expect(initialActivePaneId).toBeNull();
 
-  const pane = await paneStore.initNewPane({ title: 'Test Pane' });
-  paneStore.initLayout();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id, { title: 'Test Pane' });
+  paneStore.activePaneId = pane.id;
+  layoutStore.initLayout();
 
-  const layout = paneStore.layout;
+  const layout = layoutStore.layout;
   expect(layout.type).toBe('pane');
   expect((layout as { paneId?: string }).paneId).toBe(pane.id);
   expect(paneStore.activePaneId).toBe(pane.id);
@@ -111,8 +148,9 @@ test('AppPane should be accessible with valid paneId after initialization', asyn
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const pane = await paneStore.initNewPane({ title: 'Test Pane' });
-  paneStore.initLayout();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id, { title: 'Test Pane' });
+  paneStore.activePaneId = pane.id;
 
   const retrievedPane = paneStore.getPane(pane.id);
   expect(retrievedPane?.value).toBeDefined();

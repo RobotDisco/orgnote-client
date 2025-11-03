@@ -62,7 +62,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { StyleSize, Buffer as OrgBuffer } from 'orgnote-api';
+import type { StyleSize } from 'orgnote-api';
 import { DefaultCommands, getParentDir, I18N, join, withRoot, type DiskFile } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import FileManagerItem from './FileManagerItem.vue';
@@ -75,6 +75,7 @@ import CommandActionButton from './CommandActionButton.vue';
 import ActionButton from 'src/components/ActionButton.vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
+import { extractPathFromRoute } from 'src/utils/extract-path-from-route';
 
 const props = defineProps<{
   path?: string;
@@ -141,8 +142,8 @@ readDir();
 // };
 
 const fileReader = api.core.useFileReader();
-const buffers = api.core.useBuffers();
 const sidebar = api.ui.useSidebar();
+const paneStore = api.core.usePane();
 
 const handleFileClick = async (f: DiskFile) => {
   if (f.type === 'directory') {
@@ -169,15 +170,17 @@ const moveUp = async () => {
 
 const iconSize = computed<StyleSize>(() => (props.compact ? 'sm' : 'md'));
 
-const activePaths = computed<Set<string>>(() => {
-  const all = buffers.allBuffers as OrgBuffer[];
-  const list = all.filter((b: OrgBuffer) => b.referenceCount > 0).map((b: OrgBuffer) => b.path);
-  return new Set(list);
+const activeFilePath = computed<string | null>(() => {
+  const activeTab = paneStore.activeTab;
+  if (!activeTab?.router) return null;
+
+  const route = activeTab.router.currentRoute.value;
+  return extractPathFromRoute(route);
 });
 
 const isActiveFile = (file: DiskFile): boolean => {
-  if (file.type !== 'file') return false;
-  return activePaths.value.has(file.path);
+  if (file.type !== 'file' || !activeFilePath.value) return false;
+  return file.path === activeFilePath.value;
 };
 
 const { t } = useI18n({

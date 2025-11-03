@@ -1,9 +1,0 @@
-:PROPERTIES:
-:ID: orgnote-documentation
-:END:
-
-#+TITLE: Documentation entrypoint
-#+STARTUP: content
-
-
-- [[../PANES.org]]

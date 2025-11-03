@@ -1,40 +1,172 @@
-import {
-  type InitialPaneParams,
-  type Tab,
-  type Pane,
-  type PanesSnapshot,
-  type PaneSnapshot,
-  type TabSnapshot,
-  RouteNames,
-  type LayoutNode,
-  type LayoutPaneNode,
-  type DropDirection,
+import type {
+  InitialTabParams,
+  Tab,
+  Pane,
+  PaneSnapshot,
+  TabSnapshot,
+  PaneStore,
 } from 'orgnote-api';
-import type { PaneStore } from 'orgnote-api';
+import { RouteNames } from 'orgnote-api';
 import { defineStore } from 'pinia';
 import { getUniqueTabTitle } from 'src/utils/unique-tab-title';
 import { v4 } from 'uuid';
 
 import type { ShallowRef } from 'vue';
-import { computed, shallowRef } from 'vue';
+import { computed, shallowRef, ref } from 'vue';
 import type { RouteLocationRaw, Router } from 'vue-router';
 import { createPaneRouter } from 'src/utils/pane-router';
-import { api } from 'src/boot/api';
-
-const validateLayout = (layout: LayoutNode, panes: Record<string, ShallowRef<Pane>>): boolean => {
-  if (layout.type === 'pane') {
-    return layout.paneId !== '' && !!panes[layout.paneId];
-  }
-  return layout.children.every((child) => validateLayout(child, panes));
-};
+import { useLayoutStore } from './layout';
 
 export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
+  // TODO: feat/stable-beta replace by reactive object
   const panes = shallowRef<Record<string, ShallowRef<Pane>>>({});
-  const activePaneId = shallowRef<string | null>(null);
-  const layout = shallowRef<LayoutNode>({ type: 'pane', id: v4(), paneId: '' });
+  const activePaneId = ref<string | undefined>(null);
 
   const isDraggingTab = shallowRef(false);
-  const draggedTabData = shallowRef<{ tabId: string; paneId: string } | null>(null);
+  // TODO: feat/stable-beta separated drag&drop state
+  const draggedTabData = shallowRef<{ tabId: string; paneId: string } | undefined>(null);
+
+  const activePane = computed((): Pane => {
+    const pane = panes.value[activePaneId.value];
+    return pane?.value;
+  });
+
+  const activeTab = computed((): Tab | undefined => {
+    const pane = activePane.value;
+    return pane.tabs.value[pane?.activeTabId];
+  });
+
+  const getAllTabTitles = computed((): string[] => {
+    return Object.values(panes.value)
+      .flatMap((pane) => Object.values(pane.value.tabs.value))
+      .map((tab) => tab.title);
+  });
+
+  const hasMultiplePanes = computed(() => Object.keys(panes.value).length > 1);
+
+  const createPane = async (params?: Partial<Pane>): Promise<Pane> => {
+    const paneId = params?.id || v4();
+    const tabs = getTabsForPane(params);
+    const pane = shallowRef<Pane>({
+      id: paneId,
+      activeTabId: getActiveTabId(tabs) || '',
+      tabs: shallowRef(tabs),
+    });
+
+    pushToPanes(pane);
+
+    activePaneId.value = paneId;
+
+    return pane.value;
+  };
+
+  const getPane = (id: string): ShallowRef<Pane> => {
+    const pane = panes.value[id];
+    if (!pane) {
+      throw new Error(`Pane with id ${id} not found`);
+    }
+    return pane;
+  };
+
+  const setActivePane = (paneId: string): void => {
+    if (!panes.value[paneId]) {
+      throw new Error(`Pane with id ${paneId} not found`);
+    }
+    activePaneId.value = paneId;
+  };
+
+  const addTab = async (
+    paneId: string,
+    params: InitialTabParams = {},
+  ): Promise<Tab | undefined> => {
+    const pane = panes.value[paneId];
+    if (!pane) return;
+
+    const tab = await initNewTab({ ...params, paneId });
+
+    pushToTabs(pane, tab);
+    setTabAsActive(pane, tab.id);
+
+    return tab;
+  };
+
+  const closeTab = async (paneId: string, tabId: string): Promise<boolean> => {
+    const pane = panes.value[paneId];
+    if (!pane?.value) return false;
+
+    const currentActiveTab = pane.value.tabs.value[pane.value.activeTabId];
+    const isEmpty = closeTabInternal(paneId, tabId, currentActiveTab?.id);
+
+    if (shouldRemoveEmptyPane(isEmpty)) {
+      switchToFirstRemainingPane(paneId);
+      closePane(paneId);
+    }
+
+    return isEmpty;
+  };
+
+  const selectTab = (paneId: string, tabId: string): void => {
+    const pane = panes.value[paneId];
+    if (!pane?.value.tabs.value[tabId]) return;
+
+    pane.value = {
+      ...pane.value,
+      activeTabId: tabId,
+    };
+
+    activePaneId.value = paneId;
+  };
+
+  const moveTab = async (
+    tabId: string,
+    fromPaneId: string,
+    toPaneId: string,
+    index?: number,
+  ): Promise<Tab | undefined> => {
+    const fromPane = panes.value[fromPaneId];
+    const toPane = panes.value[toPaneId];
+
+    if (!fromPane?.value || !toPane?.value) return;
+
+    const tab = getTabFromPane(fromPaneId, tabId);
+    if (!tab) return;
+
+    const movedTab = updateTabPaneId(tab, toPaneId);
+
+    removeTabFromPane(fromPane, tabId);
+    addTabToPane(toPane, movedTab, index);
+    handleSourcePaneAfterMove(fromPane, fromPaneId, toPaneId, tabId, movedTab);
+
+    activateTabInPane(toPaneId, movedTab.id);
+
+    return movedTab;
+  };
+
+  const navigate = async (
+    params: RouteLocationRaw,
+    paneId?: string,
+    tabId?: string,
+  ): Promise<void> => {
+    const targetPaneId = paneId ?? activePaneId.value;
+    if (!targetPaneId) {
+      throw new Error('No active pane');
+    }
+
+    const pane = panes.value[targetPaneId];
+    if (!pane?.value) {
+      throw new Error(`Pane ${targetPaneId} not found`);
+    }
+
+    const targetTabId = tabId ?? pane.value.activeTabId;
+    const tab = pane.value.tabs.value[targetTabId];
+
+    if (!tab?.router) {
+      throw new Error(`Tab ${targetTabId} not found or has no router`);
+    }
+
+    const routeParams = buildRouteParams(params, targetPaneId);
+    await tab.router.push(routeParams);
+  };
 
   const startDraggingTab = (tabId: string, paneId: string): void => {
     draggedTabData.value = { tabId, paneId };
@@ -46,17 +178,25 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
     draggedTabData.value = null;
   };
 
-  const activePane = computed(() => {
-    if (!activePaneId.value) return null;
-    const pane = panes.value[activePaneId.value];
-    return pane ? pane.value : null;
-  });
+  const getPanesData = (): PaneSnapshot[] => {
+    return Object.values(panes.value).map((paneRef) => createPaneSnapshot(paneRef.value));
+  };
 
-  const getAllTabTitles = computed((): string[] => {
-    return Object.values(panes.value)
-      .flatMap((pane) => Object.values(pane.value.tabs.value))
-      .map((tab) => tab.title);
-  });
+  const restorePanesData = async (snapshot: PaneSnapshot[]): Promise<void> => {
+    console.log('[line 489][LAYOUT]: RESTORE PANES?');
+    clearPanesState();
+
+    for (const paneSnapshot of snapshot) {
+      const pane = await restorePaneFromSnapshot(paneSnapshot);
+      panes.value[paneSnapshot.id] = pane;
+    }
+
+    if (snapshot.length > 0) {
+      activePaneId.value = snapshot[0].id;
+    } else {
+      activePaneId.value = null;
+    }
+  };
 
   const initNewTab = async (
     params?: Partial<Pick<Tab, 'title' | 'id' | 'paneId'>>,
@@ -68,7 +208,7 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
 
     const newTab = {
       title,
-      paneId: params?.paneId ?? activePaneId.value,
+      paneId: params?.paneId ?? '',
       router,
       id,
     };
@@ -76,204 +216,55 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
     return newTab;
   };
 
-  const createEmptyPane = (paneId: string): ShallowRef<Pane> => {
-    const pane = shallowRef<Pane>({
-      id: paneId,
-      activeTabId: '',
-      tabs: shallowRef({}),
-    });
+  const closeTabInternal = (paneId: string, tabId: string, activeTabId?: string): boolean => {
+    const pane = panes.value[paneId];
+    if (!pane?.value.tabs.value[tabId]) return false;
 
-    panes.value = {
-      ...panes.value,
-      [paneId]: pane,
-    };
-
-    return pane;
-  };
-
-  const initNewPane = async (params: InitialPaneParams = {}): Promise<Pane> => {
-    const paneId = params.paneId ?? v4();
-    const newPage = await initNewTab({ ...params, paneId });
-
-    const pane = shallowRef<Pane>({
-      id: paneId,
-      activeTabId: newPage.id,
-      tabs: shallowRef({
-        [newPage.id]: newPage,
-      }),
-    });
-
-    activePaneId.value = paneId;
-    panes.value = {
-      ...panes.value,
-      [paneId]: pane,
-    };
-
-    return pane.value;
-  };
-
-  const getPane = (id: string): ShallowRef<Pane | undefined> => panes.value[id];
-
-  const addTab = async (params: InitialPaneParams = {}) => {
-    if (!activePaneId.value) return null;
-
-    const tab = await initNewTab(params);
-    const currentPane = panes.value[activePaneId.value];
-
-    if (!currentPane) return null;
-
-    panes.value[activePaneId.value].value.tabs.value = {
-      ...panes.value[activePaneId.value].value.tabs.value,
-      [tab.id]: tab,
-    };
-
-    return tab;
-  };
-
-  const selectTab = (paneId: string, pageId: string) => {
-    if (!panes.value[paneId] || !panes.value[paneId].value.tabs.value[pageId]) return;
-
-    activePaneId.value = paneId;
-
-    panes.value[paneId].value = {
-      ...panes.value[paneId].value,
-      activeTabId: pageId,
-    };
-  };
-
-  const resetLastTabRoute = (tab: Tab, paneId: string) => {
-    if (!tab?.router) return;
-    tab.router.push({ name: RouteNames.InitialPage, params: { paneId } });
-  };
-
-  const isLastTabInPane = (pane: ShallowRef<Pane>): boolean => {
-    return Object.keys(pane.value.tabs.value).length === 1;
-  };
-
-  const findNextActiveTab = (tabKeys: string[], deletedTabIndex: number): string | undefined => {
-    return tabKeys[deletedTabIndex - 1] ?? tabKeys[deletedTabIndex + 1];
-  };
-
-  const removeTabFromPane = (pane: ShallowRef<Pane>, tabId: string) => {
-    const newTabs = { ...pane.value.tabs.value };
-    delete newTabs[tabId];
-    pane.value.tabs.value = newTabs;
-  };
-
-  const updateActiveTab = (pane: ShallowRef<Pane>, newActiveTabId: string) => {
-    pane.value.activeTabId = newActiveTabId;
-  };
-
-  const handleActiveTabDeletion = (pane: ShallowRef<Pane>, tabKeys: string[], tabIndex: number) => {
-    const nextActiveTabId = findNextActiveTab(tabKeys, tabIndex);
-    if (!nextActiveTabId) return;
-    updateActiveTab(pane, nextActiveTabId);
-  };
-
-  const cleanupEmptyPane = (paneId: string) => {
-    removePaneFromLayout(paneId);
-    delete panes.value[paneId];
-    if (activePaneId.value !== paneId) return;
-
-    const remainingPanes = Object.keys(panes.value);
-    activePaneId.value = remainingPanes[0] ?? null;
-  };
-
-  const handleLastTabDeletion = (paneId: string, pane: ShallowRef<Pane>, tabId: string): void => {
-    const paneCount = Object.keys(panes.value).length;
-    const hasOtherPanes = paneCount > 1;
-
-    if (hasOtherPanes) {
-      cleanupEmptyPane(paneId);
-      return;
+    if (shouldPreventTabDeletion(pane)) {
+      handleLastTabDeletion(pane, tabId, paneId);
+      return false;
     }
 
-    const tab = pane.value.tabs.value[tabId];
-    resetLastTabRoute(tab, paneId);
-  };
-
-  const handleRegularTabDeletion = (
-    pane: ShallowRef<Pane>,
-    tabId: string,
-    paneId: string,
-  ): void => {
-    const tabKeys = Object.keys(pane.value.tabs.value);
-    const tabIndex = tabKeys.indexOf(tabId);
-    const isActiveTabDeleted = tabId === activeTab.value?.id && paneId === activePaneId.value;
-
-    removeTabFromPane(pane, tabId);
-
-    if (isActiveTabDeleted) {
-      handleActiveTabDeletion(pane, tabKeys, tabIndex);
-    }
+    handleRegularTabDeletion(pane, tabId, activeTabId);
 
     const isEmpty = Object.keys(pane.value.tabs.value).length === 0;
-    if (isEmpty) {
-      cleanupEmptyPane(paneId);
-    }
+    return isEmpty;
   };
 
-  const closeTab = (paneId: string, tabId: string) => {
-    const pane = panes.value[paneId];
-    if (!pane?.value.tabs.value[tabId]) return;
+  const switchToFirstRemainingPane = (paneId: string): void => {
+    const remainingPanes = Object.keys(panes.value);
+    if (remainingPanes.length === 0) return;
 
-    const isLastTab = isLastTabInPane(pane);
-
-    if (isLastTab) {
-      handleLastTabDeletion(paneId, pane, tabId);
+    const skipSwitch = activePaneId.value !== paneId;
+    if (skipSwitch) {
       return;
     }
 
-    handleRegularTabDeletion(pane, tabId, paneId);
-  };
+    const newActivePaneId = remainingPanes[0];
+    activePaneId.value = newActivePaneId;
 
-  const activeTab = computed(() => {
-    if (!activePane.value?.activeTabId) return undefined;
-
-    const tab = activePane.value.tabs.value[activePane.value.activeTabId];
-    return tab || undefined;
-  });
-
-  const buildRouteParams = (params: RouteLocationRaw, paneId: string): RouteLocationRaw => {
-    if (typeof params === 'string') {
-      return { path: params };
+    const newActivePane = panes.value[newActivePaneId];
+    // TODO: feat/stable-beta function to ensure tab active?
+    if (newActivePane && !newActivePane.value.activeTabId) {
+      setFirstTabAsActive(newActivePane);
     }
+  };
 
-    if ('name' in params) {
-      return { ...params, params: { ...('params' in params ? params.params : {}), paneId } };
+  const handleSourcePaneAfterMove = (
+    fromPane: ShallowRef<Pane>,
+    fromPaneId: string,
+    toPaneId: string,
+    tabId: string,
+    movedTab: Tab,
+  ): void => {
+    const isEmpty = isPaneEmpty(fromPane);
+
+    if (isEmpty) {
+      handleEmptySourcePane(fromPane, fromPaneId, toPaneId, tabId, movedTab);
+      return;
     }
-
-    return params;
+    handleNonEmptySourcePane(fromPane, tabId);
   };
-
-  const navigateTab = (paneId: string, tabId: string, params: RouteLocationRaw) => {
-    const pane = panes.value[paneId];
-    if (!pane?.value) return;
-
-    const tab = pane.value.tabs.value[tabId];
-    if (!tab?.router) return;
-
-    const routeParams = buildRouteParams(params, paneId);
-    return tab.router.push(routeParams);
-  };
-
-  const navigate = (params: RouteLocationRaw) => {
-    if (!activePaneId.value || !activeTab.value) return;
-    return navigateTab(activePaneId.value, activeTab.value.id, params);
-  };
-
-  const createTabSnapshot = (tab: Tab): TabSnapshot => ({
-    id: tab.id,
-    title: tab.title,
-    paneId: tab.paneId,
-    routeLocation: {
-      path: tab.router.currentRoute.value.path,
-      params: { ...tab.router.currentRoute.value.params } as Record<string, string>,
-      query: { ...tab.router.currentRoute.value.query } as Record<string, string>,
-      hash: tab.router.currentRoute.value.hash,
-      name: tab.router.currentRoute.value.name?.toString(),
-    },
-  });
 
   const createPaneSnapshot = (pane: Pane): PaneSnapshot => {
     const tabSnapshots = Object.values(pane.tabs.value).map(createTabSnapshot);
@@ -281,44 +272,6 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
       id: pane.id,
       activeTabId: pane.activeTabId,
       tabs: tabSnapshots,
-    };
-  };
-
-  const getPanesSnapshot = (): PanesSnapshot => {
-    const panesSnapshot = Object.values(panes.value).map((paneRef) =>
-      createPaneSnapshot(paneRef.value),
-    );
-    return {
-      panes: panesSnapshot,
-      activePaneId: activePaneId.value || '',
-      timestamp: Date.now(),
-    };
-  };
-
-  const restoreRouterState = async (
-    router: Router,
-    routeLocation: TabSnapshot['routeLocation'],
-  ): Promise<void> => {
-    if (routeLocation.name) {
-      await router.push({
-        name: routeLocation.name,
-        params: routeLocation.params,
-        query: routeLocation.query,
-        hash: routeLocation.hash,
-      });
-      return;
-    }
-    await router.push(routeLocation.path);
-  };
-
-  const restoreTabFromSnapshot = async (tabSnapshot: TabSnapshot): Promise<Tab> => {
-    const router = await createPaneRouter(tabSnapshot.id);
-    await restoreRouterState(router, tabSnapshot.routeLocation);
-    return {
-      id: tabSnapshot.id,
-      title: tabSnapshot.title,
-      paneId: tabSnapshot.paneId,
-      router,
     };
   };
 
@@ -337,298 +290,298 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
     });
   };
 
+  const shouldPreventTabDeletion = (pane: ShallowRef<Pane>): boolean => isOnlyTabInOnlyPane(pane);
+
+  const shouldRemoveEmptyPane = (isEmpty: boolean): boolean => isEmpty && hasMultiplePanes.value;
+
+  const handleLastTabDeletion = (pane: ShallowRef<Pane>, tabId: string, paneId: string): void => {
+    const tab = pane.value.tabs.value[tabId];
+    resetLastTabRoute(tab, paneId);
+  };
+
+  const handleRegularTabDeletion = (
+    pane: ShallowRef<Pane>,
+    tabId: string,
+    activeTabId: string | undefined,
+  ): void => {
+    const tabKeys = Object.keys(pane.value.tabs.value);
+    const tabIndex = tabKeys.indexOf(tabId);
+    const isActiveTabDeleted = tabId === activeTabId;
+
+    if (isActiveTabDeleted) {
+      handleActiveTabDeletion(pane, tabKeys, tabIndex);
+    }
+
+    removeTabFromPane(pane, tabId);
+  };
+
+  const handleEmptySourcePane = (
+    fromPane: ShallowRef<Pane>,
+    fromPaneId: string,
+    toPaneId: string,
+    tabId: string,
+    movedTab: Tab,
+  ): void => {
+    if (shouldActivateMovedTab(fromPane, tabId)) {
+      activateTabInPane(toPaneId, movedTab.id);
+    }
+
+    removeSourcePaneIfNeeded(fromPaneId, toPaneId);
+  };
+
+  const handleNonEmptySourcePane = (fromPane: ShallowRef<Pane>, tabId: string): void => {
+    const wasActiveTab = fromPane.value.activeTabId === tabId;
+    if (wasActiveTab) {
+      setFirstTabAsActive(fromPane);
+    }
+  };
+
+  const setFirstTabAsActive = (pane: ShallowRef<Pane>): void => {
+    const tabKeys = Object.keys(pane.value.tabs.value);
+    if (tabKeys.length === 0) return;
+    pane.value = {
+      ...pane.value,
+      activeTabId: tabKeys[0],
+    };
+  };
+
+  const isPaneEmpty = (pane: ShallowRef<Pane>): boolean => {
+    const tabCount = Object.keys(pane.value.tabs.value).length;
+    return tabCount === 0;
+  };
+
+  const createTabSnapshot = (tab: Tab): TabSnapshot => ({
+    id: tab.id,
+    title: tab.title,
+    paneId: tab.paneId,
+    routeLocation: {
+      path: tab.router.currentRoute.value.path,
+      params: { ...tab.router.currentRoute.value.params } as Record<string, string>,
+      query: { ...tab.router.currentRoute.value.query } as Record<string, string>,
+      hash: tab.router.currentRoute.value.hash,
+      name: tab.router.currentRoute.value.name?.toString(),
+    },
+  });
+
+  const restoreTabFromSnapshot = async (tabSnapshot: TabSnapshot): Promise<Tab> => {
+    const router = await createPaneRouter(tabSnapshot.id);
+    await restoreRouterState(router, tabSnapshot.routeLocation);
+    return {
+      id: tabSnapshot.id,
+      title: tabSnapshot.title,
+      paneId: tabSnapshot.paneId,
+      router,
+    };
+  };
+
+  const isOnlyTabInOnlyPane = (pane: ShallowRef<Pane>): boolean => {
+    const isLastTab = isLastTabInPane(pane);
+    const isOnlyPane = !hasMultiplePanes.value;
+    return isLastTab && isOnlyPane;
+  };
+
+  const resetLastTabRoute = (tab: Tab, paneId: string): void => {
+    if (!tab?.router) return;
+    tab.router.push({ name: RouteNames.InitialPage, params: { paneId } });
+  };
+
+  const handleActiveTabDeletion = (
+    pane: ShallowRef<Pane>,
+    tabKeys: string[],
+    tabIndex: number,
+  ): void => {
+    const nextActiveTabId = findNextActiveTab(tabKeys, tabIndex);
+    if (!nextActiveTabId) return;
+    updateActiveTab(pane, nextActiveTabId);
+  };
+
+  const shouldActivateMovedTab = (pane: ShallowRef<Pane>, tabId: string): boolean =>
+    pane.value.activeTabId === tabId;
+
+  const removeSourcePaneIfNeeded = (fromPaneId: string, toPaneId: string): void => {
+    const shouldRemove = shouldRemovePane(fromPaneId);
+
+    if (!shouldRemove) return;
+
+    updateActivePaneIfNeeded(fromPaneId, toPaneId);
+    closePane(fromPaneId);
+
+    const layoutStore = useLayoutStore();
+    layoutStore.removePaneFromLayout(fromPaneId);
+  };
+
+  const activateTabInPane = (paneId: string, tabId: string): void => {
+    const pane = panes.value[paneId];
+    if (!pane?.value) return;
+    pane.value = {
+      ...pane.value,
+      activeTabId: tabId,
+    };
+    activePaneId.value = paneId;
+  };
+
+  const restoreRouterState = async (
+    router: Router,
+    routeLocation: TabSnapshot['routeLocation'],
+  ): Promise<void> => {
+    if (routeLocation.name) {
+      await router.push({
+        name: routeLocation.name,
+        params: routeLocation.params,
+        query: routeLocation.query,
+        hash: routeLocation.hash,
+      });
+      return;
+    }
+    await router.push(routeLocation.path);
+  };
+
+  const isLastTabInPane = (pane: ShallowRef<Pane>): boolean => {
+    return Object.keys(pane.value.tabs.value).length === 1;
+  };
+
+  const findNextActiveTab = (tabKeys: string[], deletedTabIndex: number): string | undefined => {
+    const nextIndex =
+      deletedTabIndex < tabKeys.length - 1 ? deletedTabIndex + 1 : deletedTabIndex - 1;
+    return tabKeys[nextIndex];
+  };
+
+  const updateActiveTab = (pane: ShallowRef<Pane>, newActiveTabId: string): void => {
+    pane.value = {
+      ...pane.value,
+      activeTabId: newActiveTabId,
+    };
+  };
+
+  const removeTabFromPane = (pane: ShallowRef<Pane>, tabId: string): void => {
+    const newTabs = { ...pane.value.tabs.value };
+    delete newTabs[tabId];
+    pane.value.tabs.value = newTabs;
+    pane.value = { ...pane.value };
+  };
+
+  const shouldRemovePane = (fromPaneId: string): boolean =>
+    hasMultiplePanes.value && panes.value[fromPaneId] !== undefined;
+
+  const updateActivePaneIfNeeded = (fromPaneId: string, toPaneId: string): void => {
+    const shouldUpdateActivePane = activePaneId.value === fromPaneId;
+    if (shouldUpdateActivePane) {
+      activePaneId.value = toPaneId;
+    }
+  };
+
+  const closePane = (paneId: string): void => {
+    const newPanes = { ...panes.value };
+    delete newPanes[paneId];
+    panes.value = newPanes;
+  };
+
+  const getTabFromPane = (paneId: string, tabId: string): Tab | undefined => {
+    const pane = panes.value[paneId];
+    return pane.value?.tabs.value[tabId];
+  };
+
+  const updateTabPaneId = (tab: Tab, paneId: string): Tab => ({
+    ...tab,
+    paneId,
+  });
+
+  const addTabToPane = (pane: ShallowRef<Pane>, tab: Tab, index?: number): void => {
+    const hasValidIndex = index !== undefined && index >= 0;
+    const newTabs = hasValidIndex
+      ? insertTabAtIndex(pane.value.tabs.value, tab, index)
+      : appendTab(pane.value.tabs.value, tab);
+
+    pane.value.tabs.value = newTabs;
+    pane.value = { ...pane.value };
+  };
+
+  const buildRouteParams = (params: RouteLocationRaw, paneId: string): RouteLocationRaw => {
+    if (typeof params === 'string') {
+      return { path: params };
+    }
+
+    if ('name' in params) {
+      return { ...params, params: { ...('params' in params ? params.params : {}), paneId } };
+    }
+
+    return params;
+  };
+
+  const pushToTabs = (pane: ShallowRef<Pane>, tab: Tab): void => {
+    pane.value.tabs.value = {
+      ...pane.value.tabs.value,
+      [tab.id]: tab,
+    };
+    pane.value = { ...pane.value };
+  };
+
+  const setTabAsActive = (pane: ShallowRef<Pane>, tabId: string): void => {
+    pane.value = {
+      ...pane.value,
+      activeTabId: tabId,
+    };
+  };
+
   const clearPanesState = (): void => {
     panes.value = {};
-    activePaneId.value = null;
   };
 
-  const restorePanesSnapshot = async (snapshot: PanesSnapshot): Promise<void> => {
-    clearPanesState();
+  const getTabsForPane = (params: Partial<Pane> | undefined): Record<string, Tab> =>
+    params?.tabs?.value ?? {};
 
-    for (const paneSnapshot of snapshot.panes) {
-      const pane = await restorePaneFromSnapshot(paneSnapshot);
-      panes.value[paneSnapshot.id] = pane;
-    }
-
-    activePaneId.value = snapshot.activePaneId || null;
-    initLayout();
-  };
-
-  const shouldPersistPanes = async (): Promise<boolean> => {
-    const config = api.core.useConfig();
-    return Boolean(config.config?.ui.persistantPanes);
-  };
-
-  const savePanes = async (): Promise<void> => {
-    if (!(await shouldPersistPanes())) {
-      return;
-    }
-
-    const repository = api.infrastructure.paneSnapshotRepository;
-    const snapshot = getPanesSnapshot();
-    await repository.save(snapshot);
-  };
-
-  const restorePanes = async (): Promise<void> => {
-    if (!(await shouldPersistPanes())) {
-      return;
-    }
-
-    const repository = api.infrastructure.paneSnapshotRepository;
-    const stored = await repository.getLatest();
-    if (!stored) {
-      return;
-    }
-
-    await restorePanesSnapshot(stored.snapshot);
-    initLayout();
-  };
-
-  const shouldInitializeLayout = (): boolean => {
-    if (!activePaneId.value) return false;
-
-    const isValid = validateLayout(layout.value, panes.value);
-    if (isValid && layout.value.type === 'pane' && layout.value.paneId === activePaneId.value) {
-      return false;
-    }
-
-    return true;
-  };
-
-  const initLayout = (): void => {
-    if (!shouldInitializeLayout()) return;
-
-    const paneNode: LayoutPaneNode = {
-      type: 'pane',
-      id: v4(),
-      paneId: activePaneId.value!,
-    };
-
-    layout.value = paneNode;
-  };
-
-  const findPaneInLayout = (paneId: string, node?: LayoutNode): LayoutNode | null => {
-    const searchNode = node ?? layout.value;
-
-    if (searchNode.type === 'pane') {
-      return searchNode.paneId === paneId ? searchNode : null;
-    }
-
-    for (const child of searchNode.children) {
-      const found = findPaneInLayout(paneId, child);
-      if (found) return found;
-    }
-
-    return null;
-  };
-
-  const getSplitOrientation = (direction: DropDirection): 'horizontal' | 'vertical' => {
-    const isHorizontal = direction === 'left' || direction === 'right';
-    return isHorizontal ? 'horizontal' : 'vertical';
-  };
-
-  const orderSplitChildren = (
-    direction: DropDirection,
-    newPaneNode: LayoutPaneNode,
-    paneNode: LayoutNode,
-  ): LayoutNode[] => {
-    const shouldNewPaneFirst = direction === 'left' || direction === 'top';
-    return shouldNewPaneFirst ? [newPaneNode, paneNode] : [paneNode, newPaneNode];
-  };
-
-  const createSplitNode = (
-    direction: DropDirection,
-    newPaneNode: LayoutPaneNode,
-    paneNode: LayoutNode,
-  ): LayoutNode => {
-    return {
-      type: 'split' as const,
-      id: v4(),
-      orientation: getSplitOrientation(direction),
-      children: orderSplitChildren(direction, newPaneNode, paneNode),
+  const pushToPanes = (pane: ShallowRef<Pane>): void => {
+    panes.value = {
+      ...panes.value,
+      [pane.value.id]: pane,
     };
   };
 
-  const replaceRootLayout = (splitNode: LayoutNode): void => {
-    layout.value = splitNode;
+  const getActiveTabId = (tabs: Record<string, Tab>): string | undefined => {
+    const tabKeys = Object.keys(tabs);
+    return tabKeys.length > 0 ? tabKeys[0] : undefined;
   };
 
-  const replaceNodeInTree = (
-    node: LayoutNode,
-    targetNode: LayoutNode,
-    replacement: LayoutNode,
-  ): LayoutNode => {
-    if (node === targetNode) return replacement;
-    if (node.type === 'split') {
-      return {
-        ...node,
-        children: node.children.map((child) => replaceNodeInTree(child, targetNode, replacement)),
-      };
-    }
-    return node;
+  const insertTabAtIndex = (
+    tabs: Record<string, Tab>,
+    tab: Tab,
+    index: number,
+  ): Record<string, Tab> => {
+    const entries = Object.entries(tabs);
+    const validIndex = Math.min(Math.max(0, index), entries.length);
+
+    entries.splice(validIndex, 0, [tab.id, tab]);
+
+    return Object.fromEntries(entries);
   };
 
-  const splitPaneInLayout = async (
-    paneId: string,
-    direction: DropDirection,
-    createInitialTab: boolean = true,
-  ): Promise<string | null> => {
-    const paneNode = findPaneInLayout(paneId);
-    if (!paneNode || paneNode.type !== 'pane') return null;
+  const appendTab = (tabs: Record<string, Tab>, tab: Tab): Record<string, Tab> => ({
+    ...tabs,
+    [tab.id]: tab,
+  });
 
-    const newPane = createInitialTab ? await initNewPane() : createEmptyPane(v4()).value;
-    const newPaneId = newPane.id;
-
-    const newPaneNode: LayoutPaneNode = {
-      type: 'pane',
-      id: v4(),
-      paneId: newPaneId,
-    };
-
-    const splitNode = createSplitNode(direction, newPaneNode, paneNode);
-
-    if (layout.value === paneNode) {
-      replaceRootLayout(splitNode);
-      return newPaneId;
-    }
-
-    layout.value = replaceNodeInTree(layout.value, paneNode, splitNode);
-    return newPaneId;
-  };
-
-  const shouldRemoveNode = (node: LayoutNode, paneId: string): boolean => {
-    return node.type === 'pane' && node.paneId === paneId;
-  };
-
-  const normalizeSplitNode = (filteredChildren: LayoutNode[]): LayoutNode | null => {
-    if (filteredChildren.length === 0) return null;
-    if (filteredChildren.length === 1) return filteredChildren[0];
-    return null;
-  };
-
-  const removeNodeFromTree = (node: LayoutNode, paneId: string): LayoutNode | null => {
-    if (shouldRemoveNode(node, paneId)) {
-      return null;
-    }
-
-    if (node.type === 'split') {
-      const filteredChildren = node.children
-        .map((child) => removeNodeFromTree(child, paneId))
-        .filter((child): child is LayoutNode => child !== null);
-
-      const normalized = normalizeSplitNode(filteredChildren);
-      if (normalized !== null) return normalized;
-
-      return {
-        ...node,
-        children: filteredChildren,
-      };
-    }
-
-    return node;
-  };
-
-  const removePaneFromLayout = (paneId: string): void => {
-    if (!layout.value) return;
-    if (layout.value.type === 'pane') return;
-
-    const result = removeNodeFromTree(layout.value, paneId);
-    if (result) {
-      layout.value = result;
-    }
-  };
-
-  const getSourceTab = (sourcePaneId: string, tabId: string): Tab | null => {
-    const sourcePane = panes.value[sourcePaneId]?.value;
-    if (!sourcePane) return null;
-
-    return sourcePane.tabs.value[tabId] || null;
-  };
-
-  const transferTab = (tab: Tab, sourcePaneId: string, targetPaneId: string): void => {
-    const sourcePane = panes.value[sourcePaneId];
-    const targetPane = panes.value[targetPaneId];
-
-    if (!sourcePane || !targetPane) return;
-
-    const tabKeys = Object.keys(sourcePane.value.tabs.value);
-    const tabIndex = tabKeys.indexOf(tab.id);
-    const isActiveTabTransferred = tab.id === sourcePane.value.activeTabId;
-
-    const newSourceTabs = { ...sourcePane.value.tabs.value };
-    delete newSourceTabs[tab.id];
-    sourcePane.value.tabs.value = newSourceTabs;
-
-    if (isActiveTabTransferred) {
-      const nextActiveTabId = findNextActiveTab(tabKeys, tabIndex);
-      sourcePane.value.activeTabId = nextActiveTabId ?? '';
-    }
-
-    const newTargetTabs = { ...targetPane.value.tabs.value, [tab.id]: tab };
-    targetPane.value.tabs.value = newTargetTabs;
-
-    targetPane.value.activeTabId = tab.id;
-    tab.paneId = targetPaneId;
-
-    sourcePane.value = { ...sourcePane.value };
-    targetPane.value = { ...targetPane.value };
-  };
-
-  const shouldCleanupSourcePane = (sourcePaneId: string): boolean => {
-    const sourcePane = panes.value[sourcePaneId];
-    if (!sourcePane) return false;
-    const paneCount = Object.keys(panes.value).length;
-    const isEmpty = Object.keys(sourcePane.value.tabs.value).length === 0;
-    return isEmpty && paneCount > 1;
-  };
-
-  const moveTab = (tabId: string, sourcePaneId: string, targetPaneId: string): void => {
-    const sourcePane = panes.value[sourcePaneId]?.value;
-    const targetPane = panes.value[targetPaneId]?.value;
-
-    if (!sourcePane || !targetPane) return;
-
-    const tab = getSourceTab(sourcePaneId, tabId);
-    if (!tab) return;
-
-    transferTab(tab, sourcePaneId, targetPaneId);
-
-    if (shouldCleanupSourcePane(sourcePaneId)) {
-      cleanupEmptyPane(sourcePaneId);
-    }
-
-    activePaneId.value = targetPaneId;
-  };
-
-  const paneStore: PaneStore = {
+  const store: PaneStore = {
     panes,
-    activePane,
-    initNewPane,
-    getPane,
     activePaneId,
-    addTab,
-    selectTab,
-    closeTab,
+    activePane,
     activeTab,
-    navigateTab,
-    navigate,
-    getPanesSnapshot,
-    restorePanesSnapshot,
-    savePanes,
-    restorePanes,
-    layout,
-    initLayout,
-    findPaneInLayout,
-    splitPaneInLayout,
-    removePaneFromLayout,
     moveTab,
-  };
-
-  return {
-    ...paneStore,
+    createPane,
+    getPane,
+    closePane,
+    setActivePane,
     isDraggingTab,
     draggedTabData,
+    initNewTab,
+    addTab,
+    closeTab,
+    selectTab,
+    navigate,
     startDraggingTab,
     stopDraggingTab,
+    getPanesData,
+    restorePanesData,
   };
+
+  return store;
 });

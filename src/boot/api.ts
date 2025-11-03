@@ -36,6 +36,7 @@ import { uploadFile, uploadFiles } from 'src/utils/file-upload';
 import { useConfirmationModal } from 'src/composables/use-confirmation-modal';
 import { useCompletionStore } from 'src/stores/completion';
 import { usePaneStore } from 'src/stores/pane';
+import { useLayoutStore } from 'src/stores/layout';
 import { useFileSystemManagerStore } from 'src/stores/file-system-manager';
 import { useFileManagerStore } from 'src/stores/file-manager';
 import { useScreenDetection } from 'src/composables/use-screen-detection';
@@ -62,6 +63,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useCompletion: useCompletionStore,
       useQuasar: useQuasar,
       usePane: usePaneStore,
+      useLayout: useLayoutStore,
       useFileSystemManager: useFileSystemManagerStore,
       useFileManager: useFileManagerStore,
       useConfig: useConfigStore,

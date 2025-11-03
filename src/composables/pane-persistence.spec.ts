@@ -5,10 +5,13 @@ import type { Pane, Tab } from 'orgnote-api';
 import { sleep } from 'src/utils/sleep';
 
 const createMockPaneStore = () => ({
-  savePanes: vi.fn(() => Promise.resolve()),
-  restorePanes: vi.fn(() => Promise.resolve()),
   panes: shallowRef({} as Record<string, ShallowRef<Pane>>),
   $onAction: vi.fn(() => vi.fn()),
+});
+
+const createMockLayoutStore = () => ({
+  saveWorkspace: vi.fn(() => Promise.resolve()),
+  restoreWorkspace: vi.fn(() => Promise.resolve()),
 });
 
 const createMockConfigStore = () => ({
@@ -27,6 +30,7 @@ const createMockLogger = () => ({
 });
 
 const mockPaneStore = createMockPaneStore();
+const mockLayoutStore = createMockLayoutStore();
 const mockConfigStore = createMockConfigStore();
 const mockLogger = createMockLogger();
 
@@ -34,6 +38,7 @@ vi.mock('src/boot/api', () => ({
   api: {
     core: {
       usePane: () => mockPaneStore,
+      useLayout: () => mockLayoutStore,
       useConfig: () => mockConfigStore,
     },
     utils: {
@@ -93,10 +98,10 @@ const createTestPane = (tabs: Tab[] = []): ShallowRef<Pane> => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockPaneStore.savePanes.mockReturnValue(Promise.resolve());
-  mockPaneStore.restorePanes.mockReturnValue(Promise.resolve());
   mockPaneStore.panes.value = {} as Record<string, ShallowRef<Pane>>;
   mockPaneStore.$onAction.mockReturnValue(vi.fn());
+  mockLayoutStore.saveWorkspace.mockReturnValue(Promise.resolve());
+  mockLayoutStore.restoreWorkspace.mockReturnValue(Promise.resolve());
   mockConfigStore.config.value = {
     ui: {
       persistantPanesSaveDelay: 30,
@@ -114,12 +119,12 @@ afterEach(() => {
 test('start restores panes', async () => {
   const { start } = usePanePersistence();
   await start();
-  expect(mockPaneStore.restorePanes).toHaveBeenCalledOnce();
+  expect(mockLayoutStore.restoreWorkspace).toHaveBeenCalledOnce();
 });
 
 test('start logs error when restore fails', async () => {
   const error = new Error('Restore failed');
-  mockPaneStore.restorePanes.mockImplementation(() => Promise.reject(error));
+  mockLayoutStore.restoreWorkspace.mockImplementation(() => Promise.reject(error));
   const { start } = usePanePersistence();
   await start();
   expect(mockLogger.error).toHaveBeenCalledWith('Failed to restore panes', { error });
@@ -137,7 +142,7 @@ test('start is idempotent', async () => {
   await start();
   vi.clearAllMocks();
   await start();
-  expect(mockPaneStore.restorePanes).not.toHaveBeenCalled();
+  expect(mockLayoutStore.restoreWorkspace).not.toHaveBeenCalled();
 });
 
 test('start registers router hooks for existing tabs', async () => {
@@ -209,12 +214,12 @@ test('router afterEach triggers save', async () => {
   vi.clearAllMocks();
   (router as unknown as { triggerAfterEach: () => void }).triggerAfterEach();
   await sleep(50);
-  expect(mockPaneStore.savePanes).toHaveBeenCalled();
+  expect(mockLayoutStore.saveWorkspace).toHaveBeenCalled();
 });
 
 test('logs error when save fails', async () => {
   const error = new Error('Save failed');
-  mockPaneStore.savePanes.mockImplementation(() => Promise.reject(error));
+  mockLayoutStore.saveWorkspace.mockImplementation(() => Promise.reject(error));
   const router = createMockRouter();
   const tab = createTestTab({ router });
   const pane = createTestPane([tab]);
@@ -241,7 +246,7 @@ test('uses default delay when config delay is missing', async () => {
   await start();
   (router as unknown as { triggerAfterEach: () => void }).triggerAfterEach();
   await sleep(50);
-  expect(mockPaneStore.savePanes).toHaveBeenCalled();
+  expect(mockLayoutStore.saveWorkspace).toHaveBeenCalled();
 });
 
 test('removes hooks for routers that no longer exist', async () => {

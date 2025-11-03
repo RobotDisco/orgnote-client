@@ -28,7 +28,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
 
     const configErrors = ref<string[]>([]);
 
-    const sync = async () => {
+    const sync = async (): Promise<void> => {
       configErrors.value = [];
 
       const content = JSON.stringify(config);
@@ -38,12 +38,11 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
         return;
       }
 
-      parseConfig(newConfig).match(
-        (): void => undefined,
-        (e) => {
-          throw e;
-        },
-      );
+      const result = parseConfig(newConfig);
+
+      if (result.isErr()) {
+        throw result.error;
+      }
     };
 
     const parseConfig = (rawConfigContent: string): Result<void, Error> => {

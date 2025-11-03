@@ -5,6 +5,7 @@ import { reporter } from 'src/boot/report';
 import { useRouteActive } from 'src/composables/use-route-active';
 import { SETTINGS_ROUTER_PROVIDER_TOKEN } from 'src/constants/app-providers';
 import TheSettings from 'src/containers/TheSettings.vue';
+import { getDatabase } from 'src/infrastructure/repositories';
 import { to } from 'src/utils/to-error';
 import { defineAsyncComponent } from 'vue';
 
@@ -179,6 +180,9 @@ export function getSettingsCommands(): Command[] {
           reporter.reportError(clearResult.error);
           return;
         }
+
+        const db = getDatabase();
+        await db?.delete();
 
         localStorage.clear();
         sessionStorage.clear();

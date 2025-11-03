@@ -10,9 +10,15 @@ export function getTabsCommands(): Command[] {
       icon: 'sym_o_add_box',
       title: I18N.ADD_NEW_TAB,
       handler: async (api: OrgNoteApi, params) => {
-        const pane = api.core.usePane();
-        const tab = await pane.addTab(params.data);
-        pane.selectTab(tab.paneId, tab.id);
+        const paneStore = api.core.usePane();
+        const targetPaneId = params.data?.paneId || paneStore.activePaneId;
+
+        if (!targetPaneId) return;
+
+        const tab = await paneStore.addTab(targetPaneId, params.data);
+        if (!tab) return;
+
+        paneStore.selectTab(tab.paneId, tab.id);
         api.ui.useModal().close();
       },
     },

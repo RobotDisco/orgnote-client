@@ -48,10 +48,11 @@ const selectTab = (tab: Tab) => {
   emits('selected', tab);
 };
 
-const closeTab = (tab: Tab) => {
+const closeTab = async (tab: Tab) => {
   if (!tab.paneId) return;
 
-  paneStore.closeTab(tab.paneId, tab.id);
+  const paneStore = api.core.usePane();
+  await paneStore.closeTab(tab.paneId, tab.id);
 };
 </script>
 

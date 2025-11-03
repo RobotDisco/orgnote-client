@@ -1,132 +1,129 @@
-import { expect, test } from 'vitest';
-import type { DropZone } from 'orgnote-api';
-import { DEFAULT_CONFIG } from 'src/constants/config';
+import { test, expect } from 'vitest';
 import { getDropZone, sanitizeDropZoneRatio } from './get-drop-zone';
 
-const createRect = (width = 1000, height = 600): DOMRect => ({
-  left: 0,
-  top: 0,
-  right: width,
-  bottom: height,
+const createRect = (width = 100, height = 100, left = 0, top = 0): DOMRect => ({
   width,
   height,
-  x: 0,
-  y: 0,
+  left,
+  top,
+  right: left + width,
+  bottom: top + height,
+  x: left,
+  y: top,
   toJSON: () => ({}),
 });
 
-const ratio = sanitizeDropZoneRatio(DEFAULT_CONFIG.ui.dropZoneEdgeRatio);
-
-const getLeftBoundary = (width: number) => Math.floor(width * ratio) - 1;
-const getRightBoundary = (width: number) => Math.ceil(width * (1 - ratio)) + 1;
-const getTopBoundary = (height: number) => Math.floor(height * ratio) - 1;
-const getBottomBoundary = (height: number) => Math.ceil(height * (1 - ratio)) + 1;
-
-test('returns left zone when x is in left 15%', () => {
-  const rect = createRect();
-  const result = getDropZone(50, 300, rect, ratio);
-  expect(result).toBe<DropZone>('left');
+test('should detect left zone', () => {
+  const rect = createRect(100, 100);
+  const zone = getDropZone(5, 50, rect, 0.2);
+  expect(zone).toBe('left');
 });
 
-test('returns left zone at exact 15% boundary', () => {
-  const width = 1000;
-  const rect = createRect(width, 600);
-  const boundary = getLeftBoundary(width);
-  const result = getDropZone(boundary, 300, rect, ratio);
-  expect(result).toBe<DropZone>('left');
+test('should detect right zone', () => {
+  const rect = createRect(100, 100);
+  const zone = getDropZone(95, 50, rect, 0.2);
+  expect(zone).toBe('right');
 });
 
-test('returns right zone when x is in right 15%', () => {
-  const rect = createRect();
-  const result = getDropZone(900, 300, rect, ratio);
-  expect(result).toBe<DropZone>('right');
+test('should detect top zone', () => {
+  const rect = createRect(100, 100);
+  const zone = getDropZone(50, 5, rect, 0.2);
+  expect(zone).toBe('top');
 });
 
-test('returns right zone at exact 85% boundary', () => {
-  const width = 1000;
-  const rect = createRect(width, 600);
-  const boundary = getRightBoundary(width);
-  const result = getDropZone(boundary, 300, rect, ratio);
-  expect(result).toBe<DropZone>('right');
+test('should detect bottom zone', () => {
+  const rect = createRect(100, 100);
+  const zone = getDropZone(50, 95, rect, 0.2);
+  expect(zone).toBe('bottom');
 });
 
-test('returns top zone when y is in top 15%', () => {
-  const rect = createRect();
-  const result = getDropZone(500, 50, rect, ratio);
-  expect(result).toBe<DropZone>('top');
+test('should detect center zone', () => {
+  const rect = createRect(100, 100);
+  const zone = getDropZone(50, 50, rect, 0.2);
+  expect(zone).toBe('center');
 });
 
-test('returns top zone at exact 15% boundary', () => {
-  const height = 600;
-  const rect = createRect(1000, height);
-  const boundary = getTopBoundary(height);
-  const result = getDropZone(500, boundary, rect, ratio);
-  expect(result).toBe<DropZone>('top');
+test('should detect zone at edge boundaries', () => {
+  const rect = createRect(100, 100);
+  const leftEdge = getDropZone(19, 50, rect, 0.2);
+  expect(leftEdge).toBe('left');
+
+  const rightEdge = getDropZone(81, 50, rect, 0.2);
+  expect(rightEdge).toBe('right');
+
+  const topEdge = getDropZone(50, 19, rect, 0.2);
+  expect(topEdge).toBe('top');
+
+  const bottomEdge = getDropZone(50, 81, rect, 0.2);
+  expect(bottomEdge).toBe('bottom');
 });
 
-test('returns bottom zone when y is in bottom 15%', () => {
-  const rect = createRect();
-  const result = getDropZone(500, 550, rect, ratio);
-  expect(result).toBe<DropZone>('bottom');
+test('should handle coordinates with offset rect', () => {
+  const rect = createRect(100, 100, 50, 50);
+  const zone = getDropZone(55, 100, rect, 0.2);
+  expect(zone).toBe('left');
 });
 
-test('returns bottom zone at exact 85% boundary', () => {
-  const height = 600;
-  const rect = createRect(1000, height);
-  const boundary = getBottomBoundary(height);
-  const result = getDropZone(500, boundary, rect, ratio);
-  expect(result).toBe<DropZone>('bottom');
+test('should prioritize left/right over top/bottom', () => {
+  const rect = createRect(100, 100);
+  const zone = getDropZone(5, 5, rect, 0.2);
+  expect(zone).toBe('left');
 });
 
-test('returns center zone when in middle area', () => {
-  const rect = createRect();
-  const result = getDropZone(500, 300, rect, ratio);
-  expect(result).toBe<DropZone>('center');
+test('should sanitize negative ratio to 0.01', () => {
+  const result = sanitizeDropZoneRatio(-0.5);
+  expect(result).toBe(0.01);
 });
 
-test('prioritizes horizontal edges over vertical', () => {
-  const rect = createRect();
-  const result = getDropZone(50, 50, rect, ratio);
-  expect(result).toBe<DropZone>('left');
+test('should sanitize zero ratio to 0.01', () => {
+  const result = sanitizeDropZoneRatio(0);
+  expect(result).toBe(0.01);
 });
 
-test('works with different rect sizes', () => {
-  const rect = createRect(500, 300);
-  expect(getDropZone(25, 150, rect, ratio)).toBe<DropZone>('left');
-  expect(getDropZone(475, 150, rect, ratio)).toBe<DropZone>('right');
-  expect(getDropZone(250, 20, rect, ratio)).toBe<DropZone>('top');
-  expect(getDropZone(250, 280, rect, ratio)).toBe<DropZone>('bottom');
-  expect(getDropZone(250, 150, rect, ratio)).toBe<DropZone>('center');
+test('should sanitize ratio greater than 0.5 to 0.5', () => {
+  const result = sanitizeDropZoneRatio(0.8);
+  expect(result).toBe(0.5);
 });
 
-test('works with rect at different viewport position', () => {
-  const rect: DOMRect = {
-    left: 100,
-    top: 50,
-    right: 1100,
-    bottom: 650,
-    width: 1000,
-    height: 600,
-    x: 100,
-    y: 50,
-    toJSON: () => ({}),
-  };
-
-  expect(getDropZone(150, 350, rect, ratio)).toBe<DropZone>('left');
-  expect(getDropZone(1050, 350, rect, ratio)).toBe<DropZone>('right');
-  expect(getDropZone(600, 100, rect, ratio)).toBe<DropZone>('top');
-  expect(getDropZone(600, 600, rect, ratio)).toBe<DropZone>('bottom');
-  expect(getDropZone(600, 350, rect, ratio)).toBe<DropZone>('center');
+test('should allow valid ratios between 0.01 and 0.5', () => {
+  expect(sanitizeDropZoneRatio(0.1)).toBe(0.1);
+  expect(sanitizeDropZoneRatio(0.25)).toBe(0.25);
+  expect(sanitizeDropZoneRatio(0.3)).toBe(0.3);
+  expect(sanitizeDropZoneRatio(0.5)).toBe(0.5);
 });
 
-test('handles edge case at 0,0', () => {
-  const rect = createRect();
-  const result = getDropZone(0, 0, rect, ratio);
-  expect(result).toBe<DropZone>('left');
+test('should handle NaN ratio', () => {
+  const result = sanitizeDropZoneRatio(NaN);
+  expect(result).toBe(0.01);
 });
 
-test('handles edge case at max coordinates', () => {
-  const rect = createRect();
-  const result = getDropZone(1000, 600, rect, ratio);
-  expect(result).toBe<DropZone>('right');
+test('should handle Infinity ratio', () => {
+  const result = sanitizeDropZoneRatio(Infinity);
+  expect(result).toBe(0.01);
+});
+
+test('should handle negative Infinity ratio', () => {
+  const result = sanitizeDropZoneRatio(-Infinity);
+  expect(result).toBe(0.01);
+});
+
+test('should use sanitized ratio in getDropZone', () => {
+  const rect = createRect(100, 100);
+  const zone = getDropZone(0.5, 50, rect, -0.5);
+  expect(zone).toBe('left');
+});
+
+test('should handle very small valid ratio', () => {
+  const rect = createRect(100, 100);
+  const zone = getDropZone(0.5, 50, rect, 0.01);
+  expect(zone).toBe('left');
+});
+
+test('should handle maximum valid ratio', () => {
+  const rect = createRect(100, 100);
+  const zone = getDropZone(25, 50, rect, 0.5);
+  expect(zone).toBe('left');
+
+  const center = getDropZone(50, 50, rect, 0.5);
+  expect(center).toBe('center');
 });

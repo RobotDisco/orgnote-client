@@ -4,6 +4,35 @@ import { Quasar } from 'quasar';
 import iconSet from 'quasar/icon-set/material-icons.js';
 import { createPinia, setActivePinia } from 'pinia';
 
+const mockLogger = {
+  error: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  debug: vi.fn(),
+};
+
+vi.mock('src/boot/logger', () => ({
+  logger: mockLogger,
+}));
+
+vi.mock('src/boot/repositories', () => ({
+  repositories: {
+    paneSnapshotRepository: {
+      save: vi.fn(),
+      getLatest: vi.fn(),
+      delete: vi.fn(),
+    },
+  },
+}));
+
+vi.mock('src/boot/report', () => ({
+  reporter: {
+    captureException: vi.fn(),
+    captureMessage: vi.fn(),
+    reportError: vi.fn(),
+  },
+}));
+
 config.global.plugins = [
   [
     Quasar,

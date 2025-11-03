@@ -1,5 +1,5 @@
 <template>
-  <div class="pane-container">
+  <div class="pane-container" v-if="currentPane" @click="handlePaneClick">
     <visibility-wrapper>
       <template #desktop-above>
         <nav-tabs>
@@ -20,21 +20,25 @@
             />
           </template>
           <nav-tab
-            v-for="tab of Object.values(activePane.tabs.value)"
-            @click="pane.selectTab(activePane.id, tab.id)"
-            @close="pane.closeTab(activePane.id, tab.id)"
+            v-for="tab of tabs"
+            @click="handleTabSelect(tab.id)"
+            @close="handleTabClose(tab.id)"
             @dragstart="handleDragStart"
             @dragend="handleDragEnd"
             icon="description"
             :key="tab.id"
-            :active="tab.id === activePane.activeTabId"
+            :active="isTabActive(tab.id)"
             :tab-id="tab.id"
-            :pane-id="activePane.id"
+            :pane-id="props.paneId"
           >
             {{ generateTabTitle(tab.router.currentRoute.value) || tab.title }}
           </nav-tab>
           <template #actions>
-            <command-action-button :command="DefaultCommands.NEW_TAB" size="sm" />
+            <command-action-button
+              :command="DefaultCommands.NEW_TAB"
+              size="sm"
+              :data="{ paneId: props.paneId }"
+            />
           </template>
         </nav-tabs>
       </template>
@@ -58,15 +62,15 @@
             {{ generateTabTitle(activeTab?.router.currentRoute.value) || activeTab?.title }}
           </div>
           <command-action-button :command="DefaultCommands.SHOW_TAB_SWITCHER" size="sm" />
-          <command-action-button :command="DefaultCommands.NEW_TAB" size="sm" />
+          <command-action-button
+            :command="DefaultCommands.NEW_TAB"
+            size="sm"
+            :data="{ paneId: props.paneId }"
+          />
         </div>
       </template>
     </visibility-wrapper>
-    <ScopedRouterView
-      v-if="resolvedRouter"
-      :router="resolvedRouter"
-      :key="activePane.activeTabId"
-    />
+    <ScopedRouterView v-if="resolvedRouter" :router="resolvedRouter" :key="activeTabId || ''" />
     <drop-zone-overlay
       :visible="pane.isDraggingTab"
       v-model:active-zone="currentDropZone"
@@ -76,7 +80,7 @@
 </template>
 
 <script lang="ts" setup>
-import { DefaultCommands, type DropDirection, type DropZone } from 'orgnote-api';
+import { DefaultCommands, type DropDirection, type DropZone, type Tab } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import ActionButton from 'src/components/ActionButton.vue';
 import NavTab from 'src/components/NavTab.vue';
@@ -97,24 +101,53 @@ const props = defineProps<{
   paneId: string;
 }>();
 
-const pane = api.core.usePane() as ReturnType<typeof api.core.usePane> & {
-  isDraggingTab: boolean;
-  draggedTabData: { tabId: string; paneId: string } | null;
-  startDraggingTab: (tabId: string, paneId: string) => void;
-  stopDraggingTab: () => void;
-  splitPaneInLayout: (
-    paneId: string,
-    direction: DropDirection,
-    createInitialTab?: boolean,
-  ) => Promise<string | null>;
-};
-const activePane = pane.getPane(props.paneId);
+const pane = api.core.usePane();
+const layout = api.core.useLayout();
+
+const currentPane = computed(() => {
+  const paneRef = pane.panes?.[props.paneId];
+  return paneRef?.value;
+});
+
+const tabs = computed((): Tab[] => {
+  if (!currentPane.value) return [];
+  return Object.values(currentPane.value.tabs.value);
+});
 
 const activeTab = computed(() => {
-  const tabId = activePane.value.activeTabId;
-  if (!tabId) return null;
-  return activePane.value.tabs.value[tabId] || null;
+  const tabId = currentPane.value.activeTabId;
+  return currentPane?.value.tabs.value[tabId];
 });
+
+const activeTabId = computed(() => {
+  const id = currentPane.value?.activeTabId;
+  return id;
+});
+
+const isPaneActive = computed(() => {
+  return pane.activePaneId === props.paneId;
+});
+
+const isTabActive = (tabId: string): boolean => {
+  return tabId === activeTabId.value && isPaneActive.value;
+};
+
+const handlePaneClick = () => {
+  if (!currentPane.value) return;
+  if (pane.activePaneId !== currentPane.value.id) {
+    pane.setActivePane(currentPane.value.id);
+  }
+};
+
+const handleTabSelect = (tabId: string) => {
+  if (!currentPane.value) return;
+  pane.selectTab(currentPane.value.id, tabId);
+};
+
+const handleTabClose = (tabId: string) => {
+  if (!currentPane.value) return;
+  pane.closeTab(currentPane.value.id, tabId);
+};
 
 const currentDropZone = ref<DropZone | null>(null);
 
@@ -123,13 +156,16 @@ const resolvedRouter = computed(() => tabRouter.value as Router | null);
 
 const initTabRouter = () => {
   const tab = activeTab.value;
-  if (!tab) return;
+  if (!tab?.router) {
+    tabRouter.value = null;
+    return;
+  }
   tabRouter.value = tab.router;
 };
 
 initTabRouter();
 
-watch(activeTab, initTabRouter);
+watch(activeTab, initTabRouter, { immediate: true });
 
 provide(TAB_ROUTER_KEY, tabRouter);
 
@@ -141,13 +177,23 @@ const historyIndex = shallowRef(-1);
 
 const initHistory = () => {
   const full = tabRouter.value?.currentRoute.value.fullPath;
-  if (!full) return;
+  if (!full) {
+    routeHistory.value = [];
+    historyIndex.value = -1;
+    return;
+  }
   routeHistory.value = [full];
   historyIndex.value = 0;
 };
 
 initHistory();
-watch(activeTab, initHistory);
+watch(
+  activeTab,
+  () => {
+    initHistory();
+  },
+  { immediate: true },
+);
 
 watch(
   currentRoute,
@@ -219,28 +265,65 @@ const handleDragEnd = () => {
   currentDropZone.value = null;
 };
 
-const handleDrop = async (zone: DropZone) => {
-  if (!pane.draggedTabData) return;
+const shouldMoveTabToPane = (sourcePaneId: string, targetPaneId: string): boolean =>
+  sourcePaneId !== targetPaneId;
 
-  const { tabId, paneId: sourcePaneId } = pane.draggedTabData;
+const moveTabToCenter = async (tabId: string, sourcePaneId: string): Promise<void> => {
+  if (!shouldMoveTabToPane(sourcePaneId, props.paneId)) return;
+  await pane.moveTab(tabId, sourcePaneId, props.paneId);
+};
 
-  if (zone === 'center') {
-    if (sourcePaneId !== props.paneId) {
-      pane.moveTab(tabId, sourcePaneId, props.paneId);
-    }
-    handleDragEnd();
-    return;
-  }
+const moveTabToNewPane = async (
+  tabId: string,
+  sourcePaneId: string,
+  newPaneId: string,
+): Promise<void> => {
+  await pane.moveTab(tabId, sourcePaneId, newPaneId);
+};
 
-  const direction = zone as DropDirection;
-  const newPaneId = await pane.splitPaneInLayout(props.paneId, direction, false);
-  if (!newPaneId) {
-    handleDragEnd();
-    return;
-  }
+const createNewPaneAndMoveTab = async (
+  direction: DropDirection,
+  tabId: string,
+  sourcePaneId: string,
+): Promise<void> => {
+  const newPaneId = await layout.splitPaneInLayout(props.paneId, direction, false);
+  if (!newPaneId) return;
+  await moveTabToNewPane(tabId, sourcePaneId, newPaneId);
+};
 
-  pane.moveTab(tabId, sourcePaneId, newPaneId);
+const handleCenterDrop = async (tabId: string, sourcePaneId: string): Promise<void> => {
+  await moveTabToCenter(tabId, sourcePaneId);
   handleDragEnd();
+};
+
+const handleDirectionDrop = async (
+  zone: DropDirection,
+  tabId: string,
+  sourcePaneId: string,
+): Promise<void> => {
+  await createNewPaneAndMoveTab(zone, tabId, sourcePaneId);
+  handleDragEnd();
+};
+
+const handleTabDrop = async (
+  zone: DropZone,
+  tabId: string,
+  sourcePaneId: string,
+): Promise<void> => {
+  if (zone === 'center') {
+    await handleCenterDrop(tabId, sourcePaneId);
+    return;
+  }
+
+  await handleDirectionDrop(zone as DropDirection, tabId, sourcePaneId);
+};
+
+const handleDrop = async (zone: DropZone): Promise<void> => {
+  if (pane.draggedTabData) {
+    const { tabId, paneId: sourcePaneId } = pane.draggedTabData;
+    await handleTabDrop(zone, tabId, sourcePaneId);
+    return;
+  }
 };
 </script>
 

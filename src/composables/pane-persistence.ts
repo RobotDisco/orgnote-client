@@ -22,16 +22,15 @@ const getObsoleteRouters = (hooks: Map<Router, RouterHook>, activeRouters: Set<R
 const registerRouterHook = (router: Router, onNavigate: () => void): RouterHook =>
   router.afterEach(onNavigate);
 
-const getSaveDelay = (configDelay: number | undefined): number =>
-  configDelay ?? DEFAULT_PANE_PERSISTENCE_SAVE_DELAY;
-
 export const usePanePersistence = createGlobalState(() => {
+  const layoutStore = api.core.useLayout();
   const paneStore = api.core.usePane();
   const logger = api.utils.logger;
   const configStore = api.core.useConfig();
 
   const routerHooks = new Map<Router, RouterHook>();
   const isStarted = ref(false);
+
   let unsubscribe: RouterHook | null = null;
 
   const handleSaveError = (error: Error): void => {
@@ -39,14 +38,15 @@ export const usePanePersistence = createGlobalState(() => {
   };
 
   const safeSave = async (): Promise<void> => {
-    const result = await to(paneStore.savePanes)();
+    const result = await to(layoutStore.saveLayout)();
     if (result.isErr()) {
       handleSaveError(result.error);
     }
   };
 
-  const scheduleSave = debounce(safeSave, () =>
-    getSaveDelay(configStore.config.value?.ui.persistantPanesSaveDelay),
+  const scheduleSave = debounce(
+    safeSave,
+    () => configStore.config?.ui.persistantPanesSaveDelay ?? DEFAULT_PANE_PERSISTENCE_SAVE_DELAY,
   );
 
   const removeHooks = (routers: Router[]): void => {
@@ -76,7 +76,7 @@ export const usePanePersistence = createGlobalState(() => {
   };
 
   const restorePanes = async (): Promise<void> => {
-    const restoreResult = await to(paneStore.restorePanes)();
+    const restoreResult = await to(layoutStore.restoreLayout)();
     if (restoreResult.isErr()) {
       logger.error('Failed to restore panes', { error: restoreResult.error });
     }

@@ -1,7 +1,7 @@
 import { expect, test, vi } from 'vitest';
 import { usePaneStore } from './pane';
 import { createPinia, setActivePinia } from 'pinia';
-import type { LayoutNode, PanesSnapshot } from 'orgnote-api';
+import type { PaneSnapshot } from 'orgnote-api';
 
 const mockRouter = {
   push: vi.fn(),
@@ -24,13 +24,15 @@ test('should create unique tab titles', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const firstPane = await paneStore.initNewPane();
-  expect(firstPane.tabs.value[firstPane.activeTabId].title).toBe('Untitled');
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
+  const paneRef = paneStore.getPane(pane.id);
+  expect(paneRef.value.tabs.value[paneRef.value.activeTabId].title).toBe('Untitled');
 
-  const secondTab = await paneStore.addTab();
+  const secondTab = await paneStore.addTab(pane.id);
   expect(secondTab?.title).toBe('Untitled 2');
 
-  const thirdTab = await paneStore.addTab();
+  const thirdTab = await paneStore.addTab(pane.id);
   expect(thirdTab?.title).toBe('Untitled 3');
 });
 
@@ -38,13 +40,15 @@ test('should respect custom titles', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const firstPane = await paneStore.initNewPane({ title: 'Custom Title' });
-  expect(firstPane.tabs.value[firstPane.activeTabId].title).toBe('Custom Title');
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id, { title: 'Custom Title' });
+  const paneRef = paneStore.getPane(pane.id);
+  expect(paneRef.value.tabs.value[paneRef.value.activeTabId].title).toBe('Custom Title');
 
-  const secondTab = await paneStore.addTab();
+  const secondTab = await paneStore.addTab(pane.id);
   expect(secondTab?.title).toBe('Untitled');
 
-  const thirdTab = await paneStore.addTab();
+  const thirdTab = await paneStore.addTab(pane.id);
   expect(thirdTab?.title).toBe('Untitled 2');
 });
 
@@ -52,11 +56,13 @@ test('should switch to another tab when active tab is closed', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const pane = await paneStore.initNewPane();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
   const paneId = pane.id;
-  const firstTabId = pane.activeTabId;
+  const paneRef = paneStore.getPane(paneId);
+  const firstTabId = paneRef.value.activeTabId;
 
-  const secondTab = await paneStore.addTab();
+  const secondTab = await paneStore.addTab(paneId);
   const secondTabId = secondTab!.id;
 
   paneStore.selectTab(paneId, secondTabId);
@@ -64,7 +70,6 @@ test('should switch to another tab when active tab is closed', async () => {
 
   paneStore.closeTab(paneId, secondTabId);
 
-  // Должен переключиться на первый таб
   expect(paneStore.activeTab?.id).toBe(firstTabId);
   expect(paneStore.activeTab).toBeDefined();
 });
@@ -73,13 +78,16 @@ test('should close inactive tab without changing active tab', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const pane = await paneStore.initNewPane();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
   const paneId = pane.id;
-  const firstTabId = pane.activeTabId;
+  const paneRef = paneStore.getPane(paneId);
+  const firstTabId = paneRef.value.activeTabId;
 
-  const secondTab = await paneStore.addTab();
+  const secondTab = await paneStore.addTab(paneId);
   const secondTabId = secondTab!.id;
 
+  paneStore.selectTab(paneId, firstTabId);
   expect(paneStore.activeTab?.id).toBe(firstTabId);
 
   paneStore.closeTab(paneId, secondTabId);
@@ -90,9 +98,11 @@ test('should not remove pane when closing last tab but reset route', async () =>
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const pane = await paneStore.initNewPane();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
   const paneId = pane.id;
-  const tabId = pane.activeTabId;
+  const paneRef = paneStore.getPane(paneId);
+  const tabId = paneRef.value.activeTabId;
 
   expect(paneStore.panes[paneId]).toBeDefined();
   expect(paneStore.activePaneId).toBe(paneId);
@@ -108,7 +118,8 @@ test('should handle closing non-existent tab', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const pane = await paneStore.initNewPane();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
   const paneId = pane.id;
   const activeTabBefore = paneStore.activeTab;
 
@@ -122,7 +133,8 @@ test('should handle closing tab from non-existent pane', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  await paneStore.initNewPane();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
   const activeTabBefore = paneStore.activeTab;
 
   paneStore.closeTab('non-existent-pane-id', 'some-tab-id');
@@ -134,68 +146,64 @@ test('should create panes snapshot correctly', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const firstPane = await paneStore.initNewPane({ title: 'First Tab' });
-  await paneStore.addTab({ title: 'Second Tab' });
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id, { title: 'First Tab' });
+  await paneStore.addTab(pane.id, { title: 'Second Tab' });
 
-  const snapshot = paneStore.getPanesSnapshot();
+  const snapshot = paneStore.getPanesData();
 
-  expect(snapshot.activePaneId).toBe(firstPane.id);
-  expect(snapshot.panes).toHaveLength(1);
-  expect(snapshot.panes[0].id).toBe(firstPane.id);
-  expect(snapshot.panes[0].tabs).toHaveLength(2);
-  expect(snapshot.panes[0].tabs[0].title).toBe('First Tab');
-  expect(snapshot.panes[0].tabs[1].title).toBe('Second Tab');
-  expect(snapshot.timestamp).toBeTypeOf('number');
+  expect(snapshot).toHaveLength(1);
+  expect(snapshot[0].id).toBe(pane.id);
+  expect(snapshot[0].tabs).toHaveLength(2);
+  expect(snapshot[0].tabs[0].title).toBe('First Tab');
+  expect(snapshot[0].tabs[1].title).toBe('Second Tab');
 });
 
 test('should restore panes from snapshot', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const originalPane = await paneStore.initNewPane({ title: 'Original Tab' });
-  const secondTab = await paneStore.addTab({ title: 'Second Tab' });
+  const originalPane = await paneStore.createPane();
+  await paneStore.addTab(originalPane.id, { title: 'Original Tab' });
+  const secondTab = await paneStore.addTab(originalPane.id, { title: 'Second Tab' });
 
-  const snapshot = paneStore.getPanesSnapshot();
+  const snapshot = paneStore.getPanesData();
 
   paneStore.closeTab(originalPane.id, secondTab!.id);
   expect(Object.keys(paneStore.panes)).toHaveLength(1);
-  expect(Object.keys(paneStore.activePane!.tabs.value)).toHaveLength(1);
+  const paneRef = paneStore.getPane(originalPane.id);
+  expect(Object.keys(paneRef.value.tabs.value)).toHaveLength(1);
 
-  await paneStore.restorePanesSnapshot(snapshot);
+  await paneStore.restorePanesData(snapshot);
 
   expect(Object.keys(paneStore.panes)).toHaveLength(1);
-  expect(paneStore.activePaneId).toBe(snapshot.activePaneId);
+  expect(paneStore.activePaneId).toBe(snapshot[0].id);
 
-  const restoredPane = paneStore.activePane;
-  expect(restoredPane?.tabs.value).toHaveProperty(snapshot.panes[0].tabs[0].id);
-  expect(restoredPane?.tabs.value).toHaveProperty(snapshot.panes[0].tabs[1].id);
+  const restoredPaneRef = paneStore.getPane(snapshot[0].id);
+  expect(restoredPaneRef.value.tabs.value).toHaveProperty(snapshot[0].tabs[0].id);
+  expect(restoredPaneRef.value.tabs.value).toHaveProperty(snapshot[0].tabs[1].id);
 });
 
 test('should create empty snapshot when no panes exist', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const snapshot = paneStore.getPanesSnapshot();
+  const snapshot = paneStore.getPanesData();
 
-  expect(snapshot.panes).toHaveLength(0);
-  expect(snapshot.activePaneId).toBe('');
-  expect(snapshot.timestamp).toBeTypeOf('number');
+  expect(snapshot).toHaveLength(0);
 });
 
 test('should handle restoring empty snapshot', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  await paneStore.initNewPane();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
   expect(Object.keys(paneStore.panes)).toHaveLength(1);
 
-  const emptySnapshot: PanesSnapshot = {
-    panes: [],
-    activePaneId: '',
-    timestamp: Date.now(),
-  };
+  const emptySnapshot: PaneSnapshot[] = [];
 
-  await paneStore.restorePanesSnapshot(emptySnapshot);
+  await paneStore.restorePanesData(emptySnapshot);
 
   expect(Object.keys(paneStore.panes)).toHaveLength(0);
   expect(paneStore.activePaneId).toBeNull();
@@ -205,7 +213,8 @@ test('should handle selectTab with non-existent pane', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  await paneStore.initNewPane();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
   const originalActiveTab = paneStore.activeTab;
 
   paneStore.selectTab('non-existent-pane', 'some-tab-id');
@@ -217,7 +226,8 @@ test('should handle selectTab with non-existent tab', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const pane = await paneStore.initNewPane();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
   const originalActiveTab = paneStore.activeTab;
 
   paneStore.selectTab(pane.id, 'non-existent-tab-id');
@@ -225,37 +235,66 @@ test('should handle selectTab with non-existent tab', async () => {
   expect(paneStore.activeTab).toBe(originalActiveTab);
 });
 
-test('should handle navigate when no active pane', async () => {
+test('should set active pane when selecting tab', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const result = paneStore.navigate({ path: '/some-path' });
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id);
 
-  expect(result).toBeUndefined();
+  const pane2 = await paneStore.createPane();
+  await paneStore.addTab(pane2.id);
+
+  expect(paneStore.activePaneId).toBe(pane2.id);
+
+  paneStore.selectTab(pane1.id, tab1!.id);
+
+  expect(paneStore.activePaneId).toBe(pane1.id);
+  expect(paneStore.activePane.id).toBe(pane1.id);
+  expect(paneStore.activeTab.id).toBe(tab1!.id);
 });
 
-test('should handle navigateTab with non-existent pane or tab', async () => {
+test('should throw error when navigate without active pane', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const result1 = paneStore.navigateTab('non-existent-pane', 'some-tab', { path: '/path' });
-  expect(result1).toBeUndefined();
+  await expect(paneStore.navigate({ path: '/some-path' })).rejects.toThrow('No active pane');
+});
 
-  const pane = await paneStore.initNewPane();
-  const result2 = paneStore.navigateTab(pane.id, 'non-existent-tab', { path: '/path' });
-  expect(result2).toBeUndefined();
+test('should throw error when navigate to non-existent pane', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  await expect(paneStore.navigate({ path: '/path' }, 'non-existent-pane')).rejects.toThrow(
+    'Pane non-existent-pane not found',
+  );
+});
+
+test('should throw error when navigate to non-existent tab', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
+
+  await expect(paneStore.navigate({ path: '/path' }, pane.id, 'non-existent-tab')).rejects.toThrow(
+    'Tab non-existent-tab not found or has no router',
+  );
 });
 
 test('closeTab should remove empty pane when other panes exist', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const firstPane = await paneStore.initNewPane({ title: 'First Pane' });
+  const firstPane = await paneStore.createPane();
+  await paneStore.addTab(firstPane.id, { title: 'First Pane' });
   const firstPaneId = firstPane.id;
 
-  const secondPane = await paneStore.initNewPane({ title: 'Second Pane' });
+  const secondPane = await paneStore.createPane();
+  await paneStore.addTab(secondPane.id, { title: 'Second Pane' });
   const secondPaneId = secondPane.id;
-  const secondTabId = secondPane.activeTabId;
+  const secondPaneRef = paneStore.getPane(secondPaneId);
+  const secondTabId = secondPaneRef.value.activeTabId;
 
   expect(Object.keys(paneStore.panes)).toHaveLength(2);
   expect(paneStore.activePaneId).toBe(secondPaneId);
@@ -272,9 +311,11 @@ test('closeTab should keep last pane and show InitialPage when its only tab is c
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const pane = await paneStore.initNewPane({ title: 'Only Pane' });
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id, { title: 'Only Pane' });
   const paneId = pane.id;
-  const tabId = pane.activeTabId;
+  const paneRef = paneStore.getPane(paneId);
+  const tabId = paneRef.value.activeTabId;
 
   expect(Object.keys(paneStore.panes)).toHaveLength(1);
 
@@ -290,18 +331,21 @@ test('cleanupEmptyPane should be reachable and remove pane correctly', async () 
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const firstPane = await paneStore.initNewPane();
+  const firstPane = await paneStore.createPane();
+  await paneStore.addTab(firstPane.id);
   const firstPaneId = firstPane.id;
 
-  const secondPane = await paneStore.initNewPane();
+  const secondPane = await paneStore.createPane();
+  await paneStore.addTab(secondPane.id);
   const secondPaneId = secondPane.id;
-  const secondTabId = secondPane.activeTabId;
+  const secondPaneRef = paneStore.getPane(secondPaneId);
+  const secondTabId = secondPaneRef.value.activeTabId;
 
-  const thirdTab = await paneStore.addTab({ title: 'Third tab' });
-  expect(Object.keys(paneStore.panes[secondPaneId].value.tabs.value)).toHaveLength(2);
+  const thirdTab = await paneStore.addTab(secondPaneId, { title: 'Third tab' });
+  expect(Object.keys(paneStore.getPane(secondPaneId).value.tabs.value)).toHaveLength(2);
 
   paneStore.closeTab(secondPaneId, secondTabId);
-  expect(Object.keys(paneStore.panes[secondPaneId].value.tabs.value)).toHaveLength(1);
+  expect(Object.keys(paneStore.getPane(secondPaneId).value.tabs.value)).toHaveLength(1);
 
   paneStore.closeTab(secondPaneId, thirdTab!.id);
 
@@ -309,854 +353,560 @@ test('cleanupEmptyPane should be reachable and remove pane correctly', async () 
   expect(paneStore.panes[firstPaneId]).toBeDefined();
 });
 
-test('initLayout should create initial pane layout node', async () => {
+test('createPane should create a new pane', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const pane = await paneStore.initNewPane();
-  paneStore.initLayout();
+  const pane = await paneStore.createPane();
 
-  expect(paneStore.layout).toBeDefined();
-  expect(paneStore.layout.type).toBe('pane');
-  expect(paneStore.layout.id).toBeDefined();
-
-  if (paneStore.layout.type === 'pane') {
-    expect(paneStore.layout.paneId).toBe(pane.id);
-  }
+  expect(pane.id).toBeDefined();
+  expect(paneStore.panes[pane.id]).toBeDefined();
+  expect(paneStore.activePaneId).toBe(pane.id);
 });
 
-test('initLayout should use existing active pane if available', async () => {
+test('deletePane should remove pane', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  await paneStore.initNewPane();
-  const secondPane = await paneStore.initNewPane();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
 
-  paneStore.initLayout();
+  expect(paneStore.panes[pane.id]).toBeDefined();
 
-  if (paneStore.layout.type === 'pane') {
-    expect(paneStore.layout.paneId).toBe(secondPane.id);
-  }
+  paneStore.closePane(pane.id);
+
+  expect(paneStore.panes[pane.id]).toBeUndefined();
 });
 
-test('findPaneInLayout should find pane node by paneId', async () => {
+test('closePane should remove pane', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const pane = await paneStore.initNewPane();
-  paneStore.initLayout();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
 
-  const found = paneStore.findPaneInLayout(pane.id);
+  expect(paneStore.panes[pane.id]).toBeDefined();
 
-  expect(found).toBeDefined();
-  expect(found?.type).toBe('pane');
-  if (found?.type === 'pane') {
-    expect(found.paneId).toBe(pane.id);
-  }
+  paneStore.closePane(pane.id);
+
+  expect(paneStore.panes[pane.id]).toBeUndefined();
 });
 
-test('findPaneInLayout should return null for non-existent paneId', async () => {
+test('setActivePane should set active pane ID', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  await paneStore.initNewPane();
-  paneStore.initLayout();
+  const firstPane = await paneStore.createPane();
+  await paneStore.addTab(firstPane.id);
+  const secondPane = await paneStore.createPane();
+  await paneStore.addTab(secondPane.id);
 
-  const found = paneStore.findPaneInLayout('non-existent-id');
+  expect(paneStore.activePaneId).toBe(secondPane.id);
 
-  expect(found).toBeNull();
+  paneStore.setActivePane(firstPane.id);
+
+  expect(paneStore.activePaneId).toBe(firstPane.id);
 });
 
-test('findPaneInLayout should search recursively in split nodes', async () => {
+test('getPane should return pane ref', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const firstPane = await paneStore.initNewPane();
-  paneStore.initLayout();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
 
-  await paneStore.splitPaneInLayout(firstPane.id, 'right');
+  const paneRef = paneStore.getPane(pane.id);
 
-  const splitLayout = paneStore.layout;
-  const newPaneId =
-    splitLayout.type === 'split' && splitLayout.children[1].type === 'pane'
-      ? splitLayout.children[1].paneId
-      : '';
-
-  const found = paneStore.findPaneInLayout(newPaneId);
-
-  expect(found).toBeDefined();
-  expect(found?.type).toBe('pane');
-  if (found?.type === 'pane') {
-    expect(found.paneId).toBe(newPaneId);
-  }
+  expect(paneRef.value.id).toBe(pane.id);
 });
 
-test('splitPaneInLayout should split pane to the left', async () => {
+test('getPane should throw error for non-existent pane', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
-
-  await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  const rootNode = paneStore.layout;
-  const rootPaneId = rootNode.type === 'pane' ? rootNode.paneId : '';
-
-  await paneStore.splitPaneInLayout(rootPaneId, 'left');
-
-  const newLayout = paneStore.layout;
-
-  expect(newLayout.type).toBe('split');
-  if (newLayout.type === 'split') {
-    expect(newLayout.orientation).toBe('horizontal');
-    expect(newLayout.children).toHaveLength(2);
-  }
-});
-
-test('splitPaneInLayout should split pane to the right', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  await paneStore.splitPaneInLayout(firstPane.id, 'right');
-
-  expect(paneStore.layout.type).toBe('split');
-  if (paneStore.layout.type === 'split') {
-    expect(paneStore.layout.orientation).toBe('horizontal');
-    expect(paneStore.layout.children).toHaveLength(2);
-    if (paneStore.layout.children[0].type === 'pane') {
-      expect(paneStore.layout.children[0].paneId).toBe(firstPane.id);
-    }
-    if (paneStore.layout.children[1].type === 'pane') {
-      const newPaneId = paneStore.layout.children[1].paneId;
-      expect(paneStore.panes[newPaneId]).toBeDefined();
-    }
-  }
-});
-
-test('splitPaneInLayout should split pane to the top', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  await paneStore.splitPaneInLayout(firstPane.id, 'top');
-
-  expect(paneStore.layout.type).toBe('split');
-  if (paneStore.layout.type === 'split') {
-    expect(paneStore.layout.orientation).toBe('vertical');
-    expect(paneStore.layout.children).toHaveLength(2);
-    if (paneStore.layout.children[0].type === 'pane') {
-      const newPaneId = paneStore.layout.children[0].paneId;
-      expect(paneStore.panes[newPaneId]).toBeDefined();
-    }
-    if (paneStore.layout.children[1].type === 'pane') {
-      expect(paneStore.layout.children[1].paneId).toBe(firstPane.id);
-    }
-  }
-});
-
-test('splitPaneInLayout should split pane to the bottom', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  await paneStore.splitPaneInLayout(firstPane.id, 'bottom');
-
-  expect(paneStore.layout.type).toBe('split');
-  if (paneStore.layout.type === 'split') {
-    expect(paneStore.layout.orientation).toBe('vertical');
-    expect(paneStore.layout.children).toHaveLength(2);
-    if (paneStore.layout.children[0].type === 'pane') {
-      expect(paneStore.layout.children[0].paneId).toBe(firstPane.id);
-    }
-    if (paneStore.layout.children[1].type === 'pane') {
-      const newPaneId = paneStore.layout.children[1].paneId;
-      expect(paneStore.panes[newPaneId]).toBeDefined();
-    }
-  }
-});
-
-test('removePaneFromLayout should remove pane and collapse parent split', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  await paneStore.splitPaneInLayout(firstPane.id, 'right');
-
-  const splitLayout = paneStore.layout;
-  const newPaneId =
-    splitLayout.type === 'split' && splitLayout.children[1].type === 'pane'
-      ? splitLayout.children[1].paneId
-      : '';
-
-  paneStore.removePaneFromLayout(newPaneId);
-
-  expect(paneStore.layout.type).toBe('pane');
-  if (paneStore.layout.type === 'pane') {
-    expect(paneStore.layout.paneId).toBe(firstPane.id);
-  }
-});
-
-test('removePaneFromLayout should handle nested splits', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  const secondPane = await paneStore.initNewPane();
-  await paneStore.splitPaneInLayout(firstPane.id, 'right');
-
-  const thirdPane = await paneStore.initNewPane();
-  await paneStore.splitPaneInLayout(secondPane.id, 'bottom');
-
-  paneStore.removePaneFromLayout(thirdPane.id);
-
-  expect(paneStore.layout.type).toBe('split');
-  if (paneStore.layout.type === 'split') {
-    expect(paneStore.layout.children).toHaveLength(2);
-  }
-});
-
-test('moveTab should move tab between panes', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  const secondPane = await paneStore.initNewPane();
-
-  const firstTabId = Object.keys(firstPane.tabs.value)[0];
-  const firstTab = firstPane.tabs.value[firstTabId];
-
-  paneStore.moveTab(firstTab.id, firstPane.id, secondPane.id);
-
-  expect(Object.keys(firstPane.tabs.value)).toHaveLength(0);
-  expect(Object.keys(secondPane.tabs.value)).toHaveLength(2);
-  expect(firstTab.id in secondPane.tabs.value).toBe(true);
-});
-
-test('moveTab should set moved tab as active in target pane', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  const secondPane = await paneStore.initNewPane();
-
-  const firstTabId = Object.keys(firstPane.tabs.value)[0];
-  const firstTab = firstPane.tabs.value[firstTabId];
-  const originalSecondActiveTabId = secondPane.activeTabId;
-
-  paneStore.moveTab(firstTab.id, firstPane.id, secondPane.id);
-
-  expect(secondPane.activeTabId).toBe(firstTab.id);
-  expect(secondPane.activeTabId).not.toBe(originalSecondActiveTabId);
-});
-
-test('moveTab should update source pane active tab when moving active tab', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const sourcePane = await paneStore.initNewPane();
-  const targetPane = await paneStore.initNewPane();
-
-  paneStore.activePaneId = sourcePane.id;
-  await paneStore.addTab();
-  await paneStore.addTab();
-
-  const initialTabId = sourcePane.activeTabId;
-  const tabKeysBeforeMove = Object.keys(sourcePane.tabs.value);
-  const remainingTabIds = tabKeysBeforeMove.filter((id) => id !== initialTabId);
-
-  paneStore.selectTab(sourcePane.id, initialTabId);
-
-  expect(sourcePane.activeTabId).toBe(initialTabId);
-  expect(tabKeysBeforeMove).toHaveLength(3);
-
-  paneStore.moveTab(initialTabId, sourcePane.id, targetPane.id);
-
-  const sourcePaneAfterMove = paneStore.getPane(sourcePane.id);
-  const activeAfterMove = sourcePaneAfterMove?.value.activeTabId;
-
-  expect(activeAfterMove).not.toBe(initialTabId);
-  expect(remainingTabIds).toContain(activeAfterMove);
-  expect(targetPane.activeTabId).toBe(initialTabId);
-  expect(Object.keys(sourcePane.tabs.value)).toHaveLength(2);
-});
-
-test('moveTab should clear active tab id when moving the last tab', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const sourcePane = await paneStore.initNewPane();
-  const targetPane = await paneStore.initNewPane();
-  await paneStore.initNewPane();
-
-  paneStore.activePaneId = sourcePane.id;
-
-  const onlyTabId = sourcePane.activeTabId;
-
-  expect(Object.keys(sourcePane.tabs.value)).toHaveLength(1);
-  expect(sourcePane.activeTabId).toBe(onlyTabId);
-
-  paneStore.moveTab(onlyTabId, sourcePane.id, targetPane.id);
-
-  const sourcePaneAfterMove = paneStore.getPane(sourcePane.id);
-
-  expect(sourcePaneAfterMove).toBeUndefined();
-  expect(targetPane.activeTabId).toBe(onlyTabId);
-  expect(paneStore.activePaneId).toBe(targetPane.id);
-});
-
-test('moveTab should handle missing source pane gracefully', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const targetPane = await paneStore.initNewPane();
-  const fakeTabId = 'fake-tab-id';
-  const nonExistentPaneId = 'non-existent-pane-id';
 
   expect(() => {
-    paneStore.moveTab(fakeTabId, nonExistentPaneId, targetPane.id);
-  }).not.toThrow();
-
-  expect(Object.keys(targetPane.tabs.value)).toHaveLength(1);
+    paneStore.getPane('non-existent-id');
+  }).toThrow();
 });
 
-test('moveTab should handle missing target pane gracefully', async () => {
+test('activePane should return active pane', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const sourcePane = await paneStore.initNewPane();
-  const tabId = sourcePane.activeTabId;
-  const nonExistentPaneId = 'non-existent-pane-id';
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
+
+  expect(paneStore.activePane.id).toBe(pane.id);
+});
+
+test('activeTab should return active tab', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id, { title: 'Test Tab' });
+
+  expect(paneStore.activeTab.title).toBe('Test Tab');
+});
+
+test('startDraggingTab should set dragging state', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
+  const paneRef = paneStore.getPane(pane.id);
+  const tabId = paneRef.value.activeTabId;
+
+  paneStore.startDraggingTab(tabId, pane.id);
+
+  expect(paneStore.isDraggingTab).toBe(true);
+  expect(paneStore.draggedTabData).toEqual({ tabId, paneId: pane.id });
+});
+
+test('stopDraggingTab should clear dragging state', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
+  const paneRef = paneStore.getPane(pane.id);
+  const tabId = paneRef.value.activeTabId;
+
+  paneStore.startDraggingTab(tabId, pane.id);
+  paneStore.stopDraggingTab();
+
+  expect(paneStore.isDraggingTab).toBe(false);
+  expect(paneStore.draggedTabData).toBeNull();
+});
+
+test('should move tab between panes', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Tab 1' });
+  await paneStore.addTab(pane1.id, { title: 'Tab 1.5' });
+
+  const pane2 = await paneStore.createPane();
+  await paneStore.addTab(pane2.id, { title: 'Tab 2' });
+
+  const movedTab = await paneStore.moveTab(tab1!.id, pane1.id, pane2.id);
+
+  expect(movedTab).toBeTruthy();
+  expect(movedTab?.paneId).toBe(pane2.id);
+  expect(paneStore.getPane(pane2.id).value.tabs.value[tab1!.id]).toBeDefined();
+});
+
+test('should move tab to specific index', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Tab 1' });
+
+  const pane2 = await paneStore.createPane();
+  await paneStore.addTab(pane2.id, { title: 'Tab 2' });
+  await paneStore.addTab(pane2.id, { title: 'Tab 3' });
+
+  await paneStore.moveTab(tab1!.id, pane1.id, pane2.id, 1);
+
+  const tabKeys = Object.keys(paneStore.getPane(pane2.id).value.tabs.value);
+  expect(tabKeys[1]).toBe(tab1!.id);
+});
+
+test('should activate moved tab in target pane', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Tab 1' });
+
+  const pane2 = await paneStore.createPane();
+  await paneStore.addTab(pane2.id, { title: 'Tab 2' });
+
+  await paneStore.moveTab(tab1!.id, pane1.id, pane2.id);
+
+  expect(paneStore.getPane(pane2.id).value.activeTabId).toBe(tab1!.id);
+  expect(paneStore.activePaneId).toBe(pane2.id);
+});
+
+test('should remove tab from source pane', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Tab 1' });
+  await paneStore.addTab(pane1.id, { title: 'Tab 1.5' });
+
+  const pane2 = await paneStore.createPane();
+  await paneStore.addTab(pane2.id, { title: 'Tab 2' });
+
+  await paneStore.moveTab(tab1!.id, pane1.id, pane2.id);
+
+  expect(paneStore.getPane(pane1.id).value.tabs.value[tab1!.id]).toBeUndefined();
+});
+
+test('should handle moving last tab from pane with multiple panes', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Tab 1' });
+
+  const pane2 = await paneStore.createPane();
+  await paneStore.addTab(pane2.id, { title: 'Tab 2' });
+
+  await paneStore.moveTab(tab1!.id, pane1.id, pane2.id);
+
+  expect(paneStore.panes[pane1.id]).toBeUndefined();
+});
+
+test('should remove source pane when empty and multiple panes exist', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Tab 1' });
+
+  const pane2 = await paneStore.createPane();
+  await paneStore.addTab(pane2.id, { title: 'Tab 2' });
+
+  await paneStore.moveTab(tab1!.id, pane1.id, pane2.id);
+
+  expect(paneStore.panes[pane1.id]).toBeUndefined();
+});
+
+test('should activate moved tab when it was active', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Tab 1' });
+  await paneStore.addTab(pane1.id, { title: 'Tab 2' });
+
+  paneStore.selectTab(pane1.id, tab1!.id);
+
+  const pane2 = await paneStore.createPane();
+  await paneStore.addTab(pane2.id, { title: 'Tab 3' });
+
+  await paneStore.moveTab(tab1!.id, pane1.id, pane2.id);
+
+  expect(paneStore.activePaneId).toBe(pane2.id);
+  expect(paneStore.getPane(pane2.id).value.activeTabId).toBe(tab1!.id);
+});
+
+test('should activate first tab in source pane after move', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Tab 1' });
+  const tab2 = await paneStore.addTab(pane1.id, { title: 'Tab 2' });
+
+  paneStore.selectTab(pane1.id, tab2!.id);
+
+  const pane2 = await paneStore.createPane();
+  await paneStore.addTab(pane2.id, { title: 'Tab 3' });
+
+  await paneStore.moveTab(tab2!.id, pane1.id, pane2.id);
+
+  expect(paneStore.getPane(pane1.id).value.activeTabId).toBe(tab1!.id);
+});
+
+test('should return moved tab', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Tab 1' });
+
+  const pane2 = await paneStore.createPane();
+  await paneStore.addTab(pane2.id, { title: 'Tab 2' });
+
+  const result = await paneStore.moveTab(tab1!.id, pane1.id, pane2.id);
+
+  expect(result).toBeTruthy();
+  expect(result?.id).toBe(tab1!.id);
+  expect(result?.paneId).toBe(pane2.id);
+});
+
+test('should return undefined when tab not found', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane1 = await paneStore.createPane();
+  await paneStore.addTab(pane1.id, { title: 'Tab 1' });
+
+  const pane2 = await paneStore.createPane();
+  await paneStore.addTab(pane2.id, { title: 'Tab 2' });
+
+  const result = await paneStore.moveTab('non-existent-id', pane1.id, pane2.id);
+
+  expect(result).toBeUndefined();
+});
+
+test('should return undefined when panes not found', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const result = await paneStore.moveTab('tab-id', 'non-existent-pane-1', 'non-existent-pane-2');
+
+  expect(result).toBeUndefined();
+});
+
+test('should handle moving to same pane', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Tab 1' });
+  await paneStore.addTab(pane1.id, { title: 'Tab 2' });
+
+  const result = await paneStore.moveTab(tab1!.id, pane1.id, pane1.id);
+
+  expect(result).toBeTruthy();
+  expect(paneStore.getPane(pane1.id).value.tabs.value[tab1!.id]).toBeDefined();
+});
+
+test('navigate should call router push on active tab in active pane', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  vi.clearAllMocks();
+
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
+
+  await paneStore.navigate({ name: 'EditNote', params: { path: 'test.org' } });
+
+  expect(mockRouter.push).toHaveBeenLastCalledWith({
+    name: 'EditNote',
+    params: { path: 'test.org', paneId: pane.id },
+  });
+});
+
+test('navigate should call router push on specific pane', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  vi.clearAllMocks();
+
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
+
+  await paneStore.navigate({ name: 'EditNote', params: { path: 'test.org' } }, pane.id);
+
+  expect(mockRouter.push).toHaveBeenLastCalledWith({
+    name: 'EditNote',
+    params: { path: 'test.org', paneId: pane.id },
+  });
+});
+
+test('navigate should handle string route params', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  vi.clearAllMocks();
+
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
+
+  await paneStore.navigate('/test-path');
+
+  expect(mockRouter.push).toHaveBeenLastCalledWith({ path: '/test-path' });
+});
+
+test('navigate should throw when pane has no active tab', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  await expect(paneStore.navigate({ path: '/test-path' })).rejects.toThrow();
+});
+
+test('navigate should call router push on specific tab', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  vi.clearAllMocks();
+
+  const pane = await paneStore.createPane();
+  const tab = await paneStore.addTab(pane.id);
+
+  await paneStore.navigate({ name: 'EditNote', params: { path: 'test.org' } }, pane.id, tab!.id);
+
+  expect(mockRouter.push).toHaveBeenCalledWith({
+    name: 'EditNote',
+    params: { path: 'test.org', paneId: pane.id },
+  });
+});
+
+test('navigate should handle string route with specific tab', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  vi.clearAllMocks();
+
+  const pane = await paneStore.createPane();
+  const tab = await paneStore.addTab(pane.id);
+
+  await paneStore.navigate('/edit-note/test.org', pane.id, tab!.id);
+
+  expect(mockRouter.push).toHaveBeenLastCalledWith({
+    path: '/edit-note/test.org',
+  });
+});
+
+test('navigate should preserve existing params', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const pane = await paneStore.createPane();
+  const tab = await paneStore.addTab(pane.id);
+
+  await paneStore.navigate(
+    {
+      name: 'EditNote',
+      params: { path: 'test.org', customParam: 'value' },
+    },
+    pane.id,
+    tab!.id,
+  );
+
+  expect(mockRouter.push).toHaveBeenCalledWith({
+    name: 'EditNote',
+    params: { path: 'test.org', customParam: 'value', paneId: pane.id },
+  });
+});
+
+test('addTab should return undefined when pane does not exist', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
+
+  const result = await paneStore.addTab('non-existent-pane-id');
+
+  expect(result).toBeUndefined();
+});
+
+test('setActivePane should throw error for non-existent pane', async () => {
+  setActivePinia(createPinia());
+  const paneStore = usePaneStore();
 
   expect(() => {
-    paneStore.moveTab(tabId, sourcePane.id, nonExistentPaneId);
-  }).not.toThrow();
-
-  expect(Object.keys(sourcePane.tabs.value)).toHaveLength(1);
-  expect(sourcePane.activeTabId).toBe(tabId);
+    paneStore.setActivePane('non-existent-pane-id');
+  }).toThrow();
 });
 
-test('moveTab should handle non-existent tab', async () => {
+test('activePane should return undefined when no active pane', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const firstPane = await paneStore.initNewPane();
-  const secondPane = await paneStore.initNewPane();
-
-  const originalFirstTabsCount = Object.keys(firstPane.tabs.value).length;
-  const originalSecondTabsCount = Object.keys(secondPane.tabs.value).length;
-
-  paneStore.moveTab('non-existent-tab', firstPane.id, secondPane.id);
-
-  expect(Object.keys(firstPane.tabs.value)).toHaveLength(originalFirstTabsCount);
-  expect(Object.keys(secondPane.tabs.value)).toHaveLength(originalSecondTabsCount);
+  expect(paneStore.activePane).toBeUndefined();
 });
 
-test('moveTab should handle non-existent source pane', async () => {
+test('activeTab should return undefined when no active tab', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const targetPane = await paneStore.initNewPane();
-  const originalTabsCount = Object.keys(targetPane.tabs.value).length;
+  await paneStore.createPane();
 
-  paneStore.moveTab('some-tab-id', 'non-existent-pane', targetPane.id);
-
-  expect(Object.keys(targetPane.tabs.value)).toHaveLength(originalTabsCount);
+  expect(paneStore.activeTab).toBeUndefined();
 });
 
-test('moveTab should handle non-existent target pane', async () => {
+test('closeTab should not affect other panes', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const sourcePane = await paneStore.initNewPane();
-  const firstTabId = Object.keys(sourcePane.tabs.value)[0];
-  const firstTab = sourcePane.tabs.value[firstTabId];
-  const originalTabsCount = Object.keys(sourcePane.tabs.value).length;
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Pane 1 Tab' });
 
-  paneStore.moveTab(firstTab.id, sourcePane.id, 'non-existent-pane');
+  const pane2 = await paneStore.createPane();
+  const tab2 = await paneStore.addTab(pane2.id, { title: 'Pane 2 Tab' });
 
-  expect(Object.keys(sourcePane.tabs.value)).toHaveLength(originalTabsCount);
+  paneStore.closeTab(pane2.id, tab2!.id);
+
+  expect(paneStore.getPane(pane1.id).value.tabs.value[tab1!.id]).toBeDefined();
+  expect(paneStore.getPane(pane1.id).value.tabs.value[tab1!.id].title).toBe('Pane 1 Tab');
 });
 
-test('splitPaneInLayout should handle deep nesting', async () => {
+test('should handle multiple tabs with same title pattern', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  await paneStore.initNewPane();
-  paneStore.initLayout();
+  const pane = await paneStore.createPane();
+  await paneStore.addTab(pane.id);
+  await paneStore.addTab(pane.id);
+  await paneStore.addTab(pane.id);
+  const tab4 = await paneStore.addTab(pane.id);
 
-  const rootNode = paneStore.layout;
-  const rootPaneId = rootNode.type === 'pane' ? rootNode.paneId : '';
-
-  await paneStore.splitPaneInLayout(rootPaneId, 'right');
-  const level1Split = paneStore.layout;
-
-  const secondPaneNode = level1Split.type === 'split' ? level1Split.children[1] : null;
-  const secondPaneId = secondPaneNode?.type === 'pane' ? secondPaneNode.paneId : '';
-
-  await paneStore.splitPaneInLayout(secondPaneId, 'bottom');
-
-  const finalLayout = paneStore.layout;
-
-  expect(finalLayout.type).toBe('split');
-  if (finalLayout.type === 'split') {
-    expect(finalLayout.children).toHaveLength(2);
-    expect(finalLayout.children[1].type).toBe('split');
-    if (finalLayout.children[1].type === 'split') {
-      expect(finalLayout.children[1].orientation).toBe('vertical');
-      expect(finalLayout.children[1].children).toHaveLength(2);
-    }
-  }
+  expect(tab4?.title).toBe('Untitled 4');
 });
 
-test('removePaneFromLayout should handle removing middle node in deep split', async () => {
+test('restorePanesData should restore multiple panes', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  await paneStore.initNewPane();
-  paneStore.initLayout();
+  const pane1 = await paneStore.createPane();
+  await paneStore.addTab(pane1.id, { title: 'Pane 1 Tab' });
 
-  const rootPaneId = paneStore.activePaneId ?? '';
+  const pane2 = await paneStore.createPane();
+  await paneStore.addTab(pane2.id, { title: 'Pane 2 Tab' });
 
-  await paneStore.splitPaneInLayout(rootPaneId, 'right');
-  const firstSplit = paneStore.layout;
-  const middlePaneId =
-    firstSplit.type === 'split' && firstSplit.children[1].type === 'pane'
-      ? firstSplit.children[1].paneId
-      : '';
+  const snapshot = paneStore.getPanesData();
 
-  await paneStore.splitPaneInLayout(middlePaneId, 'right');
+  paneStore.closePane(pane1.id);
+  paneStore.closePane(pane2.id);
 
-  paneStore.removePaneFromLayout(middlePaneId);
+  await paneStore.restorePanesData(snapshot);
 
-  const finalLayout = paneStore.layout;
-
-  expect(finalLayout.type).toBe('split');
-  if (finalLayout.type === 'split') {
-    expect(finalLayout.children).toHaveLength(2);
-    expect(finalLayout.children.every((child) => child.type === 'pane')).toBe(true);
-  }
-});
-
-test('splitPaneInLayout should handle non-existent paneId gracefully', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  const originalLayout = JSON.stringify(paneStore.layout);
-
-  const result = await paneStore.splitPaneInLayout('non-existent-pane', 'right');
-
-  expect(result).toBeNull();
-  expect(JSON.stringify(paneStore.layout)).toBe(originalLayout);
-});
-
-test('removePaneFromLayout should handle non-existent paneId gracefully', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  const originalLayout = JSON.stringify(paneStore.layout);
-
-  paneStore.removePaneFromLayout('non-existent-pane');
-
-  expect(JSON.stringify(paneStore.layout)).toBe(originalLayout);
-});
-
-test('removePaneFromLayout should handle single pane layout', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  const originalLayout = paneStore.layout;
-  const paneId = originalLayout.type === 'pane' ? originalLayout.paneId : '';
-
-  paneStore.removePaneFromLayout(paneId);
-
-  expect(paneStore.layout).toEqual(originalLayout);
-});
-
-test('splitPaneInLayout should create new pane in panes record', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  const initialPaneCount = Object.keys(paneStore.panes).length;
-  const rootPaneId = paneStore.activePaneId ?? '';
-
-  await paneStore.splitPaneInLayout(rootPaneId, 'right');
-
-  expect(Object.keys(paneStore.panes)).toHaveLength(initialPaneCount + 1);
-});
-
-test('cleanupEmptyPane should remove pane from layout tree', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  await paneStore.splitPaneInLayout(firstPane.id, 'right');
-
-  const splitLayout = paneStore.layout;
-  const secondPaneId =
-    splitLayout.type === 'split' && splitLayout.children[1].type === 'pane'
-      ? splitLayout.children[1].paneId
-      : '';
-  const secondTabId = paneStore.panes[secondPaneId].value.activeTabId;
-
-  expect(paneStore.layout.type).toBe('split');
   expect(Object.keys(paneStore.panes)).toHaveLength(2);
-
-  paneStore.closeTab(secondPaneId, secondTabId);
-
-  expect(paneStore.layout.type).toBe('pane');
-  expect(Object.keys(paneStore.panes)).toHaveLength(1);
-  if (paneStore.layout.type === 'pane') {
-    expect(paneStore.layout.paneId).toBe(firstPane.id);
-  }
+  expect(paneStore.panes[pane1.id]).toBeDefined();
+  expect(paneStore.panes[pane2.id]).toBeDefined();
 });
 
-test('initLayout should fix corrupted layout with empty paneId', async () => {
+test('should activate remaining pane when closing last tab in active pane with multiple panes', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  const pane = await paneStore.initNewPane();
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Pane 1 Tab' });
 
-  paneStore.layout = { type: 'pane', id: 'old-id', paneId: '' };
+  const pane2 = await paneStore.createPane();
+  const tab2 = await paneStore.addTab(pane2.id, { title: 'Pane 2 Tab' });
 
-  paneStore.initLayout();
+  paneStore.setActivePane(pane2.id);
+  expect(paneStore.activePaneId).toBe(pane2.id);
 
-  expect(paneStore.layout.type).toBe('pane');
-  if (paneStore.layout.type === 'pane') {
-    expect(paneStore.layout.paneId).toBe(pane.id);
-    expect(paneStore.layout.paneId).not.toBe('');
-  }
+  paneStore.closeTab(pane2.id, tab2!.id);
+
+  expect(paneStore.activePaneId).toBe(pane1.id);
+  expect(paneStore.activePane).toBeDefined();
+  expect(paneStore.activePane?.activeTabId).toBeTruthy();
+  expect(paneStore.activeTab).toBeDefined();
+  expect(paneStore.activeTab?.id).toBe(tab1!.id);
 });
 
-test('initLayout should not recreate valid layout', async () => {
+test('BUG: should activate tab in remaining pane when it has no active tab', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
-  await paneStore.initNewPane();
-  paneStore.initLayout();
+  const pane1 = await paneStore.createPane();
+  const tab1 = await paneStore.addTab(pane1.id, { title: 'Pane 1 Tab' });
 
-  const originalLayoutId = paneStore.layout.id;
+  const pane2 = await paneStore.createPane();
+  const tab2 = await paneStore.addTab(pane2.id, { title: 'Pane 2 Tab' });
 
-  paneStore.initLayout();
-
-  expect(paneStore.layout.id).toBe(originalLayoutId);
-});
-
-test('restorePanes should initialize layout after restoration', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const pane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  const snapshot: PanesSnapshot = {
-    panes: [
-      {
-        id: pane.id,
-        activeTabId: pane.activeTabId,
-        tabs: [
-          {
-            id: pane.activeTabId,
-            title: 'Test Tab',
-            paneId: pane.id,
-            routeLocation: {
-              path: '/',
-              params: {},
-              query: {},
-              hash: '',
-              name: 'InitialPage',
-            },
-          },
-        ],
-      },
-    ],
-    activePaneId: pane.id,
-    timestamp: Date.now(),
+  paneStore.panes[pane1.id].value = {
+    ...paneStore.panes[pane1.id].value,
+    activeTabId: '',
   };
 
-  paneStore.layout = { type: 'pane', id: 'corrupted-id', paneId: '' };
+  paneStore.setActivePane(pane2.id);
 
-  await paneStore.restorePanesSnapshot(snapshot);
-  paneStore.initLayout();
+  paneStore.closeTab(pane2.id, tab2!.id);
 
-  const finalLayout = paneStore.layout;
-  expect(finalLayout.type).toBe('pane');
-  if (finalLayout.type === 'pane') {
-    expect(finalLayout.paneId).toBe(pane.id);
-    expect(finalLayout.paneId).not.toBe('');
-  }
-});
-
-test('activePane should return null when activePaneId is empty', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  await paneStore.initNewPane();
-  paneStore.activePaneId = '';
-
-  expect(paneStore.activePane).toBeNull();
-});
-
-test('activePane should return null when activePaneId does not exist in panes', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  await paneStore.initNewPane();
-  paneStore.activePaneId = 'non-existent-pane-id';
-
-  expect(paneStore.activePane).toBeNull();
-});
-
-test('restorePanesSnapshot should call initLayout after restoration', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const pane = await paneStore.initNewPane();
-
-  const snapshot: PanesSnapshot = {
-    panes: [
-      {
-        id: pane.id,
-        activeTabId: pane.activeTabId,
-        tabs: [
-          {
-            id: pane.activeTabId,
-            title: 'Test Tab',
-            paneId: pane.id,
-            routeLocation: {
-              path: '/',
-              params: {},
-              query: {},
-              hash: '',
-              name: 'InitialPage',
-            },
-          },
-        ],
-      },
-    ],
-    activePaneId: pane.id,
-    timestamp: Date.now(),
-  };
-
-  paneStore.layout = { type: 'pane', id: 'corrupted-id', paneId: '' };
-
-  await paneStore.restorePanesSnapshot(snapshot);
-
-  expect(paneStore.layout.type).toBe('pane');
-  if (paneStore.layout.type === 'pane') {
-    expect(paneStore.layout.paneId).not.toBe('');
-    expect(paneStore.panes[paneStore.layout.paneId]).toBeDefined();
-  }
-});
-
-test('splitPaneInLayout should handle deeply nested layouts', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  await paneStore.splitPaneInLayout(firstPane.id, 'right');
-  const pane2Id = Object.keys(paneStore.panes).find((id) => id !== firstPane.id)!;
-
-  await paneStore.splitPaneInLayout(pane2Id, 'bottom');
-  const pane3Id = Object.keys(paneStore.panes).find((id) => id !== firstPane.id && id !== pane2Id)!;
-
-  await paneStore.splitPaneInLayout(pane3Id, 'right');
-
-  expect(paneStore.layout.type).toBe('split');
-  expect(Object.keys(paneStore.panes)).toHaveLength(4);
-
-  const findPaneInLayout = (node: typeof paneStore.layout, paneId: string): boolean => {
-    if (node.type === 'pane') {
-      return node.paneId === paneId;
-    }
-    return node.children.some((child) => findPaneInLayout(child, paneId));
-  };
-
-  expect(findPaneInLayout(paneStore.layout, firstPane.id)).toBe(true);
-  expect(findPaneInLayout(paneStore.layout, pane2Id)).toBe(true);
-  expect(findPaneInLayout(paneStore.layout, pane3Id)).toBe(true);
-});
-
-test('removePaneFromLayout should handle deeply nested pane removal', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  await paneStore.splitPaneInLayout(firstPane.id, 'right');
-  const pane2Id = Object.keys(paneStore.panes).find((id) => id !== firstPane.id)!;
-
-  await paneStore.splitPaneInLayout(pane2Id, 'bottom');
-  const pane3Id = Object.keys(paneStore.panes).find((id) => id !== firstPane.id && id !== pane2Id)!;
-
-  await paneStore.splitPaneInLayout(pane3Id, 'right');
-  const pane4Id = Object.keys(paneStore.panes).find(
-    (id) => id !== firstPane.id && id !== pane2Id && id !== pane3Id,
-  )!;
-
-  expect(Object.keys(paneStore.panes)).toHaveLength(4);
-
-  const pane4 = paneStore.panes[pane4Id].value;
-  paneStore.closeTab(pane4Id, pane4.activeTabId);
-
-  expect(Object.keys(paneStore.panes)).toHaveLength(3);
-  expect(paneStore.panes[pane4Id]).toBeUndefined();
-});
-
-test('moveTab should work across deeply nested panes', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  await paneStore.splitPaneInLayout(firstPane.id, 'right');
-  const pane2Id = Object.keys(paneStore.panes).find((id) => id !== firstPane.id)!;
-
-  await paneStore.splitPaneInLayout(pane2Id, 'bottom');
-  const pane3Id = Object.keys(paneStore.panes).find((id) => id !== firstPane.id && id !== pane2Id)!;
-
-  const pane3 = paneStore.panes[pane3Id].value;
-
-  paneStore.activePaneId = firstPane.id;
-  const sourceTab = await paneStore.addTab();
-  const sourceTabId = sourceTab!.id;
-
-  expect(firstPane.tabs.value[sourceTabId]).toBeDefined();
-  expect(pane3.tabs.value[sourceTabId]).toBeUndefined();
-
-  paneStore.moveTab(sourceTabId, firstPane.id, pane3Id);
-
-  expect(firstPane.tabs.value[sourceTabId]).toBeUndefined();
-  expect(pane3.tabs.value[sourceTabId]).toBeDefined();
-});
-
-test('splitPaneInLayout with all directions creates correct layout', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const centerPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  await paneStore.splitPaneInLayout(centerPane.id, 'right');
-  await paneStore.splitPaneInLayout(centerPane.id, 'left');
-  await paneStore.splitPaneInLayout(centerPane.id, 'top');
-  await paneStore.splitPaneInLayout(centerPane.id, 'bottom');
-
-  expect(Object.keys(paneStore.panes)).toHaveLength(5);
-  expect(paneStore.panes[centerPane.id]).toBeDefined();
-});
-
-test('multiple concurrent closeTab operations maintain layout consistency', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  await paneStore.splitPaneInLayout(firstPane.id, 'right');
-  const pane2Id = Object.keys(paneStore.panes).find((id) => id !== firstPane.id)!;
-  const pane2 = paneStore.panes[pane2Id].value;
-
-  await paneStore.splitPaneInLayout(pane2Id, 'bottom');
-  const pane3Id = Object.keys(paneStore.panes).find((id) => id !== firstPane.id && id !== pane2Id)!;
-  const pane3 = paneStore.panes[pane3Id].value;
-
-  const initialPaneCount = Object.keys(paneStore.panes).length;
-  expect(initialPaneCount).toBe(3);
-
-  paneStore.closeTab(pane2Id, pane2.activeTabId);
-  paneStore.closeTab(pane3Id, pane3.activeTabId);
-
-  expect(Object.keys(paneStore.panes).length).toBeLessThan(initialPaneCount);
-  expect(paneStore.layout.type).toBe('pane');
-  if (paneStore.layout.type === 'pane') {
-    expect(paneStore.panes[paneStore.layout.paneId]).toBeDefined();
-  }
-});
-
-test('splitPaneInLayout should maintain proper parent-child relationships', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const rootPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  await paneStore.splitPaneInLayout(rootPane.id, 'right');
-  await paneStore.splitPaneInLayout(rootPane.id, 'bottom');
-
-  expect(paneStore.layout.type).toBe('split');
-
-  if (paneStore.layout.type === 'split') {
-    expect(paneStore.layout.children.length).toBeGreaterThan(0);
-
-    const findNodeDepth = (node: LayoutNode, paneId: string, depth = 0): number => {
-      if (node.type === 'pane') {
-        return node.paneId === paneId ? depth : -1;
-      }
-      if (node.type === 'split') {
-        for (const child of node.children) {
-          const result = findNodeDepth(child, paneId, depth + 1);
-          if (result !== -1) return result;
-        }
-      }
-      return -1;
-    };
-
-    expect(findNodeDepth(paneStore.layout, rootPane.id)).toBeGreaterThanOrEqual(0);
-  }
-});
-
-test('layout should remain valid after removing middle pane in three-pane split', async () => {
-  setActivePinia(createPinia());
-  const paneStore = usePaneStore();
-
-  const firstPane = await paneStore.initNewPane();
-  paneStore.initLayout();
-
-  await paneStore.splitPaneInLayout(firstPane.id, 'right');
-  const pane2Id = Object.keys(paneStore.panes).find((id) => id !== firstPane.id)!;
-  const pane2 = paneStore.panes[pane2Id].value;
-
-  await paneStore.splitPaneInLayout(pane2Id, 'bottom');
-  const pane3Id = Object.keys(paneStore.panes).find((id) => id !== firstPane.id && id !== pane2Id)!;
-  const pane3 = paneStore.panes[pane3Id].value;
-
-  const initialPaneCount = Object.keys(paneStore.panes).length;
-  expect(initialPaneCount).toBe(3);
-
-  paneStore.closeTab(pane2Id, pane2.activeTabId);
-  paneStore.closeTab(pane3Id, pane3.activeTabId);
-
-  expect(Object.keys(paneStore.panes).length).toBeLessThan(initialPaneCount);
-  expect(paneStore.layout.type).toBe('pane');
-  if (paneStore.layout.type === 'pane') {
-    expect(paneStore.panes[paneStore.layout.paneId]).toBeDefined();
-  }
+  expect(paneStore.activePaneId).toBe(pane1.id);
+  expect(paneStore.activePane?.activeTabId).toBe(tab1!.id);
+  expect(paneStore.activeTab).toBeDefined();
+  expect(paneStore.activeTab?.id).toBe(tab1!.id);
 });

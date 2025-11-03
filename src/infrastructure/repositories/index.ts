@@ -10,10 +10,10 @@ import {
   LOGGER_REPOSITORY_NAME,
 } from './logger-repository';
 import {
-  createPaneSnapshotRepository,
+  createLayoutSnapshotRepository,
   PANE_SNAPSHOT_MIGRATIONS,
   PANE_SNAPSHOT_REPOSITORY_NAME,
-} from './pane-snapshot-repository';
+} from './layout-snapshot-repository';
 import type Dexie from 'dexie';
 
 let database: Dexie | null = null;
@@ -32,6 +32,6 @@ export async function initRepositories(): Promise<OrgNoteApi['infrastructure']> 
     fileInfoRepository: createFileRepository(db),
     noteInfoRepository: createNoteInfoRepository(db),
     logRepository: createLoggerRepository(db),
-    paneSnapshotRepository: createPaneSnapshotRepository(db),
+    layoutSnapshotRepository: createLayoutSnapshotRepository(db),
   };
 }
