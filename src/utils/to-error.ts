@@ -1,12 +1,13 @@
 import type { Result } from 'neverthrow';
 import { ResultAsync, ok, err } from 'neverthrow';
+import { isPresent } from './nullable-guards';
 
 const defaultToError = (e: unknown) => (e instanceof Error ? e : new Error(String(e)));
 
 function isPromiseLike<T = unknown>(x: unknown): x is PromiseLike<T> {
   return (
     typeof x === 'object' &&
-    x !== null &&
+    isPresent(x) &&
     'then' in x &&
     typeof (x as { then?: unknown }).then === 'function'
   );

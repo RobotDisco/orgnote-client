@@ -6,7 +6,7 @@ export const createFolderCompletion = async (api: OrgNoteApi): Promise<string> =
   const filePath = await getNewFolderName(api, fm.focusDirPath);
 
   if (!filePath) {
-    return;
+    return '';
   }
 
   await fm.createFolder(filePath);

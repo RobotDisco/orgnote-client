@@ -90,7 +90,7 @@ test('closeBuffer returns true and removes buffer when no changes', async () => 
   expect(store.allBuffers.length).toBe(1);
   const closed = await store.closeBuffer('/test/file.org');
   expect(closed).toBe(true);
-  expect(store.getBufferByPath('/test/file.org')).toBeNull();
+  expect(store.getBufferByPath('/test/file.org')).toBeUndefined();
 });
 
 test('closeBuffer returns false when unsaved changes and force=false', async () => {
@@ -108,7 +108,7 @@ test('closeBuffer returns true when unsaved changes and force=true', async () =>
   b.content = 'modified content';
   const closed = await store.closeBuffer('/test/file.org', true);
   expect(closed).toBe(true);
-  expect(store.getBufferByPath('/test/file.org')).toBeNull();
+  expect(store.getBufferByPath('/test/file.org')).toBeUndefined();
 });
 
 test('saveAllBuffers calls file system write for all buffers', async () => {

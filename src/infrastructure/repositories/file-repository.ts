@@ -68,11 +68,11 @@ export const createFileRepository = (db: Dexie): FileInfoRepository => {
   };
 
   const getByPath = async (path: string): Promise<FileInfo | undefined> => {
-    const note = await store.get({ filePath: path });
-    if (note?.deletedAt) {
+    const file = await store.get({ filePath: path });
+    if (!file || file.deletedAt) {
       return;
     }
-    return note;
+    return file;
   };
 
   return {

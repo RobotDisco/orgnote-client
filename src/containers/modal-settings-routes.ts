@@ -74,7 +74,7 @@ export function createSettingsRouter() {
   });
 
   const screenWidth = ref(window.innerWidth);
-  const isMobile = ref<boolean>(null);
+  const isMobile = ref<boolean>(false);
 
   const updateRoutes = () => {
     router.removeRoute(RouteNames.SettingsPage);

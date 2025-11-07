@@ -16,24 +16,27 @@ import { computed, shallowRef, ref } from 'vue';
 import type { RouteLocationRaw, Router } from 'vue-router';
 import { createPaneRouter } from 'src/utils/pane-router';
 import { useLayoutStore } from './layout';
+import { isPresent } from 'src/utils/nullable-guards';
 
 export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
   // TODO: feat/stable-beta replace by reactive object
   const panes = shallowRef<Record<string, ShallowRef<Pane>>>({});
-  const activePaneId = ref<string | undefined>(null);
+  const activePaneId = ref<string | undefined>();
 
   const isDraggingTab = shallowRef(false);
   // TODO: feat/stable-beta separated drag&drop state
-  const draggedTabData = shallowRef<{ tabId: string; paneId: string } | undefined>(null);
+  const draggedTabData = shallowRef<{ tabId: string; paneId: string } | undefined>();
 
-  const activePane = computed((): Pane => {
-    const pane = panes.value[activePaneId.value];
+  const activePane = computed((): Pane | undefined => {
+    const paneId = activePaneId.value;
+    const pane = panes.value[paneId!];
     return pane?.value;
   });
 
-  const activeTab = computed((): Tab | undefined => {
+  const activeTab = computed(() => {
     const pane = activePane.value;
-    return pane.tabs.value[pane?.activeTabId];
+    const tab = pane?.tabs.value[pane.activeTabId];
+    return tab;
   });
 
   const getAllTabTitles = computed((): string[] => {
@@ -175,7 +178,7 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
 
   const stopDraggingTab = (): void => {
     isDraggingTab.value = false;
-    draggedTabData.value = null;
+    draggedTabData.value = undefined;
   };
 
   const getPanesData = (): PaneSnapshot[] => {
@@ -191,10 +194,10 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
       panes.value[paneSnapshot.id] = pane;
     }
 
-    if (snapshot.length > 0) {
+    if (snapshot.length > 0 && snapshot[0]) {
       activePaneId.value = snapshot[0].id;
     } else {
-      activePaneId.value = null;
+      activePaneId.value = undefined;
     }
   };
 
@@ -241,6 +244,8 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
     }
 
     const newActivePaneId = remainingPanes[0];
+    if (!newActivePaneId) return;
+
     activePaneId.value = newActivePaneId;
 
     const newActivePane = panes.value[newActivePaneId];
@@ -296,6 +301,7 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
 
   const handleLastTabDeletion = (pane: ShallowRef<Pane>, tabId: string, paneId: string): void => {
     const tab = pane.value.tabs.value[tabId];
+    if (!tab) return;
     resetLastTabRoute(tab, paneId);
   };
 
@@ -339,9 +345,11 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
   const setFirstTabAsActive = (pane: ShallowRef<Pane>): void => {
     const tabKeys = Object.keys(pane.value.tabs.value);
     if (tabKeys.length === 0) return;
+    const firstTabId = tabKeys[0];
+    if (!firstTabId) return;
     pane.value = {
       ...pane.value,
-      activeTabId: tabKeys[0],
+      activeTabId: firstTabId,
     };
   };
 
@@ -461,7 +469,7 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
   };
 
   const shouldRemovePane = (fromPaneId: string): boolean =>
-    hasMultiplePanes.value && panes.value[fromPaneId] !== undefined;
+    hasMultiplePanes.value && isPresent(panes.value[fromPaneId]);
 
   const updateActivePaneIfNeeded = (fromPaneId: string, toPaneId: string): void => {
     const shouldUpdateActivePane = activePaneId.value === fromPaneId;
@@ -478,6 +486,7 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
 
   const getTabFromPane = (paneId: string, tabId: string): Tab | undefined => {
     const pane = panes.value[paneId];
+    if (!pane) return;
     return pane.value?.tabs.value[tabId];
   };
 
@@ -487,7 +496,7 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
   });
 
   const addTabToPane = (pane: ShallowRef<Pane>, tab: Tab, index?: number): void => {
-    const hasValidIndex = index !== undefined && index >= 0;
+    const hasValidIndex = isPresent(index) && index >= 0;
     const newTabs = hasValidIndex
       ? insertTabAtIndex(pane.value.tabs.value, tab, index)
       : appendTab(pane.value.tabs.value, tab);

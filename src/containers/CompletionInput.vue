@@ -5,7 +5,7 @@
       <app-input
         ref="appInputRef"
         @keypress.enter="handleCompletionInput"
-        v-model="activeCompletion.searchQuery"
+        v-model="completion.activeCompletion!.searchQuery"
         :placeholder="placeholder"
       ></app-input>
     </div>
@@ -13,7 +13,7 @@
     <visibility-wrapper desktop-above>
       <action-button
         @click="toggleFullScreen"
-        :icon="config.fullScreen ? 'sym_o_close_fullscreen' : 'open_in_full'"
+        :icon="config?.fullScreen ? 'sym_o_close_fullscreen' : 'open_in_full'"
         size="sm"
       ></action-button>
     </visibility-wrapper>
@@ -36,20 +36,19 @@ defineProps<{
 }>();
 
 const completion = api.core.useCompletion();
-const { activeCompletion } = storeToRefs(completion);
 
 const modal = api.ui.useModal();
 const { config } = storeToRefs(modal);
 const toggleFullScreen = () => {
   modal.updateConfig({
-    fullScreen: !config.value.fullScreen,
+    fullScreen: !config.value?.fullScreen,
   });
 };
 
 const handleCompletionInput = () => {
-  const isInputChoice = activeCompletion.value.type === 'input-choice';
+  const isInputChoice = completion.activeCompletion!.type === 'input-choice';
   if (isInputChoice) {
-    completion.close(completion.activeCompletion.searchQuery);
+    completion.close(completion.activeCompletion!.searchQuery);
     return;
   }
 };

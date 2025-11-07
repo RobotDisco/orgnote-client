@@ -119,7 +119,7 @@ test('setThemeColor updates existing meta tag with the correct color', () => {
 });
 
 test('setThemeColor creates a new meta tag if it does not exist', () => {
-  document.head.querySelector('meta[name="theme-color"]').remove();
+  document.head.querySelector('meta[name="theme-color"]')!.remove();
 
   const bgSettings = useBackgroundSettings();
   bgSettings.setBackground('bg');

@@ -24,9 +24,9 @@ const { t } = useI18n({
 
 const commonScheme = valibotScheme({ ...ORG_NOTE_CONFIG_SCHEMA.entries.ui });
 const theme = valibotScheme({ ...ORG_NOTE_CONFIG_SCHEMA.entries.ui.entries.theme });
-delete commonScheme.entries['theme'];
-delete commonScheme.entries['darkThemeName'];
-delete commonScheme.entries['lightThemeName'];
+delete commonScheme.entries?.['theme'];
+delete commonScheme.entries?.['darkThemeName'];
+delete commonScheme.entries?.['lightThemeName'];
 const themeScheme = valibotScheme({ ...ORG_NOTE_CONFIG_SCHEMA.entries.ui });
 themeScheme.entries = {
   theme,

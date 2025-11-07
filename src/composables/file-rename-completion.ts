@@ -10,11 +10,12 @@ export const useFileRenameCompletion = async (
   const filePathDoesNotChanged = filePath === result || !result;
 
   if (filePathDoesNotChanged) {
-    return;
+    return '';
   }
 
   const fm = api.core.useFileSystem();
   await fm.rename(filePath, result);
+  return result;
 };
 
 const getNewFileName = async (api: OrgNoteApi, filePath: string) => {

@@ -15,7 +15,7 @@ import {
 } from 'src/utils/platform-specific';
 import { useEncryptionStore } from 'src/stores/encryption';
 import { useSplashScreen } from 'src/composables/use-splash-screen';
-import { getCssVar, useQuasar } from 'quasar';
+import { useQuasar } from 'quasar';
 import {
   getCssTheme,
   getNumericCssVar,
@@ -23,6 +23,7 @@ import {
   getCssNumericProperty,
   applyCSSVariables,
   resetCSSVariables,
+  getCssVar,
 } from 'src/utils/css-utils';
 import { useBackgroundSettings } from 'src/composables/background';
 import { useSidebarStore } from 'src/stores/sidebar';

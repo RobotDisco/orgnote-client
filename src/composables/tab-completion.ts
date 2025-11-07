@@ -9,6 +9,7 @@ import type {
   Tab,
 } from 'orgnote-api';
 import { I18N } from 'orgnote-api';
+import { DEFAULT_FUST_THRESHOLD } from 'src/constants/config';
 
 const transformPanesToCompletionCandidates = (
   panes: ShallowRef<Pane>[],
@@ -50,7 +51,7 @@ export const useTabCompletion = async (api: OrgNoteApi): Promise<void> => {
   const paneStore = api.core.usePane();
   const panes = Object.values(paneStore.panes);
   const tabs = transformPanesToCompletionCandidates(panes, paneStore.selectTab);
-  const threshold = api.core.useConfig().config.completion.fuseThreshold;
+  const threshold = api.core.useConfig().config.completion.fuseThreshold ?? DEFAULT_FUST_THRESHOLD;
   const itemsGetter = createTabSearcher(tabs, threshold);
 
   completion.open<Tab>({

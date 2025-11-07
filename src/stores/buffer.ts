@@ -37,7 +37,7 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     }
 
     const w = await encryptContent(buffer.path, buffer.content)
-      .andThen((content) => to(fm.currentFs.writeFile)(buffer.path, content))
+      .andThen((content) => to(fm.currentFs!.writeFile)(buffer.path, content))
       .map(() => {
         buffer.metadata.originalContent = buffer.content;
       });
@@ -101,16 +101,6 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
   };
 
   const allBuffers = computed(() => Array.from(buffers.value.values()));
-  const recentBuffers = computed(() =>
-    [...allBuffers.value]
-      .sort((a, b) => b.lastAccessed.getTime() - a.lastAccessed.getTime())
-      .slice(0, 10),
-  );
-
-  const currentBuffer = computed((): OrgBuffer | null => {
-    const all = allBuffers.value;
-    return all.length > 0 ? all[0] : null;
-  });
 
   const getOrCreateBuffer = async (path: string): Promise<OrgBuffer> => {
     const existing = buffers.value.get(path);
@@ -152,8 +142,8 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     buffer.referenceCount = Math.max(0, buffer.referenceCount - 1);
   };
 
-  const getBufferByPath = (path: string): OrgBuffer | null => {
-    return buffers.value.get(path) || null;
+  const getBufferByPath = (path: string): OrgBuffer | undefined => {
+    return buffers.value.get(path);
   };
 
   const saveBuffer = async (path: string): Promise<void> => {
@@ -185,9 +175,7 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
 
   const store: BufferStore = {
     buffers,
-    currentBuffer,
     allBuffers,
-    recentBuffers,
     getOrCreateBuffer,
     releaseBuffer,
     closeBuffer,

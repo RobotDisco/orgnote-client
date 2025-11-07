@@ -1,7 +1,7 @@
 <template>
   <div>
-    <input :id="id" name="toggle" class="sw" type="checkbox" v-model="model" />
-    <label :for="id"></label>
+    <input :id="id ?? undefined" name="toggle" class="sw" type="checkbox" v-model="model" />
+    <label :for="id ?? undefined"></label>
   </div>
 </template>
 

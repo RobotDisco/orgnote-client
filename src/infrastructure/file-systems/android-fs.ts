@@ -1,5 +1,6 @@
 import { splitPath, type DiskFile, type FileSystem, type FileSystemParams } from 'orgnote-api';
 import { AndroidSaf } from 'src/plugins/saf.plugin';
+import { isPresent } from 'src/utils/nullable-guards';
 import { to } from 'src/utils/to-error';
 
 export const ANDROID_SAF_FS_NAME = 'SAF android file system';
@@ -7,14 +8,14 @@ export const ANDROID_SAF_FS_NAME = 'SAF android file system';
 export const useAndroidFs = (): FileSystem => {
   let rootUri = '';
 
-  const init: FileSystem['init'] = async (params: FileSystemParams): Promise<FileSystemParams> => {
-    params.root = params?.root ?? (await pickFolder());
-    rootUri = params.root;
-    return params;
+  const init: FileSystem['init'] = async (params?: FileSystemParams): Promise<FileSystemParams> => {
+    const root = params?.root ?? (await pickFolder());
+    rootUri = root;
+    return { ...params, root };
   };
 
-  const mount: FileSystem['mount'] = async (params: FileSystemParams): Promise<boolean> => {
-    if (params.root) {
+  const mount: FileSystem['mount'] = async (params?: FileSystemParams): Promise<boolean> => {
+    if (params?.root) {
       rootUri = params.root;
       return true;
     }
@@ -33,10 +34,8 @@ export const useAndroidFs = (): FileSystem => {
     type: 'file' | 'directory';
     size: number;
     mtime: number;
-  }): DiskFile => {
-    if (!file) {
-      return;
-    }
+  }): DiskFile | undefined => {
+    if (!file) return;
     const uri = file.uri || file.path || '';
     let relativePath = '';
 
@@ -59,7 +58,10 @@ export const useAndroidFs = (): FileSystem => {
     };
   };
 
-  const readFile: FileSystem['readFile'] = async (path, encoding = 'utf8') => {
+  const readFile: FileSystem['readFile'] = async <T extends 'utf8' | 'binary'>(
+    path: string,
+    encoding: T = 'utf8' as T,
+  ) => {
     const file = await to(AndroidSaf.readFile)({ uri: rootUri, path: splitPath(path) });
     if (file.isErr()) {
       throw file.error;
@@ -76,7 +78,7 @@ export const useAndroidFs = (): FileSystem => {
 
   const readDir: FileSystem['readDir'] = async (path) => {
     const { files } = await AndroidSaf.readDir({ uri: rootUri, path: splitPath(path) });
-    const normalizedFiles = files.map(toDiskFile);
+    const normalizedFiles = files.map(toDiskFile).filter((f) => isPresent(f));
     return normalizedFiles;
   };
 
@@ -102,11 +104,11 @@ export const useAndroidFs = (): FileSystem => {
   };
 
   const isDirExist: FileSystem['isDirExist'] = async (path) => {
-    return (await to(fileInfo)(path)).map((i) => i.type === 'directory').unwrapOr(false);
+    return (await to(fileInfo)(path)).map((i) => i?.type === 'directory').unwrapOr(false);
   };
 
   const isFileExist: FileSystem['isFileExist'] = async (path) => {
-    return (await to(fileInfo)(path)).map((i) => i.type === 'file').unwrapOr(false);
+    return (await to(fileInfo)(path)).map((i) => i?.type === 'file').unwrapOr(false);
   };
 
   const utimeSync: FileSystem['utimeSync'] = async (path, _, mtime) => {

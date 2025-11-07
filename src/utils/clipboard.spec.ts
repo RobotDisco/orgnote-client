@@ -49,7 +49,8 @@ test('uses legacyCopy on native mobile platforms', async () => {
 
   await copyToClipboard(mockText);
 
-  const appendedTextarea = appendChildSpy.mock.calls[0][0] as HTMLTextAreaElement;
+  const appendedTextarea = appendChildSpy.mock.calls[0]?.[0] as HTMLTextAreaElement;
+  if (!appendedTextarea) throw new Error('appendedTextarea is undefined');
   expect(appendedTextarea.value).toBe(mockText);
   expect(appendedTextarea.select).toHaveBeenCalled();
   expect(document.execCommand).toHaveBeenCalledWith('copy');

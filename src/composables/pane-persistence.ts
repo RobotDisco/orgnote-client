@@ -31,7 +31,7 @@ export const usePanePersistence = createGlobalState(() => {
   const routerHooks = new Map<Router, RouterHook>();
   const isStarted = ref(false);
 
-  let unsubscribe: RouterHook | null = null;
+  let unsubscribe: RouterHook | undefined;
 
   const handleSaveError = (error: Error): void => {
     logger.error('Pane snapshot save failed', { error, context: 'auto-save' });
@@ -113,7 +113,7 @@ export const usePanePersistence = createGlobalState(() => {
 
     if (unsubscribe) {
       unsubscribe();
-      unsubscribe = null;
+      unsubscribe = undefined;
     }
 
     isStarted.value = false;

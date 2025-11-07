@@ -10,8 +10,8 @@ const createMockPaneStore = () => ({
 });
 
 const createMockLayoutStore = () => ({
-  saveWorkspace: vi.fn(() => Promise.resolve()),
-  restoreWorkspace: vi.fn(() => Promise.resolve()),
+  saveLayout: vi.fn(() => Promise.resolve()),
+  restoreLayout: vi.fn(() => Promise.resolve()),
 });
 
 const createMockConfigStore = () => ({
@@ -100,8 +100,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockPaneStore.panes.value = {} as Record<string, ShallowRef<Pane>>;
   mockPaneStore.$onAction.mockReturnValue(vi.fn());
-  mockLayoutStore.saveWorkspace.mockReturnValue(Promise.resolve());
-  mockLayoutStore.restoreWorkspace.mockReturnValue(Promise.resolve());
+  mockLayoutStore.saveLayout.mockReturnValue(Promise.resolve());
+  mockLayoutStore.restoreLayout.mockReturnValue(Promise.resolve());
   mockConfigStore.config.value = {
     ui: {
       persistantPanesSaveDelay: 30,
@@ -119,12 +119,12 @@ afterEach(() => {
 test('start restores panes', async () => {
   const { start } = usePanePersistence();
   await start();
-  expect(mockLayoutStore.restoreWorkspace).toHaveBeenCalledOnce();
+  expect(mockLayoutStore.restoreLayout).toHaveBeenCalledOnce();
 });
 
 test('start logs error when restore fails', async () => {
   const error = new Error('Restore failed');
-  mockLayoutStore.restoreWorkspace.mockImplementation(() => Promise.reject(error));
+  mockLayoutStore.restoreLayout.mockImplementation(() => Promise.reject(error));
   const { start } = usePanePersistence();
   await start();
   expect(mockLogger.error).toHaveBeenCalledWith('Failed to restore panes', { error });
@@ -142,7 +142,7 @@ test('start is idempotent', async () => {
   await start();
   vi.clearAllMocks();
   await start();
-  expect(mockLayoutStore.restoreWorkspace).not.toHaveBeenCalled();
+  expect(mockLayoutStore.restoreLayout).not.toHaveBeenCalled();
 });
 
 test('start registers router hooks for existing tabs', async () => {
@@ -214,12 +214,12 @@ test('router afterEach triggers save', async () => {
   vi.clearAllMocks();
   (router as unknown as { triggerAfterEach: () => void }).triggerAfterEach();
   await sleep(50);
-  expect(mockLayoutStore.saveWorkspace).toHaveBeenCalled();
+  expect(mockLayoutStore.saveLayout).toHaveBeenCalled();
 });
 
 test('logs error when save fails', async () => {
   const error = new Error('Save failed');
-  mockLayoutStore.saveWorkspace.mockImplementation(() => Promise.reject(error));
+  mockLayoutStore.saveLayout.mockImplementation(() => Promise.reject(error));
   const router = createMockRouter();
   const tab = createTestTab({ router });
   const pane = createTestPane([tab]);
@@ -246,7 +246,7 @@ test('uses default delay when config delay is missing', async () => {
   await start();
   (router as unknown as { triggerAfterEach: () => void }).triggerAfterEach();
   await sleep(50);
-  expect(mockLayoutStore.saveWorkspace).toHaveBeenCalled();
+  expect(mockLayoutStore.saveLayout).toHaveBeenCalled();
 });
 
 test('removes hooks for routers that no longer exist', async () => {

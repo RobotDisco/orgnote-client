@@ -4,6 +4,7 @@ import { migrator } from './migrator';
 import type Dexie from 'dexie';
 import type { FilePathInfo, NoteInfoRepository } from 'orgnote-api';
 import type { ModelsPublicNoteEncryptionTypeEnum } from 'orgnote-api/remote-api';
+import { isNullable } from 'src/utils/nullable-guards';
 
 export const NOTE_REPOSITORY_NAME = 'notes';
 export const NOTE_MIGRATIONS = migrator<NoteInfo>()
@@ -53,13 +54,16 @@ export const createNoteInfoRepository = (db: Dexie): NoteInfoRepository => {
   };
 
   const getById = async (id: string): Promise<NoteInfo | undefined> => {
-    return store.get(id);
+    const note = await store.get(id);
+    return note;
   };
 
   const getByPath = async (filePath: string[]): Promise<NoteInfo | undefined> => {
-    return store
+    const note = await store
       .filter((n) => !n.deletedAt && join(...(n.filePath || [])) === join(...filePath))
       .first();
+
+    return note;
   };
 
   const getNotesInfo = async ({
@@ -99,7 +103,7 @@ export const createNoteInfoRepository = (db: Dexie): NoteInfoRepository => {
     tags?: string[],
     bookmarked?: boolean,
   ): boolean => {
-    if (!searchText && !tags?.length && bookmarked == null) {
+    if (!searchText && !tags?.length && isNullable(bookmarked)) {
       return true;
     }
 
@@ -108,7 +112,7 @@ export const createNoteInfoRepository = (db: Dexie): NoteInfoRepository => {
     const descriptionMatched =
       searchText && note.meta.description?.toLowerCase().includes(searchText.toLowerCase());
     const tagMatched = !tags?.length || note.meta.fileTags?.some((tag) => tags.includes(tag));
-    const bookmarkedMatched = bookmarked == null || note.bookmarked === bookmarked;
+    const bookmarkedMatched = isNullable(bookmarked) || note.bookmarked === bookmarked;
 
     return (titleMatched || descriptionMatched || !searchText) && !!tagMatched && bookmarkedMatched;
   };
@@ -140,7 +144,10 @@ export const createNoteInfoRepository = (db: Dexie): NoteInfoRepository => {
     const pathInfo: FilePathInfo[] = [];
     await store
       .filter((n) => !n.deletedAt)
-      .each((n) => pathInfo.push({ id: n.id, filePath: n.filePath }));
+      .each((n) => {
+        if (!n.filePath) return;
+        pathInfo.push({ id: n.id!, filePath: n.filePath });
+      });
     return pathInfo;
   };
 
@@ -187,7 +194,10 @@ export const createNoteInfoRepository = (db: Dexie): NoteInfoRepository => {
     return store
       .filter((n) => !n.deletedAt)
       .filter(filterCb)
-      .each((n) => ids.push(n.id))
+      .each((n) => {
+        if (!n.id) return;
+        ids.push(n.id);
+      })
       .then(() => ids);
   };
 

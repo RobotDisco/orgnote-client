@@ -16,7 +16,7 @@ export const useModalStore = defineStore<'modal', ModalStore>('modal', () => {
 
     if (alreadyOpenedIndex !== -1) {
       modals.value = modals.value.slice(0, alreadyOpenedIndex + 1);
-      return modals.value[alreadyOpenedIndex]?.closed;
+      return modals.value[alreadyOpenedIndex]!.closed as Promise<TReturn>;
     }
 
     const [p, resolver] = createPromise<TReturn>();
@@ -50,12 +50,15 @@ export const useModalStore = defineStore<'modal', ModalStore>('modal', () => {
   };
 
   const updateConfig = (newConfig: Partial<ModalConfig>) => {
+    const lastModal = modals.value[modals.value.length - 1];
+    if (!lastModal) return;
+
     modals.value = [
       ...modals.value.slice(0, -1),
       {
-        ...modals.value[modals.value.length - 1],
+        ...lastModal,
         config: {
-          ...modals.value[modals.value.length - 1].config,
+          ...lastModal.config,
           ...newConfig,
         },
       },

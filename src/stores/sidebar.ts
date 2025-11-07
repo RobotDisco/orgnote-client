@@ -11,7 +11,7 @@ import {
 export const useSidebarStore = defineStore<'sidebar', SidebarStore>('sidebar', () => {
   const opened = ref(false);
 
-  const component = shallowRef<VueComponent>(null);
+  const component = shallowRef<VueComponent>();
   const componentConfig = shallowRef<ComponentConfig<VueComponent>>();
 
   const commands = ref<CommandName[]>([

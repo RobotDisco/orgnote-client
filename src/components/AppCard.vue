@@ -48,7 +48,7 @@ const icon = computed(() => {
   return typeIconMap[props.type];
 });
 
-const bg = computed(() => getCssVariableName(background.value));
+const bg = computed(() => background.value && getCssVariableName(background.value));
 </script>
 
 <style lang="scss" scoped>

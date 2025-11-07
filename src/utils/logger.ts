@@ -2,6 +2,7 @@ import pino from 'pino';
 import type { OrgNoteApi, LogRecord, LogLevel, LoggerRepository } from 'orgnote-api';
 import { createBufferedSink } from './log-sink';
 import type { LogSink } from './log-sink';
+import { isPresent } from './nullable-guards';
 
 type Logger = OrgNoteApi['utils']['logger'];
 
@@ -25,8 +26,14 @@ const getBrowserConfig = () => ({
         const ts = new Date(logEvent.ts);
         const first = logEvent.messages?.[0];
         const msg = typeof first === 'string' ? first : String(first);
-        const b0 = Array.isArray(logEvent.bindings) && logEvent.bindings.length > 0 ? logEvent.bindings[0] : {};
-        const ctx = typeof first === 'object' && first !== null ? (first as Record<string, unknown>) : undefined;
+        const b0 =
+          Array.isArray(logEvent.bindings) && logEvent.bindings.length > 0
+            ? logEvent.bindings[0]
+            : {};
+        const ctx =
+          typeof first === 'object' && isPresent(first)
+            ? (first as Record<string, unknown>)
+            : undefined;
         const record: LogRecord = { ts, level: mapped, message: msg, bindings: b0, context: ctx };
         sink.write(record);
       },
@@ -57,8 +64,15 @@ const getServerConfig = () => ({
       const msg0 = typeof a0 === 'string' ? a0 : '';
       const msg1 = typeof a1 === 'string' ? a1 : '';
       const msg = msg0 || msg1;
-      const ctx = typeof a0 === 'object' && a0 !== null ? (a0 as Record<string, unknown>) : undefined;
-      const record: LogRecord = { ts: new Date(), level: mapped, message: msg, bindings: {}, context: ctx };
+      const ctx =
+        typeof a0 === 'object' && isPresent(a0) ? (a0 as Record<string, unknown>) : undefined;
+      const record: LogRecord = {
+        ts: new Date(),
+        level: mapped,
+        message: msg,
+        bindings: {},
+        context: ctx,
+      };
       sink.write(record);
       method.apply(this, inputArgs);
     },
@@ -73,9 +87,11 @@ const sink: LogSink = createBufferedSink({
   maxRecords: 50000,
 });
 
-const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && isPresent(v);
 
-const createLogMethod = (pinoLogger: pino.Logger, method: keyof pino.Logger) =>
+const createLogMethod =
+  (pinoLogger: pino.Logger, method: keyof pino.Logger) =>
   (msg: string, ...args: unknown[]) => {
     const first = args[0];
     const hasObjectArg = isRecord(first);

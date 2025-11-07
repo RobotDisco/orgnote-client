@@ -9,13 +9,14 @@ const toggleCommandsHandler = (api: OrgNoteApi) => {
 
   const getCommands = (commands: Command[]): CompletionCandidate<Command>[] => {
     return commands.reduce<CompletionCandidate<Command>[]>((acc, cmd) => {
+      if (!cmd.command) return acc;
       acc.push({
         group: cmd.group,
         icon: cmd.icon,
         title: cmd.title ?? cmd.command,
         data: cmd,
         description: cmd.description,
-        commandHandler: () => cmds.execute(cmd.command),
+        commandHandler: () => cmds.execute(cmd.command!),
       });
       return acc;
     }, []);

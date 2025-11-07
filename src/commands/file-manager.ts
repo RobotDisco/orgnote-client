@@ -7,6 +7,7 @@ import { deleteFileCompletion } from 'src/composables/delete-file-completion';
 import { useFileRenameCompletion } from 'src/composables/file-rename-completion';
 import { getFileDirPath } from 'src/utils/get-file-dir-path';
 import { to } from 'src/utils/to-error';
+import { isNullable } from 'src/utils/nullable-guards';
 import { defineAsyncComponent } from 'vue';
 
 const group = 'file manager';
@@ -84,6 +85,9 @@ export function getFileManagerCommands(): Command[] {
       icon: 'sym_o_edit',
       handler: async (api: OrgNoteApi) => {
         const fm = api.core.useFileManager();
+        if (!fm.focusFile) {
+          return;
+        }
         useFileRenameCompletion(api, fm.focusFile.path);
         return;
       },
@@ -92,7 +96,8 @@ export function getFileManagerCommands(): Command[] {
       command: DefaultCommands.DELETE_FILE,
       group,
       icon: 'sym_o_delete',
-      handler: async (api: OrgNoteApi, params: CommandHandlerParams<string>) => {
+      handler: async (api: OrgNoteApi, params?: CommandHandlerParams<string>) => {
+        if (isNullable(params?.data)) return;
         await deleteFileCompletion(api, params.data);
       },
     },

@@ -29,7 +29,11 @@ const props = withDefaults(
 
 import { getCurrentInstance } from 'vue';
 import { createSettingsRouter } from './modal-settings-routes';
-const app = getCurrentInstance().appContext.app;
+const instance = getCurrentInstance();
+if (!instance) {
+  throw new Error('getCurrentInstance returned null');
+}
+const app = instance.appContext.app;
 const settingsRouter = createSettingsRouter();
 
 app.provide(SETTINGS_ROUTER_PROVIDER_TOKEN, settingsRouter);

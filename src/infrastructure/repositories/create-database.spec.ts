@@ -11,35 +11,36 @@ interface MockItem {
   migrated?: boolean;
 }
 
-const mockRepositories = [
-  {
-    storeName: 'store1',
-    migrations: {
-      '1': {
-        indexes: '++id,name',
-        migrate: (item: unknown) => {
-          const mockItem = item as MockItem;
-          mockItem.updated = true; // Mock migration
-        },
+const store1Repository = {
+  storeName: 'store1',
+  migrations: {
+    '1': {
+      indexes: '++id,name',
+      migrate: (item: unknown) => {
+        const mockItem = item as MockItem;
+        mockItem.updated = true;
       },
     },
   },
-  {
-    storeName: 'store2',
-    migrations: {
-      '1': {
-        indexes: '++id,createdAt',
-      },
-      '2': {
-        indexes: '++id,updatedAt',
-        migrate: (item: unknown) => {
-          const mockItem = item as MockItem;
-          mockItem.migrated = true;
-        },
+};
+
+const store2Repository = {
+  storeName: 'store2',
+  migrations: {
+    '1': {
+      indexes: '++id,createdAt',
+    },
+    '2': {
+      indexes: '++id,updatedAt',
+      migrate: (item: unknown) => {
+        const mockItem = item as MockItem;
+        mockItem.migrated = true;
       },
     },
   },
-];
+};
+
+const mockRepositories = [store1Repository, store2Repository];
 
 const DATABASE_NAME = 'orgnote';
 

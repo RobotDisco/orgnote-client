@@ -19,15 +19,15 @@ export const platformSpecific = (condition: Condition): PlatformSpecificFn => {
 };
 
 export const androidOnly = platformSpecific(
-  () => process.env.CLIENT && Platform.is.nativeMobile && Platform.is.android,
+  () => !!process.env.CLIENT && Platform.is.nativeMobile && Platform.is.android,
 );
 export const clientOnly = platformSpecific(() => !!process.env.CLIENT);
 export const serverOnly = platformSpecific(() => !process.env.CLIENT);
-export const mobileOnly = platformSpecific(() => process.env.CLIENT && Platform.is.mobile);
+export const mobileOnly = platformSpecific(() => !!process.env.CLIENT && Platform.is.mobile);
 export const iosOnly = platformSpecific(
-  () => process.env.CLIENT && Platform.is.nativeMobile && Platform.is.ios,
+  () => !!process.env.CLIENT && Platform.is.nativeMobile && Platform.is.ios,
 );
 export const nativeMobileOnly = platformSpecific(
-  () => process.env.CLIENT && Platform.is.nativeMobile,
+  () => !!process.env.CLIENT && Platform.is.nativeMobile,
 );
 export const desktopOnly = platformSpecific(() => !Platform.is.mobile && !!process.env.CLIENT);

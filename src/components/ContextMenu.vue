@@ -27,7 +27,7 @@ import type { CommandName } from 'orgnote-api';
 import CommandActionButton from 'src/containers/CommandActionButton.vue';
 
 defineProps<{
-  target?: boolean | string | Element | undefined;
+  target?: boolean | string | Element;
   items: CommandName[];
   data?: unknown;
 }>();

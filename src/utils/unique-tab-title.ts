@@ -1,16 +1,18 @@
+import { isPresent } from './nullable-guards';
+
 const isBaseTitleAvailable = (existingTitles: string[], titlePrefix: string): boolean => {
   return !existingTitles.includes(titlePrefix);
 };
 
-const extractNumberFromTitle = (title: string, titlePrefix: string): number | null => {
+const extractNumberFromTitle = (title: string, titlePrefix: string): number | undefined => {
   if (title === titlePrefix) return 1;
 
-  if (!title.startsWith(`${titlePrefix} `)) return null;
+  if (!title.startsWith(`${titlePrefix} `)) return;
 
   const numberPart = title.slice(titlePrefix.length + 1);
   const num = parseInt(numberPart, 10);
 
-  return !isNaN(num) && num > 0 && numberPart === num.toString() ? num : null;
+  return !isNaN(num) && num > 0 && numberPart === num.toString() ? num : undefined;
 };
 
 const findMaxTitleNumber = (existingTitles: string[], titlePrefix: string): number => {
@@ -18,9 +20,8 @@ const findMaxTitleNumber = (existingTitles: string[], titlePrefix: string): numb
 
   for (const title of existingTitles) {
     const number = extractNumberFromTitle(title, titlePrefix);
-    if (number !== null) {
-      maxNumber = Math.max(maxNumber, number);
-    }
+    if (!isPresent(number)) continue;
+    maxNumber = Math.max(maxNumber, number);
   }
 
   return maxNumber;

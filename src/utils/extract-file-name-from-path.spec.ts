@@ -34,13 +34,13 @@ test('extracts file name from an empty path', () => {
 test('handles undefined path', () => {
   const path = undefined as unknown as string;
   const result = extractFileNameFromPath(path);
-  expect(result).toBeUndefined();
+  expect(result).toBe('');
 });
 
 test('handles null path', () => {
   const path = null as unknown as string;
   const result = extractFileNameFromPath(path);
-  expect(result).toBeNull();
+  expect(result).toBe('');
 });
 
 test('handles path with only slashes', () => {

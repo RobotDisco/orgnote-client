@@ -1,6 +1,11 @@
 <template>
   <div class="search-input">
-    <input :name="name" :type="type" v-model="model" :placeholder="t(placeholder)" />
+    <input
+      :name="name"
+      :type="type"
+      v-model="model"
+      :placeholder="placeholder && t(placeholder)"
+    />
     <action-button @click="model = ''" icon="sym_o_backspace" :size="size" />
   </div>
 </template>

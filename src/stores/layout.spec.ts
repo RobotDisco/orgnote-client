@@ -3,6 +3,7 @@ import { setActivePinia, createPinia } from 'pinia';
 import { useLayoutStore } from './layout';
 import { usePaneStore } from './pane';
 import type { LayoutSnapshot } from 'orgnote-api';
+import { isPresent } from 'src/utils/nullable-guards';
 
 vi.mock('src/boot/repositories', () => ({
   repositories: {
@@ -55,7 +56,7 @@ test('should create pane when no activePaneId exists', async () => {
   const layoutStore = useLayoutStore();
   const paneStore = usePaneStore();
 
-  expect(paneStore.activePaneId).toBeNull();
+  expect(paneStore.activePaneId).toBeUndefined();
 
   await layoutStore.initLayout();
 
@@ -71,6 +72,11 @@ test('should add initial tab to new pane', async () => {
 
   const paneId = paneStore.activePaneId!;
   const pane = paneStore.getPane(paneId);
+  
+  if (!isPresent(pane.value)) {
+    throw new Error('Pane not found');
+  }
+
   const tabCount = Object.keys(pane.value.tabs.value).length;
 
   expect(tabCount).toBe(1);
@@ -86,11 +92,23 @@ test('should split pane horizontally to left', async () => {
   const newPaneId = await layoutStore.splitPaneInLayout(originalPaneId, 'left');
 
   expect(newPaneId).toBeTruthy();
-  expect(layoutStore.layout?.type).toBe('split');
-  if (layoutStore.layout?.type === 'split') {
-    expect(layoutStore.layout.orientation).toBe('horizontal');
-    expect(layoutStore.layout.children).toHaveLength(2);
-    expect(layoutStore.layout.children[0].type).toBe('pane');
+  
+  const layout = layoutStore.layout;
+  if (!isPresent(layout)) {
+    throw new Error('Layout not found');
+  }
+
+  expect(layout.type).toBe('split');
+  if (layout.type === 'split') {
+    const children = layout.children;
+    expect(layout.orientation).toBe('horizontal');
+    expect(children).toHaveLength(2);
+    
+    const firstChild = children[0];
+    if (!isPresent(firstChild)) {
+      throw new Error('First child not found');
+    }
+    expect(firstChild.type).toBe('pane');
   }
 });
 
@@ -104,10 +122,22 @@ test('should split pane horizontally to right', async () => {
   const newPaneId = await layoutStore.splitPaneInLayout(originalPaneId, 'right');
 
   expect(newPaneId).toBeTruthy();
-  expect(layoutStore.layout?.type).toBe('split');
-  if (layoutStore.layout?.type === 'split') {
-    expect(layoutStore.layout.orientation).toBe('horizontal');
-    expect(layoutStore.layout.children[1].type).toBe('pane');
+  
+  const layout = layoutStore.layout;
+  if (!isPresent(layout)) {
+    throw new Error('Layout not found');
+  }
+
+  expect(layout.type).toBe('split');
+  if (layout.type === 'split') {
+    const children = layout.children;
+    expect(layout.orientation).toBe('horizontal');
+    
+    const secondChild = children[1];
+    if (!isPresent(secondChild)) {
+      throw new Error('Second child not found');
+    }
+    expect(secondChild.type).toBe('pane');
   }
 });
 
@@ -121,10 +151,22 @@ test('should split pane vertically to top', async () => {
   const newPaneId = await layoutStore.splitPaneInLayout(originalPaneId, 'top');
 
   expect(newPaneId).toBeTruthy();
-  expect(layoutStore.layout?.type).toBe('split');
-  if (layoutStore.layout?.type === 'split') {
-    expect(layoutStore.layout.orientation).toBe('vertical');
-    expect(layoutStore.layout.children[0].type).toBe('pane');
+  
+  const layout = layoutStore.layout;
+  if (!isPresent(layout)) {
+    throw new Error('Layout not found');
+  }
+
+  expect(layout.type).toBe('split');
+  if (layout.type === 'split') {
+    const children = layout.children;
+    expect(layout.orientation).toBe('vertical');
+    
+    const firstChild = children[0];
+    if (!isPresent(firstChild)) {
+      throw new Error('First child not found');
+    }
+    expect(firstChild.type).toBe('pane');
   }
 });
 
@@ -138,10 +180,22 @@ test('should split pane vertically to bottom', async () => {
   const newPaneId = await layoutStore.splitPaneInLayout(originalPaneId, 'bottom');
 
   expect(newPaneId).toBeTruthy();
-  expect(layoutStore.layout?.type).toBe('split');
-  if (layoutStore.layout?.type === 'split') {
-    expect(layoutStore.layout.orientation).toBe('vertical');
-    expect(layoutStore.layout.children[1].type).toBe('pane');
+  
+  const layout = layoutStore.layout;
+  if (!isPresent(layout)) {
+    throw new Error('Layout not found');
+  }
+
+  expect(layout.type).toBe('split');
+  if (layout.type === 'split') {
+    const children = layout.children;
+    expect(layout.orientation).toBe('vertical');
+    
+    const secondChild = children[1];
+    if (!isPresent(secondChild)) {
+      throw new Error('Second child not found');
+    }
+    expect(secondChild.type).toBe('pane');
   }
 });
 
@@ -155,7 +209,17 @@ test('should create pane with initial tab when splitting', async () => {
   const newPaneId = await layoutStore.splitPaneInLayout(originalPaneId, 'right', true);
 
   expect(newPaneId).toBeTruthy();
-  const newPane = paneStore.getPane(newPaneId!);
+  
+  if (!isPresent(newPaneId)) {
+    throw new Error('New pane ID not found');
+  }
+
+  const newPane = paneStore.getPane(newPaneId);
+  
+  if (!isPresent(newPane.value)) {
+    throw new Error('New pane not found');
+  }
+
   const tabCount = Object.keys(newPane.value.tabs.value).length;
   expect(tabCount).toBe(1);
 });
@@ -170,7 +234,17 @@ test('should create empty pane when splitting without initial tab', async () => 
   const newPaneId = await layoutStore.splitPaneInLayout(originalPaneId, 'right', false);
 
   expect(newPaneId).toBeTruthy();
-  const newPane = paneStore.getPane(newPaneId!);
+  
+  if (!isPresent(newPaneId)) {
+    throw new Error('New pane ID not found');
+  }
+
+  const newPane = paneStore.getPane(newPaneId);
+  
+  if (!isPresent(newPane.value)) {
+    throw new Error('New pane not found');
+  }
+
   const tabCount = Object.keys(newPane.value.tabs.value).length;
   expect(tabCount).toBe(0);
 });
@@ -307,6 +381,10 @@ test('should restore workspace from snapshot', async () => {
   const originalPaneId = paneStore.activePaneId!;
   const snapshot = layoutStore.getLayoutSnapshot();
 
+  if (!isPresent(snapshot)) {
+    throw new Error('Snapshot not found');
+  }
+
   await layoutStore.restoreLayoutSnapshot(snapshot);
 
   expect(paneStore.activePaneId).toBe(originalPaneId);
@@ -319,6 +397,10 @@ test('should include layout in snapshot', async () => {
   await layoutStore.initLayout();
   const snapshot = layoutStore.getLayoutSnapshot();
 
+  if (!isPresent(snapshot)) {
+    throw new Error('Snapshot not found');
+  }
+
   expect(snapshot.layout).toBeDefined();
 });
 
@@ -330,6 +412,11 @@ test('should restore activePaneId from snapshot', async () => {
   const pane1 = await paneStore.createPane();
   await paneStore.addTab(pane1.id);
 
+  const layout = layoutStore.layout;
+  if (!isPresent(layout)) {
+    throw new Error('Layout not found');
+  }
+
   const snapshot: LayoutSnapshot = {
     panes: [
       {
@@ -340,7 +427,7 @@ test('should restore activePaneId from snapshot', async () => {
     ],
     activePaneId: pane1.id,
     timestamp: Date.now(),
-    layout: layoutStore.layout,
+    layout,
   };
 
   await layoutStore.restoreLayoutSnapshot(snapshot);
@@ -360,7 +447,7 @@ test('should clear panes before restore', async () => {
     panes: [],
     activePaneId: '',
     timestamp: Date.now(),
-    layout: undefined,
+    layout: { type: 'pane', id: '', paneId: '' },
   };
 
   await layoutStore.restoreLayoutSnapshot(snapshot);

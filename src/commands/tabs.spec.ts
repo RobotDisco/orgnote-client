@@ -12,9 +12,9 @@ test('getTabsCommands returns expected commands', () => {
   const commands = getTabsCommands();
 
   expect(commands).toHaveLength(3);
-  expect(commands[0].command).toBe(DefaultCommands.NEW_TAB);
-  expect(commands[1].command).toBe(DefaultCommands.TABS);
-  expect(commands[2].command).toBe(DefaultCommands.SHOW_TAB_SWITCHER);
+  expect(commands[0]?.command).toBe(DefaultCommands.NEW_TAB);
+  expect(commands[1]?.command).toBe(DefaultCommands.TABS);
+  expect(commands[2]?.command).toBe(DefaultCommands.SHOW_TAB_SWITCHER);
 });
 
 test('NEW_TAB command calls addTab and selectTab', async () => {

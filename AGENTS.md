@@ -171,6 +171,38 @@ const data = ref<Data | null | undefined>(undefined);
 // Data = has data
 ```
 
+### Nullable Type Guards
+
+Use type guard functions from `src/utils/nullable-guards.ts` for safe nullable checks:
+
+```typescript
+import { isPresent, isNullable, isPresentAndNotNaN } from 'src/utils/nullable-guards';
+
+// ✅ Good - type guard with narrowing
+const paneId = activePaneId.value;
+if (isPresent(paneId)) {
+  const pane = panes.value[paneId]; // TypeScript knows paneId is string
+}
+
+// ✅ Good - filter arrays
+const validIds = ids.filter(isPresent); // Type: string[]
+
+// ✅ Good - reactive refs with local variable
+const activePane = computed(() => {
+  const paneId = activePaneId.value; // Save to local const
+  if (!isPresent(paneId)) return;
+  return panes.value[paneId]; // TypeScript understands narrowing
+});
+
+// ❌ Bad - direct ref access, TypeScript can't narrow
+if (!activePaneId.value) return;
+const pane = panes.value[activePaneId.value]; // ❌ Error: undefined cannot be index
+```
+
+**Available guards:**
+- `isPresent(value)` - returns true if not null/undefined/NaN (positive guard)
+- `isNullable(value)` - returns true if null/undefined/NaN (negative guard)
+
 ### Key Patterns
 
 ```typescript

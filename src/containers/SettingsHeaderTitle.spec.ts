@@ -20,7 +20,7 @@ type MockedRouter = {
   options: {
     history: {
       state: {
-        back: string | null;
+        back: string | undefined;
       };
     };
   };
@@ -37,7 +37,7 @@ const createMockRouter = (hasBackHistory = false): MockedRouter => ({
   options: {
     history: {
       state: {
-        back: hasBackHistory ? '/previous-route' : null,
+        back: hasBackHistory ? '/previous-route' : undefined,
       },
     },
   },

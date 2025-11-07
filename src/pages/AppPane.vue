@@ -59,7 +59,11 @@
             @click="handleNavigation('forward')"
           />
           <div class="mobile-tab-title">
-            {{ generateTabTitle(activeTab?.router.currentRoute.value) || activeTab?.title }}
+            {{
+              activeTab?.router.currentRoute.value
+                ? generateTabTitle(activeTab.router.currentRoute.value)
+                : activeTab?.title
+            }}
           </div>
           <command-action-button :command="DefaultCommands.SHOW_TAB_SWITCHER" size="sm" />
           <command-action-button
@@ -80,7 +84,8 @@
 </template>
 
 <script lang="ts" setup>
-import { DefaultCommands, type DropDirection, type DropZone, type Tab } from 'orgnote-api';
+import { DefaultCommands } from 'orgnote-api';
+import { type DropDirection, type DropZone, type Tab } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import ActionButton from 'src/components/ActionButton.vue';
 import NavTab from 'src/components/NavTab.vue';
@@ -96,6 +101,7 @@ import type { Router } from 'vue-router';
 
 import ScopedRouterView from 'src/components/ScopedRouterView.vue';
 import { TAB_ROUTER_KEY } from 'src/constants/context-providers';
+import { isPresent } from 'src/utils/nullable-guards';
 
 const props = defineProps<{
   paneId: string;
@@ -114,9 +120,9 @@ const tabs = computed((): Tab[] => {
   return Object.values(currentPane.value.tabs.value);
 });
 
-const activeTab = computed(() => {
-  const tabId = currentPane.value.activeTabId;
-  return currentPane?.value.tabs.value[tabId];
+const activeTab = computed<Tab | undefined>(() => {
+  const tabId = currentPane.value?.activeTabId;
+  return currentPane.value?.tabs.value[tabId!];
 });
 
 const activeTabId = computed(() => {
@@ -149,15 +155,15 @@ const handleTabClose = (tabId: string) => {
   pane.closeTab(currentPane.value.id, tabId);
 };
 
-const currentDropZone = ref<DropZone | null>(null);
+const currentDropZone = ref<DropZone | undefined>();
 
-const tabRouter = shallowRef<Router | null>(null);
-const resolvedRouter = computed(() => tabRouter.value as Router | null);
+const tabRouter = shallowRef<Router | undefined>();
+const resolvedRouter = computed(() => tabRouter.value as Router | undefined);
 
 const initTabRouter = () => {
   const tab = activeTab.value;
   if (!tab?.router) {
-    tabRouter.value = null;
+    tabRouter.value = undefined;
     return;
   }
   tabRouter.value = tab.router;
@@ -221,11 +227,11 @@ watch(
 );
 
 const canGoBack = computed(() => {
-  return tabRouter.value !== null && historyIndex.value > 0;
+  return isPresent(tabRouter.value) && historyIndex.value > 0;
 });
 
 const canGoForward = computed(() => {
-  return tabRouter.value !== null && historyIndex.value < routeHistory.value.length - 1;
+  return isPresent(tabRouter.value) && historyIndex.value < routeHistory.value.length - 1;
 });
 
 const handleNavigation = (direction: 'back' | 'forward') => {
@@ -262,7 +268,7 @@ const handleDragStart = (payload: { tabId: string; paneId: string }) => {
 
 const handleDragEnd = () => {
   pane.stopDraggingTab();
-  currentDropZone.value = null;
+  currentDropZone.value = undefined;
 };
 
 const shouldMoveTabToPane = (sourcePaneId: string, targetPaneId: string): boolean =>

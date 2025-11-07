@@ -92,6 +92,7 @@ import { useI18n } from 'vue-i18n';
 import type { ValibotScheme } from 'src/models/valibot-scheme';
 import AppTextArea from './AppTextArea.vue';
 import AppDescription from 'src/components/AppDescription.vue';
+import { isPresent } from 'src/utils/nullable-guards';
 
 const props = defineProps<{
   path: keyof OrgNoteConfig;
@@ -103,7 +104,7 @@ const props = defineProps<{
 const { config } = api.core.useConfig() as Record<string, any>;
 const getNestedPath = (path: string) => `${props.path}.${path}`;
 
-const editInputRef = ref<typeof AppInput | null>(null);
+const editInputRef = ref<typeof AppInput>();
 
 const onItemClick = () => {
   ensureValue();
@@ -131,7 +132,7 @@ const removeFromArray = (index: number) => {
 
 const uploadConfigFile = async () => {
   const file = await api.utils.uploadFile();
-  config[props.path][props.name] = await file.text();
+  config[props.path][props.name] = await file?.text();
 };
 
 const metadata = props.scheme.pipe?.find((e) => e.type === 'metadata')?.metadata;
@@ -173,7 +174,7 @@ const getDefaultValueForType = (type: string): DefaultValue | undefined => {
 
 const ensureValue = (): void => {
   if (!isOptional.value) return;
-  if (config[props.path][props.name] != null) return;
+  if (isPresent(config[props.path][props.name])) return;
 
   const defaultValue = getDefaultValueForType(actualType.value);
   if (defaultValue === undefined) return;

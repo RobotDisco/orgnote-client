@@ -9,13 +9,14 @@ import { debounce } from 'src/utils/debounce';
 import { DEFAULT_INPUT_DEBOUNCE } from 'src/constants/default-input-debounce';
 import { createPromise } from 'src/utils/create-promise';
 import { useConfigStore } from './config';
+import { isNullable } from 'src/utils/nullable-guards';
 
 export const useCompletionStore = defineStore<'completion-store', CompletionStore>(
   'completion-store',
   () => {
     const modal = useModalStore();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let lastModalConfig: CompletionConfig<any>;
+    let lastModalConfig: CompletionConfig<any> | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const openedCompletions = ref<Completion<any>[]>([]);
 
@@ -47,7 +48,7 @@ export const useCompletionStore = defineStore<'completion-store', CompletionStor
         return;
       }
       open(lastModalConfig);
-      lastModalConfig = null;
+      lastModalConfig = undefined;
     };
 
     const close = <TReturn = unknown>(data?: TReturn) => {
@@ -64,44 +65,53 @@ export const useCompletionStore = defineStore<'completion-store', CompletionStor
     );
 
     const nextCandidate = () => {
-      if (!activeCompletion.value) {
+      if (isNoCompletion.value) return;
+
+      const completion = activeCompletion.value;
+      if (isNullable(completion?.total)) return;
+
+      if (isNullable(completion.selectedCandidateIndex)) {
+        completion.selectedCandidateIndex = 1;
         return;
       }
 
-      if (activeCompletion.value.selectedCandidateIndex === null) {
-        activeCompletion.value.selectedCandidateIndex = 1;
-        return;
-      }
-      const isLastIndex =
-        activeCompletion.value.selectedCandidateIndex === activeCompletion.value.total - 1;
+      const isLastIndex = completion.selectedCandidateIndex === completion.total - 1;
 
       if (isLastIndex) {
-        activeCompletion.value.selectedCandidateIndex = 0;
+        completion.selectedCandidateIndex = 0;
         return;
       }
-      activeCompletion.value.selectedCandidateIndex++;
+      completion.selectedCandidateIndex++;
     };
 
     const previousCandidate = () => {
+      if (isNoCompletion.value) return;
+
+      const completion = activeCompletion.value;
+      if (isNullable(completion?.total)) return;
+
+      if (isNullable(completion.selectedCandidateIndex)) {
+        completion.selectedCandidateIndex = completion.total - 1;
+        return;
+      }
+
+      const isFirstIndex = completion.selectedCandidateIndex === 0;
+
+      if (isFirstIndex) {
+        completion.selectedCandidateIndex = completion.total - 1;
+        return;
+      }
+      completion.selectedCandidateIndex--;
+    };
+
+    const isNoCompletion = computed(
+      () => !activeCompletion.value || isNullable(activeCompletion.value.total),
+    );
+
+    const search = (limit?: number, offset: number = 0) => {
       if (!activeCompletion.value) {
         return;
       }
-
-      if (activeCompletion.value.selectedCandidateIndex === null) {
-        activeCompletion.value.selectedCandidateIndex = activeCompletion.value.total - 1;
-        return;
-      }
-
-      const isFirstIndex = activeCompletion.value.selectedCandidateIndex === 0;
-
-      if (isFirstIndex) {
-        activeCompletion.value.selectedCandidateIndex = activeCompletion.value.total - 1;
-        return;
-      }
-      activeCompletion.value.selectedCandidateIndex--;
-    };
-
-    const search = (limit?: number, offset: number = 0) => {
       if (activeCompletion.value.type === 'input') {
         return;
       }
@@ -124,9 +134,15 @@ export const useCompletionStore = defineStore<'completion-store', CompletionStor
     };
 
     const setupCandidates = (r: CompletionSearchResult, offset: number): void => {
+      if (!activeCompletion.value) {
+        return;
+      }
       if (!offset) {
         activeCompletion.value.candidates = r.result;
         activeCompletion.value.total = r.total;
+        return;
+      }
+      if (!activeCompletion.value.candidates) {
         return;
       }
       const indexedCandidates = [...activeCompletion.value.candidates];

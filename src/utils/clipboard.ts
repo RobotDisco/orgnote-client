@@ -1,7 +1,7 @@
 import { Platform, copyToClipboard as cp } from 'quasar';
 
 // NOTE: https://stackoverflow.com/questions/61243646/clipboard-api-call-throws-notallowederror-without-invoking-onpermissionrequest
-export function copyToClipboard(text: string): Promise<void> {
+export async function copyToClipboard(text: string): Promise<void> {
   if (Platform.is.nativeMobile) {
     legacyCopy(text);
     return;

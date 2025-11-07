@@ -21,7 +21,7 @@ export const useLayoutStore = defineStore<'layout', LayoutStore>('layout', () =>
   const { activePaneId } = storeToRefs(paneStore);
   const configStore = useConfigStore();
 
-  const layout = shallowRef<LayoutNode>();
+  const layout = shallowRef<LayoutNode | undefined>();
 
   const initLayout = async (layoutParam?: LayoutNode): Promise<void> => {
     if (layoutParam) {
@@ -32,7 +32,7 @@ export const useLayoutStore = defineStore<'layout', LayoutStore>('layout', () =>
       await initPane();
     }
 
-    const paneNode: LayoutPaneNode = createPaneNode(activePaneId.value);
+    const paneNode: LayoutPaneNode = createPaneNode(activePaneId.value!);
     layout.value = paneNode;
   };
 
@@ -59,7 +59,9 @@ export const useLayoutStore = defineStore<'layout', LayoutStore>('layout', () =>
     return Boolean(configStore.config?.ui.persistantPanes);
   };
 
-  const getLayoutSnapshot = (): LayoutSnapshot => {
+  const getLayoutSnapshot = (): LayoutSnapshot | undefined => {
+    if (!layout.value) return;
+
     const panesData = paneStore.getPanesData();
     return {
       panes: panesData,
@@ -76,6 +78,9 @@ export const useLayoutStore = defineStore<'layout', LayoutStore>('layout', () =>
 
     const repository = repositories.layoutSnapshotRepository;
     const snapshot = getLayoutSnapshot();
+    if (!snapshot) {
+      return;
+    }
     await repository.save(snapshot);
   };
 
@@ -110,11 +115,11 @@ export const useLayoutStore = defineStore<'layout', LayoutStore>('layout', () =>
   const findPaneInLayout = (paneId: string, node?: LayoutNode): LayoutNode | undefined => {
     const searchNode = node ?? layout.value;
 
-    if (searchNode.type === 'pane') {
-      return searchNode.paneId === paneId ? searchNode : null;
+    if (searchNode?.type === 'pane') {
+      return searchNode.paneId === paneId ? searchNode : undefined;
     }
 
-    for (const child of searchNode.children) {
+    for (const child of searchNode!.children) {
       const found = findPaneInLayout(paneId, child);
       if (found) return found;
     }
@@ -239,7 +244,7 @@ export const useLayoutStore = defineStore<'layout', LayoutStore>('layout', () =>
       return newPaneId;
     }
 
-    layout.value = replaceNodeInTree(layout.value, paneNode, splitNode);
+    layout.value = replaceNodeInTree(layout.value!, paneNode, splitNode);
     activePaneId.value = newPaneId;
     scheduleSave();
     return newPaneId;
@@ -256,9 +261,9 @@ export const useLayoutStore = defineStore<'layout', LayoutStore>('layout', () =>
   const findNodeById = (nodeId: string, node?: LayoutNode): LayoutNode | undefined => {
     const searchNode = node ?? layout.value;
 
-    if (searchNode.id === nodeId) return searchNode;
+    if (searchNode?.id === nodeId) return searchNode;
 
-    if (searchNode.type !== 'split') {
+    if (searchNode?.type !== 'split') {
       return;
     }
 
@@ -274,7 +279,7 @@ export const useLayoutStore = defineStore<'layout', LayoutStore>('layout', () =>
 
     node.sizes = sizes;
 
-    layout.value = { ...layout.value };
+    layout.value = { ...layout.value! };
     scheduleSave();
   };
 

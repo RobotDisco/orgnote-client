@@ -4,7 +4,7 @@
     :class="[`icon-${size}`, active, { outline, border, text: slots.text }, props.classes]"
     :style="{
       '--action-border-color': getCssVariableName(activeColor),
-      '--btn-action-hover-color': getCssVariableName(hoverColor),
+      '--btn-action-hover-color': safeHoverColor,
     }"
   >
     <animation-wrapper>
@@ -50,6 +50,7 @@ const fired = ref<boolean>(false);
 
 const activeIcon = computed(() => (fired.value ? props.fireIcon : props.icon));
 const activeColor = computed(() => (fired.value ? (props.fireColor ?? props.color) : props.color));
+const safeHoverColor = computed(() => props.hoverColor && getCssVariableName(props.hoverColor));
 
 const onButtonClick = async () => {
   if (props.copyText) {

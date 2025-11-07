@@ -13,7 +13,7 @@ export const createPaneRouter = async (tabId: string): Promise<Router> => {
         name: RouteNames.InitialPage,
         component: () => import('src/pages/InitialPage.vue'),
         meta: {
-          titleGenerator: () => null,
+          titleGenerator: () => '',
         },
       },
 
@@ -29,7 +29,7 @@ export const createPaneRouter = async (tabId: string): Promise<Router> => {
             meta: {
               titleGenerator: (route: RouteLocationNormalized) => {
                 const filePath = route.params.path as string;
-                if (!filePath) return null;
+                if (!filePath) return '';
 
                 const fileName = filePath.split('/').pop();
                 return fileName || DEFAULT_TAB_TITLE;

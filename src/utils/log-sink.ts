@@ -1,4 +1,5 @@
 import type { LoggerRepository, LogRecord } from 'orgnote-api';
+
 import { to } from './to-error';
 
 type LogSink = {
@@ -17,7 +18,7 @@ type BufferedSinkOptions = {
 
 const createBufferedSink = (options: BufferedSinkOptions): LogSink => {
   const queue: LogRecord[] = [];
-  let repository: LoggerRepository | null = null;
+  let repository: LoggerRepository | undefined;
   let timer: ReturnType<typeof setInterval> | null = null;
 
   const schedule = () => {
@@ -57,6 +58,8 @@ const createBufferedSink = (options: BufferedSinkOptions): LogSink => {
   };
 
   const clearOldRecords = async (): Promise<void> => {
+    if (!repository) return;
+
     const retentionMs = options.retentionDays * 24 * 60 * 60 * 1000;
 
     const cutoff = new Date(Date.now() - retentionMs);
@@ -70,6 +73,8 @@ const createBufferedSink = (options: BufferedSinkOptions): LogSink => {
   };
 
   const clearThreshold = async (): Promise<void> => {
+    if (!repository) return;
+
     const cnt = await to(repository.count)();
 
     if (cnt.isErr()) {

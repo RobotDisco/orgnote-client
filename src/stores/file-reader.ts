@@ -35,7 +35,7 @@ export const useFileReaderStore = defineStore<string, FileReaderStore>(
         return;
       }
 
-      readers.get(reader)(path);
+      readers.get(reader)?.(path);
     };
 
     return {

@@ -1,16 +1,16 @@
 <template>
-  <div class="completion-wrapper" :class="{ 'full-screen': config.fullScreen }">
+  <div class="completion-wrapper" :class="{ 'full-screen': config!.fullScreen }">
     <div class="header">
       <completion-input :placeholder="placeholder" />
     </div>
     <div class="content">
-      <completion-result v-if="activeCompletion.candidates?.length" />
+      <completion-result v-if="activeCompletion!.candidates?.length" />
       <div v-else class="not-found" :style="{ height: completionItemHeight + 'px' }">
         {{ t(I18N.NOT_FOUND).toUpperCase() }}
       </div>
     </div>
     <div class="footer">
-      {{ activeCompletion.selectedCandidateIndex + 1 }}/{{ activeCompletion.total }}
+      {{ (activeCompletion!.selectedCandidateIndex ?? 0) + 1 }}/{{ activeCompletion!.total }}
     </div>
   </div>
 </template>
@@ -31,9 +31,11 @@ defineProps<
 >();
 
 const { config } = storeToRefs(api.ui.useModal());
-const { activeCompletion } = storeToRefs(api.core.useCompletion());
+const completionStore = api.core.useCompletion();
+const { activeCompletion } = storeToRefs(completionStore);
+
 const completionItemHeight = computed(
-  () => activeCompletion.value.itemHeight ?? DEFAULT_COMPLETIO_ITEM_HEIGHT,
+  () => activeCompletion.value!.itemHeight ?? DEFAULT_COMPLETIO_ITEM_HEIGHT,
 );
 
 const { t } = useI18n({

@@ -107,7 +107,8 @@ test('useTabCompletion itemsGetter returns all tabs when no filter', async () =>
 
   await useTabCompletion(mockApi as OrgNoteApi);
 
-  const openCall = mockCompletion.open.mock.calls[0][0];
+  const openCall = mockCompletion.open.mock.calls[0]?.[0];
+  if (!openCall) throw new Error('openCall is undefined');
   const itemsGetter = openCall.itemsGetter;
   const result = itemsGetter('');
 
@@ -161,7 +162,8 @@ test('useTabCompletion itemsGetter filters tabs correctly', async () => {
 
   await useTabCompletion(mockApi as OrgNoteApi);
 
-  const openCall = mockCompletion.open.mock.calls[0][0];
+  const openCall = mockCompletion.open.mock.calls[0]?.[0];
+  if (!openCall) throw new Error('openCall is undefined');
   const itemsGetter = openCall.itemsGetter;
   const result = itemsGetter('Java');
 
@@ -208,7 +210,8 @@ test('useTabCompletion item commandHandler calls selectTab with correct paramete
 
   await useTabCompletion(mockApi as OrgNoteApi);
 
-  const openCall = mockCompletion.open.mock.calls[0][0];
+  const openCall = mockCompletion.open.mock.calls[0]?.[0];
+  if (!openCall) throw new Error('openCall is undefined');
   const itemsGetter = openCall.itemsGetter;
   const result = itemsGetter('');
 
@@ -237,7 +240,8 @@ test('useTabCompletion handles empty panes gracefully', async () => {
 
   await useTabCompletion(mockApi as OrgNoteApi);
 
-  const openCall = mockCompletion.open.mock.calls[0][0];
+  const openCall = mockCompletion.open.mock.calls[0]?.[0];
+  if (!openCall) throw new Error('openCall is undefined');
   const itemsGetter = openCall.itemsGetter;
   const result = itemsGetter('');
 

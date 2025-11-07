@@ -45,7 +45,7 @@ const isDragging = ref(false);
 const canDrag = computed(() => !Platform.is.mobile && !!props.tabId && !!props.paneId);
 
 const handleDragStart = (event: DragEvent) => {
-  if (!canDrag.value) return;
+  if (!canDrag.value || !props.tabId || !props.paneId) return;
 
   isDragging.value = true;
   emits('dragstart', { tabId: props.tabId, paneId: props.paneId });

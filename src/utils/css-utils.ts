@@ -35,17 +35,21 @@ export const getCssTheme: GetCssTheme = (variableNames) => {
 export const getNumericCssVar: GetNumericCssVar = (varName) => {
   const normalizedName = normalizeCssVariable(varName);
   const value = getCssVar(normalizedName);
+  if (!value) return;
   const n = value.replace(/[^\d.]/g, '');
   return +n;
 };
 
 export const getCssProperty: GetCssProperty = (element, propertyName) => {
-  const computedStyle = document.defaultView.getComputedStyle(element, null);
+  const defaultView = document.defaultView;
+  if (!defaultView) return;
+  const computedStyle = defaultView.getComputedStyle(element, null);
   return computedStyle.getPropertyValue(propertyName);
 };
 
 export const getCssNumericProperty: GetCssNumericProperty = (element, propertyName) => {
   const value = getCssProperty(element, propertyName);
+  if (!value) return;
   const n = value.replace(/[^\d.]/g, '');
   return +n;
 };

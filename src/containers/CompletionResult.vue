@@ -16,7 +16,7 @@
           <completion-result-item
             :item="item as CompletionCandidate"
             :index="index"
-            :selected="index === activeCompletion.selectedCandidateIndex"
+            :selected="index === completion.activeCompletion!.selectedCandidateIndex"
             rounded
           />
         </keep-alive>
@@ -37,29 +37,27 @@ import type { GroupedCompletionCandidate } from 'src/models/grouped-completion-c
 import { extractDynamicValue } from 'src/utils/extract-dynamic-value';
 
 const completion = api.core.useCompletion();
-const { activeCompletion } = storeToRefs(completion);
 const { config } = storeToRefs(api.core.useConfig());
 
 const getPagedResult = (from: number, size: number) => {
   const fakeRows = Object.freeze(new Array(size).fill(null));
-  // search(size, from);
   return fakeRows;
 };
 
 const itemHeight = computed(
-  () => activeCompletion.value.itemHeight ?? DEFAULT_COMPLETIO_ITEM_HEIGHT,
+  () => completion.activeCompletion!.itemHeight ?? DEFAULT_COMPLETIO_ITEM_HEIGHT,
 );
 
 const groupedCandidates = computed<[GroupedCompletionCandidate[], string[]]>(() => {
-  if (!activeCompletion.value.candidates || !config.value.completion.showGroup) {
-    return [activeCompletion.value.candidates, []];
+  if (!completion.activeCompletion!.candidates || !config.value.completion.showGroup) {
+    return [completion.activeCompletion!.candidates ?? [], []];
   }
 
-  return activeCompletion.value.candidates.reduce<[GroupedCompletionCandidate[], string[]]>(
-    (acc, item: CompletionCandidate, index) => {
+  return completion.activeCompletion!.candidates.reduce<[GroupedCompletionCandidate[], string[]]>(
+    (acc: [GroupedCompletionCandidate[], string[]], item: CompletionCandidate, index: number) => {
       const groupChanged = acc[1][acc[1].length - 1] !== item.group;
       if (groupChanged) {
-        const groupName = extractDynamicValue(item.group);
+        const groupName = extractDynamicValue(item.group) ?? '';
         acc[0].push({ groupTitle: groupName });
         acc[1].push(groupName);
       }
@@ -72,10 +70,10 @@ const groupedCandidates = computed<[GroupedCompletionCandidate[], string[]]>(() 
 });
 
 const total = computed(
-  () => activeCompletion.value.candidates?.length + groupedCandidates.value[1].length,
+  () => (completion.activeCompletion!.candidates?.length ?? 0) + groupedCandidates.value[1].length,
 );
 
 const candidatesAvailable = computed(() =>
-  ['choice', 'input-choice'].includes(activeCompletion.value.type),
+  ['choice', 'input-choice'].includes(completion.activeCompletion!.type ?? ''),
 );
 </script>

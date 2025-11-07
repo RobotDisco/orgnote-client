@@ -11,11 +11,11 @@ export function getTabsCommands(): Command[] {
       title: I18N.ADD_NEW_TAB,
       handler: async (api: OrgNoteApi, params) => {
         const paneStore = api.core.usePane();
-        const targetPaneId = params.data?.paneId || paneStore.activePaneId;
+        const targetPaneId = params?.data?.paneId || paneStore.activePaneId;
 
         if (!targetPaneId) return;
 
-        const tab = await paneStore.addTab(targetPaneId, params.data);
+        const tab = await paneStore.addTab(targetPaneId, params?.data);
         if (!tab) return;
 
         paneStore.selectTab(tab.paneId, tab.id);

@@ -1,11 +1,11 @@
 <template>
   <menu-item
     @click="execute(props.command)"
-    :icon="extractDynamicValue(command.icon)"
+    :icon="extractDynamicValue(command?.icon)"
     :active="command?.isActive?.(api)"
     :narrow="command?.context?.narrow"
   >
-    <div class="capitalize text-bold">{{ t(command.command) }}</div>
+    <div class="capitalize text-bold">{{ command?.command ? t(command.command) : '' }}</div>
   </menu-item>
 </template>
 

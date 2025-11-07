@@ -15,7 +15,7 @@ import { extractPathFromRoute } from 'src/utils/extract-path-from-route';
 
 const buffers = api.core.useBuffers();
 const route = useRoute();
-const tabRouter = inject<ShallowRef<Router> | null>(TAB_ROUTER_KEY, null);
+const tabRouter = inject<ShallowRef<Router | undefined>>(TAB_ROUTER_KEY);
 
 const filePath = computed(() => {
   const fromInjected = tabRouter?.value?.currentRoute.value;
@@ -24,11 +24,11 @@ const filePath = computed(() => {
   return route ? extractPathFromRoute(route) : null;
 });
 
-const activeBuffer = ref<OrgBuffer | null>(null);
+const activeBuffer = ref<OrgBuffer | undefined>();
 
 const cleanup = () => {
   const buf = activeBuffer.value;
-  activeBuffer.value = null;
+  activeBuffer.value = undefined;
   if (!buf) return;
   buffers.releaseBuffer(buf.path);
 };

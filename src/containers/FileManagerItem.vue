@@ -11,9 +11,9 @@
           <highlighter
             class="my-highlight"
             highlightClassName="highlight"
-            :searchWords="highlight"
+            :searchWords="highlight ?? []"
             :autoEscape="true"
-            :textToHighlight="file?.name"
+            :textToHighlight="file?.name ?? ''"
           />
         </template>
       </div>

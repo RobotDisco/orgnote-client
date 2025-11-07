@@ -75,8 +75,18 @@ test('handles null currentRoute gracefully with custom router', () => {
   expect(isActive('home')).toBe(false);
 });
 
-test('handles null currentRoute gracefully with default router', () => {
-  vi.mocked(useRoute).mockReturnValue(null);
+test('handles undefined route name gracefully', () => {
+  vi.mocked(useRoute).mockReturnValue({
+    name: undefined,
+    matched: [],
+    params: {},
+    query: {},
+    fullPath: '/',
+    hash: '',
+    path: '/',
+    redirectedFrom: undefined,
+    meta: {},
+  } as RouteLocationNormalizedLoaded);
 
   const { isActive } = useRouteActive();
   expect(isActive('home')).toBe(false);

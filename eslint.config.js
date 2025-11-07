@@ -104,6 +104,29 @@ export default [
 
             // allow debugger during development only
             'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
+
+            // Enforce using isPresent/isNullable from nullable-guards instead of manual checks
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: 'BinaryExpression[operator="=="][right.value=null]',
+                    message:
+                        'Use isNullable() or isPresent() from src/utils/nullable-guards instead of == null',
+                },
+                {
+                    selector: 'BinaryExpression[operator="!="][right.value=null]',
+                    message:
+                        'Use isPresent() or isNullable() from src/utils/nullable-guards instead of != null',
+                },
+                {
+                    selector: 'BinaryExpression[operator="==="][right.value=null]',
+                    message: 'Use isNullable() from src/utils/nullable-guards instead of === null',
+                },
+                {
+                    selector: 'BinaryExpression[operator="!=="][right.value=null]',
+                    message: 'Use isPresent() from src/utils/nullable-guards instead of !== null',
+                },
+            ],
         },
     },
 
@@ -113,6 +136,13 @@ export default [
             globals: {
                 ...globals.serviceworker,
             },
+        },
+    },
+
+    {
+        files: ['src/utils/nullable-guards.ts'],
+        rules: {
+            'no-restricted-syntax': 'off',
         },
     },
 

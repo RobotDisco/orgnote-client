@@ -8,7 +8,7 @@ export const createFileCompletion = async (api: OrgNoteApi): Promise<string> => 
   let filePath = await getNewFileName(api, fm.focusDirPath);
 
   if (!filePath) {
-    return;
+    return '';
   }
 
   if (!isOrgFile(filePath)) {

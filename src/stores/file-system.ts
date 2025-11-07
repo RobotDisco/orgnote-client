@@ -12,11 +12,19 @@ import { watch } from 'vue';
 import { useSettingsStore } from './settings';
 import { reporter } from 'src/boot/report';
 import { to } from 'src/utils/to-error';
+import { isNullable } from 'src/utils/nullable-guards';
 
 export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
   'file-system',
   () => {
     const { currentFs, currentFsInfo } = storeToRefs(useFileSystemManagerStore());
+
+    const safeFs = computed(() => {
+      if (!currentFs.value) {
+        throw new Error('No file system selected');
+      }
+      return currentFs.value;
+    });
     const settingsStore = useSettingsStore();
 
     watch(currentFsInfo, () => {
@@ -30,14 +38,14 @@ export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
       return getUserFilePath(stringPath);
     };
 
-    const noVaultProvided = computed(() => settingsStore.settings.vault == null);
+    const noVaultProvided = computed(() => isNullable(settingsStore.settings.vault));
 
     const prettyVault = computed(() => {
       if (noVaultProvided.value || !currentFs.value) {
         return '';
       }
 
-      return currentFs.value.prettifyPath(settingsStore.settings.vault) ?? '';
+      return currentFs.value.prettifyPath?.(settingsStore.settings.vault!) ?? '';
     });
 
     const removeRelativePaths = (path: string | string[]): string | string[] => {
@@ -66,49 +74,49 @@ export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
       encoding?: T,
     ): Promise<T extends 'utf8' ? string : Uint8Array> => {
       const normalizedPath = normalizePath(path);
-      return await currentFs.value.readFile(normalizedPath, encoding);
+      return await safeFs.value.readFile(normalizedPath, encoding);
     };
 
     const writeFile = async (path: string | string[], content: string | Uint8Array) => {
       const realPath = normalizePath(path);
       const isEncrypted = isOrgGpgFile(realPath);
       const format = isEncrypted || content instanceof Uint8Array ? 'binary' : 'utf8';
-      return await currentFs.value.writeFile(realPath, content, format);
+      return await safeFs.value.writeFile(realPath, content, format);
     };
 
     const syncFile = async <T extends string | Uint8Array>(
       path: string | string[],
       content: T,
       time: number,
-    ): Promise<T> => {
+    ): Promise<T | undefined> => {
       const realPath = normalizePath(path);
-      const previousFileInfo = await currentFs.value.fileInfo(realPath);
-      const needToUpdate = previousFileInfo?.mtime < time;
+      const previousFileInfo = await safeFs.value.fileInfo(realPath);
+      const needToUpdate = !previousFileInfo || previousFileInfo?.mtime < time;
 
-      if (previousFileInfo && !needToUpdate) {
+      if (!needToUpdate) {
         return;
       }
 
-      const dirExists = await currentFs.value.isDirExist(getFileDirPath(realPath));
+      const dirExists = await currentFs.value!.isDirExist(getFileDirPath(realPath));
 
       if (!dirExists) {
-        await currentFs.value.mkdir(getFileDirPath(realPath));
+        await currentFs.value!.mkdir(getFileDirPath(realPath));
       }
 
       await writeFile(realPath, content);
     };
 
     const rename = async (path: string | string[], newPath: string | string[]): Promise<void> => {
-      return currentFs.value.rename(normalizePath(path), normalizePath(newPath));
+      return currentFs.value!.rename(normalizePath(path), normalizePath(newPath));
     };
 
     const deleteFile = async (path: string | string[]) => {
-      return await currentFs.value.deleteFile(normalizePath(path));
+      return await currentFs.value!.deleteFile(normalizePath(path));
     };
 
     const removeAllFiles = async () => {
-      await mobileOnly(async () => await currentFs.value.rmdir('/'))();
-      return await currentFs.value.wipe?.();
+      await mobileOnly(async () => await currentFs.value!.rmdir('/'))();
+      return await safeFs.value.wipe?.();
     };
 
     const initFolderForFile = async (filePath: string | string[], isDir = false): Promise<void> => {
@@ -117,12 +125,12 @@ export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
       }
       const realPath = normalizePath(filePath);
       const dirPath = isDir ? realPath : getFileDirPath(realPath) || '';
-      const isDirExist = await currentFs.value.isDirExist(dirPath);
+      const isDirExist = await safeFs.value.isDirExist(dirPath);
       if (isDirExist) {
         return;
       }
 
-      const safeMkdir = to(currentFs.value.mkdir, `Failed to create ${filePath} directory`);
+      const safeMkdir = to(safeFs.value.mkdir, `Failed to create ${filePath} directory`);
 
       await safeMkdir(dirPath).mapErr((e) => {
         reporter.reportError(e);
@@ -130,15 +138,15 @@ export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
     };
 
     const mkdir = async (path: string | string[]): Promise<void> => {
-      await currentFs.value.mkdir(normalizePath(path));
+      await safeFs.value.mkdir(normalizePath(path));
     };
 
     const rmdir = async (path: string | string[]): Promise<void> => {
-      await currentFs.value.rmdir(normalizePath(path));
+      await safeFs.value.rmdir(normalizePath(path));
     };
 
-    const fileInfo = async (path: string | string[]): Promise<DiskFile> => {
-      const fileInfo = await currentFs.value.fileInfo(normalizePath(path));
+    const fileInfo = async (path: string | string[]): Promise<DiskFile | undefined> => {
+      const fileInfo = await safeFs.value.fileInfo(normalizePath(path));
 
       if (!fileInfo) {
         return;
@@ -152,18 +160,27 @@ export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
         return [];
       }
 
-      const res = await currentFs.value.readDir(normalizePath(path));
+      const res = await safeFs.value.readDir(normalizePath(path));
       return res;
     };
 
-    const withSafeFolderCreation =
-      <PATH extends string | string[], A extends unknown[], R>(
-        fn: (p: PATH, ...args: A) => R,
-        isDir = false,
-      ) =>
-      async (path?: PATH, ...args: A): Promise<Awaited<R>> => {
-        if (!currentFs.value) {
-          return;
+    function withSafeFolderCreation<PATH extends string | string[], A extends unknown[], R>(
+      fn: (p: PATH, ...args: A) => Promise<R>,
+      isDir: boolean,
+      defaultValue: R,
+    ): (path?: PATH, ...args: A) => Promise<R>;
+    function withSafeFolderCreation<PATH extends string | string[], A extends unknown[], R>(
+      fn: (p: PATH, ...args: A) => Promise<R>,
+      isDir?: boolean,
+    ): (path?: PATH, ...args: A) => Promise<R | undefined>;
+    function withSafeFolderCreation<PATH extends string | string[], A extends unknown[], R>(
+      fn: (p: PATH, ...args: A) => Promise<R>,
+      isDir = false,
+      defaultValue?: R,
+    ) {
+      return async (path?: PATH, ...args: A): Promise<R | undefined> => {
+        if (!currentFs.value || !path) {
+          return defaultValue;
         }
         try {
           return await fn(path, ...args);
@@ -175,13 +192,14 @@ export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
           return await fn(path, ...args);
         }
       };
+    }
 
     const dropFileSystem = async () => {
       // NOTE: ignore native mobile file system.
       if (Platform.is.nativeMobile) {
         return;
       }
-      await currentFs.value.rmdir('/');
+      await currentFs.value?.rmdir('/');
     };
 
     const store: FileSystemStore = {
@@ -194,7 +212,7 @@ export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
       mkdir: withSafeFolderCreation(mkdir),
       rmdir: withSafeFolderCreation(rmdir, true),
       fileInfo: withSafeFolderCreation(fileInfo),
-      readDir: withSafeFolderCreation(readDir),
+      readDir: withSafeFolderCreation(readDir, false, []),
       dropFileSystem,
       prettyVault,
     };

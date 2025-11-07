@@ -25,7 +25,7 @@ export const useFileSystemManagerStore = defineStore<string, FileSystemManagerSt
 
     const useFs = async (fsName: string): Promise<void> => {
       currentFsName.value = fsName;
-      const params = await currentFs.value?.init({
+      const params = await currentFs.value?.init?.({
         root: settings.settings.vault,
       });
       if (params && 'root' in params) {

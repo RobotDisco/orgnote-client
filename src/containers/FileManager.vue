@@ -63,7 +63,8 @@
 
 <script lang="ts" setup>
 import type { StyleSize } from 'orgnote-api';
-import { DefaultCommands, getParentDir, I18N, join, withRoot, type DiskFile } from 'orgnote-api';
+import { DefaultCommands, getParentDir, I18N, join, withRoot } from 'orgnote-api';
+import type { DiskFile } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import FileManagerItem from './FileManagerItem.vue';
 import CardWrapper from 'src/components/CardWrapper.vue';
@@ -170,9 +171,9 @@ const moveUp = async () => {
 
 const iconSize = computed<StyleSize>(() => (props.compact ? 'sm' : 'md'));
 
-const activeFilePath = computed<string | null>(() => {
+const activeFilePath = computed<string | undefined>(() => {
   const activeTab = paneStore.activeTab;
-  if (!activeTab?.router) return null;
+  if (!activeTab?.router) return;
 
   const route = activeTab.router.currentRoute.value;
   return extractPathFromRoute(route);

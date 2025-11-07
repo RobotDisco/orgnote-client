@@ -2,6 +2,7 @@ import { expect, test, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { usePaneStore } from 'src/stores/pane';
 import { useLayoutStore } from 'src/stores/layout';
+import { isPresent } from 'src/utils/nullable-guards';
 
 vi.mock('src/utils/pane-router', () => ({
   createPaneRouter: vi.fn(() =>
@@ -99,11 +100,11 @@ test('PanesPage store should have valid pane IDs accessible via getPane', async 
   paneStore.activePaneId = paneId;
 
   expect(paneStore.panes[paneId]).toBeDefined();
-  expect(paneStore.panes[paneId].value.id).toBe(paneId);
+  expect(paneStore.panes[paneId]?.value.id).toBe(paneId);
 
   const retrievedPane = paneStore.getPane(paneId);
   expect(retrievedPane?.value).toBeDefined();
-  expect(retrievedPane?.value.id).toBe(paneId);
+  expect(retrievedPane?.value?.id).toBe(paneId);
 });
 
 test('PanesPage store should initialize layout when pane is created', async () => {
@@ -131,7 +132,7 @@ test('PanesPage workflow should call initLayout after initNewPane', async () => 
   const layoutStore = useLayoutStore();
 
   const initialActivePaneId = paneStore.activePaneId;
-  expect(initialActivePaneId).toBeNull();
+  expect(initialActivePaneId).toBeUndefined();
 
   const pane = await paneStore.createPane();
   await paneStore.addTab(pane.id, { title: 'Test Pane' });
@@ -139,8 +140,14 @@ test('PanesPage workflow should call initLayout after initNewPane', async () => 
   layoutStore.initLayout();
 
   const layout = layoutStore.layout;
+  if (!isPresent(layout)) {
+    throw new Error('Layout not found');
+  }
+
   expect(layout.type).toBe('pane');
-  expect((layout as { paneId?: string }).paneId).toBe(pane.id);
+  if (layout.type === 'pane') {
+    expect(layout.paneId).toBe(pane.id);
+  }
   expect(paneStore.activePaneId).toBe(pane.id);
 });
 
@@ -154,5 +161,5 @@ test('AppPane should be accessible with valid paneId after initialization', asyn
 
   const retrievedPane = paneStore.getPane(pane.id);
   expect(retrievedPane?.value).toBeDefined();
-  expect(retrievedPane?.value.id).toBe(pane.id);
+  expect(retrievedPane?.value?.id).toBe(pane.id);
 });

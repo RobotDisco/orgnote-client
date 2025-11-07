@@ -16,9 +16,9 @@ import {
 } from './layout-snapshot-repository';
 import type Dexie from 'dexie';
 
-let database: Dexie | null = null;
+let database: Dexie | undefined;
 
-export const getDatabase = (): Dexie | null => database;
+export const getDatabase = (): Dexie | undefined => database;
 
 export async function initRepositories(): Promise<OrgNoteApi['infrastructure']> {
   const { db } = createDatabase([

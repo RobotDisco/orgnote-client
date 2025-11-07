@@ -60,6 +60,7 @@ const inputRef = ref<typeof AppInput | undefined>();
 <style lang="scss" scoped>
 .subscription-settings {
   @include flexify(column, flex-start, center, var(--gap-lg));
+
   width: 100%;
 }
 .reference {

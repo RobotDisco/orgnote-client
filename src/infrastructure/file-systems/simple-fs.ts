@@ -35,16 +35,20 @@ export const useSimpleFs = (): FileSystem => {
     if (!(await isFileExist(path))) {
       throw new ErrorFileNotFound(path);
     }
-    const content = (await fs.get(path)).content as R;
+    const file = await fs.get(path);
+    if (!file) {
+      throw new ErrorFileNotFound(path);
+    }
+    const content = file.content as R;
     await fs.update(path, { atime: Date.now() });
     return content;
   };
 
   const writeFile: FileSystem['writeFile'] = async (
-    path: string,
-    content: string | Uint8Array,
+    path,
+    content,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _encoding: string,
+    _encoding,
   ) => {
     path = normalizePath(path);
     const existingFile = await fileInfo(path);
@@ -133,10 +137,9 @@ export const useSimpleFs = (): FileSystem => {
   };
 
   const rmdir: FileSystem['rmdir'] = async (path: string) => {
-    // NOTE: if path is root
     if (path === '/') {
       await fs.clear();
-      await init();
+      await init?.();
       return;
     }
     if (!(await isDirExist(path))) {
@@ -189,9 +192,10 @@ export const useSimpleFs = (): FileSystem => {
     });
   };
 
-  const fileInfo: FileSystem['fileInfo'] = async (path: string) => {
+  const fileInfo: FileSystem['fileInfo'] = async (path: string): Promise<DiskFile | undefined> => {
     path = normalizePath(path);
-    return fs.get(path);
+    const file = await fs.get(path);
+    return file;
   };
 
   const init: FileSystem['init'] = async () => {

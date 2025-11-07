@@ -1,4 +1,5 @@
 import { I18N } from 'orgnote-api';
+import { isPresent } from 'src/utils/nullable-guards';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -20,11 +21,11 @@ export function useLoadingMessages(options: { messages?: string[]; timer?: numbe
     options.messages && options.messages.length > 0 ? options.messages : defaultMessages,
   );
   const timer = ref<number>(options.timer || 3000);
-  const currentMessage = ref<string>(messages.value[0]);
+  const currentMessage = ref<string | undefined>(messages.value[0]);
   let intervalId: ReturnType<typeof setInterval> | null = null;
 
   const updateMessage = () => {
-    const currentIndex = messages.value.indexOf(currentMessage.value);
+    const currentIndex = messages.value.indexOf(currentMessage.value ?? '');
     const nextIndex = (currentIndex + 1) % messages.value.length;
     currentMessage.value = messages.value[nextIndex];
   };
@@ -34,7 +35,7 @@ export function useLoadingMessages(options: { messages?: string[]; timer?: numbe
   });
 
   onUnmounted(() => {
-    if (intervalId !== null) {
+    if (isPresent(intervalId)) {
       clearInterval(intervalId);
       intervalId = null;
     }

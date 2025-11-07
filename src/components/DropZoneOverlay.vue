@@ -23,11 +23,11 @@ import { getDropZone, sanitizeDropZoneRatio } from 'src/utils/get-drop-zone';
 
 defineProps<{
   visible: boolean;
-  activeZone: DropZone | null;
+  activeZone: DropZone | undefined;
 }>();
 
 const emit = defineEmits<{
-  (event: 'update:activeZone', zone: DropZone | null): void;
+  (event: 'update:activeZone', zone: DropZone | undefined): void;
   (event: 'drop', zone: DropZone, payload: DragEvent): void;
 }>();
 
@@ -54,7 +54,7 @@ const handleDragOver = (event: DragEvent) => {
 };
 
 const handleDragLeave = () => {
-  emit('update:activeZone', null);
+  emit('update:activeZone', undefined);
 };
 
 const handleDrop = (event: DragEvent) => {

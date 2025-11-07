@@ -21,7 +21,7 @@ defineProps<{
 
 const model = defineModel<string | number>();
 
-const inputRef = ref<HTMLInputElement | null>(null);
+const inputRef = ref<HTMLInputElement | undefined>();
 
 const focus = () => {
   if (inputRef.value) {

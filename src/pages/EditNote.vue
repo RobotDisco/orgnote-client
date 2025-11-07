@@ -21,9 +21,9 @@ const currentNotePath = computed(() => {
 
 const buffers = api.core.useBuffers();
 
-const buffer = computed<OrgBuffer | null>(() => {
+const buffer = computed<OrgBuffer | undefined>(() => {
   const path = currentNotePath.value;
-  if (!path) return null;
+  if (!path) return;
   return buffers.getBufferByPath(path);
 });
 </script>

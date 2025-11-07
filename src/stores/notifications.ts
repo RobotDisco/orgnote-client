@@ -29,7 +29,7 @@ export const useNotificationsStore = defineStore<'notifications', NotificationsS
         type: notificationConfig.level || 'info',
         group: notificationConfig.group ?? notificationConfig.message,
         classes: 'notification',
-        closeBtn: notificationConfig.closable ? i18n.global.t(I18N.CLOSE) : null,
+        closeBtn: notificationConfig.closable && i18n.global.t(I18N.CLOSE),
         position,
       });
 

@@ -1,7 +1,10 @@
 import { getFileName, I18N, type DiskFile, type OrgNoteApi } from 'orgnote-api';
 import { dirItemsGetter } from 'src/utils/dir-items-getter';
 
-export const deleteFileCompletion = async (api: OrgNoteApi, filePath: string): Promise<string> => {
+export const deleteFileCompletion = async (
+  api: OrgNoteApi,
+  filePath: string,
+): Promise<string | undefined> => {
   const fm = api.core.useFileManager();
   const deletedFilePath = await getDeleteFileName(api, fm.focusFile?.path ?? filePath);
 

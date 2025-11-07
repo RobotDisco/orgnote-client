@@ -12,9 +12,9 @@ export interface ValibotMetadata {
 
 export interface ValibotScheme {
   type: string;
-  options: ValibotScheme[];
+  options?: ValibotScheme[];
   pipe?: ValibotMetadata[];
-  entries: { [key: string]: ValibotScheme };
+  entries?: { [key: string]: ValibotScheme };
   literal?: string;
   wrapped?: {
     type: string;

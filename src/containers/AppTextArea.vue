@@ -16,7 +16,7 @@ defineProps<{
 }>();
 
 const model = defineModel<string>();
-const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const textareaRef = ref<HTMLTextAreaElement | undefined>();
 
 const focus = () => {
   textareaRef.value?.focus();

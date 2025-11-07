@@ -1,4 +1,4 @@
-export function extractDynamicValue<T>(value?: T | (() => T)): T {
+export function extractDynamicValue<T>(value?: T | (() => T)): T | undefined {
   if (value === undefined) {
     return;
   }

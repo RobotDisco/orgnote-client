@@ -2,6 +2,7 @@ import { test, expect, vi } from 'vitest';
 import { getFileManagerCommands } from './file-manager';
 import { DefaultCommands } from 'orgnote-api';
 import type { OrgNoteApi } from 'orgnote-api';
+import { isNullable } from 'src/utils/nullable-guards';
 
 vi.mock('src/composables/create-file-completion', () => ({
   createFileCompletion: vi.fn(),
@@ -35,6 +36,7 @@ test('CREATE_NOTE command calls OPEN_NOTE after successful file creation', async
   const createNoteCommand = commands.find((cmd) => cmd.command === DefaultCommands.CREATE_NOTE);
 
   expect(createNoteCommand).toBeDefined();
+  if (isNullable(createNoteCommand)) return;
 
   await createNoteCommand.handler(mockApi as OrgNoteApi);
 
@@ -60,6 +62,8 @@ test('CREATE_NOTE command does not call OPEN_NOTE when file creation fails', asy
 
   const commands = getFileManagerCommands();
   const createNoteCommand = commands.find((cmd) => cmd.command === DefaultCommands.CREATE_NOTE);
+
+  if (isNullable(createNoteCommand)) return;
 
   await createNoteCommand.handler(mockApi as OrgNoteApi);
 

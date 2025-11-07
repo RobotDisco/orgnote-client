@@ -77,8 +77,8 @@ test('split node renders child LayoutRenderer components', () => {
   expect(childRenderers).toHaveLength(2);
 
   const splitLayout = layout as LayoutSplitNode;
-  expect(childRenderers[0].props('layout')).toEqual(splitLayout.children[0]);
-  expect(childRenderers[1].props('layout')).toEqual(splitLayout.children[1]);
+  expect(childRenderers[0]?.props('layout')).toEqual(splitLayout.children[0]);
+  expect(childRenderers[1]?.props('layout')).toEqual(splitLayout.children[1]);
 });
 
 test('applies correct CSS classes to split nodes', () => {

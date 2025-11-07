@@ -52,6 +52,7 @@ const focusCompletionCandidate = (e: MouseEvent, index: number) => {
     return;
   }
   lastCoords = [e.clientX, e.clientY];
+  if (!completion.activeCompletion) return;
   completion.activeCompletion.selectedCandidateIndex = index;
 };
 
@@ -59,6 +60,7 @@ const executeCompletionItem = async (e: MouseEvent) => {
   if ('groupTitle' in props.item) return;
   e.preventDefault();
   e.stopPropagation();
+  if (!completion.activeCompletion) return;
   if (completion.activeCompletion.type !== 'input-choice') {
     completion.close(props.item.data);
   }

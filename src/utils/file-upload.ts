@@ -49,10 +49,14 @@ export function uploadFiles(params: MultipleUploadParams): Promise<FileList> {
   return handleFileSelection(input);
 }
 
-export async function uploadFile(params: UploadParams = {}): Promise<File> {
+export async function uploadFile(params: UploadParams = {}): Promise<File | undefined> {
   const files = await uploadFiles({ ...params, multiple: false });
+
   if (!files.length) {
-    throw new Error('No file selected');
+    return;
   }
-  return files[0];
+
+  const file = files[0];
+
+  return file;
 }

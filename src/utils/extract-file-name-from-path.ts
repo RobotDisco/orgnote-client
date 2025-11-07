@@ -1,6 +1,6 @@
 export function extractFileNameFromPath(path?: string): string {
   if (!path) {
-    return path;
+    return '';
   }
-  return path.split('/').pop();
+  return path.split('/').pop() || '';
 }

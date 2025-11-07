@@ -2,7 +2,7 @@ import type { App } from 'vue';
 import { createApp } from 'vue';
 
 export function withSetup<T>(composable: () => T): [T, App] {
-  let result: T;
+  let result: T | undefined;
   const app = createApp({
     setup() {
       result = composable();
@@ -10,5 +10,5 @@ export function withSetup<T>(composable: () => T): [T, App] {
     },
   });
   app.mount(document.createElement('div'));
-  return [result, app];
+  return [result as T, app];
 }

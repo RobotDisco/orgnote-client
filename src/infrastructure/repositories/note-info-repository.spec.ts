@@ -41,7 +41,9 @@ test('should save and retrieve a note by ID', async () => {
   const note = createMockNote();
   await repository.putNote(note);
 
-  const result = await repository.getById(note.id);
+  const noteId = note.id;
+  if (!noteId) throw new Error('note.id is undefined');
+  const result = await repository.getById(noteId);
   expect(result).toEqual(note);
 });
 
@@ -59,11 +61,15 @@ test('should retrieve notes after a specific update time', async () => {
 test('should mark notes as deleted', async () => {
   const note = createMockNote();
   await repository.putNote(note);
-  await repository.markAsDeleted([note.id]);
+  const noteId = note.id;
+  if (!noteId) throw new Error('note.id is undefined');
+  await repository.markAsDeleted([noteId]);
 
   const deletedNotes = await repository.getDeletedNotes();
   expect(deletedNotes).toHaveLength(1);
-  expect(deletedNotes[0]?.id).toBe(note.id);
+  const deletedNote = deletedNotes[0];
+  if (!deletedNote) throw new Error('deletedNote is undefined');
+  expect(deletedNote.id).toBe(noteId);
 });
 
 test('should retrieve notes with specific tags', async () => {
@@ -79,20 +85,26 @@ test('should retrieve notes with specific tags', async () => {
 
   const results = await repository.getNotesInfo({ tags: ['tag1'] });
   expect(results).toHaveLength(1);
-  expect(results[0]?.meta.fileTags).toContain('tag1');
+  const result = results[0];
+  if (!result) throw new Error('result is undefined');
+  expect(result.meta.fileTags).toContain('tag1');
 });
 
 test('should add and remove a bookmark', async () => {
   const note = createMockNote();
   await repository.putNote(note);
 
-  await repository.addBookmark(note.id);
-  const bookmarkedNote = await repository.getById(note.id);
-  expect(bookmarkedNote?.bookmarked).toBe(true);
+  const noteId = note.id;
+  if (!noteId) throw new Error('note.id is undefined');
+  await repository.addBookmark(noteId);
+  const bookmarkedNote = await repository.getById(noteId);
+  if (!bookmarkedNote) throw new Error('bookmarkedNote is undefined');
+  expect(bookmarkedNote.bookmarked).toBe(true);
 
-  await repository.deleteBookmark(note.id);
-  const unbookmarkedNote = await repository.getById(note.id);
-  expect(unbookmarkedNote?.bookmarked).toBe(false);
+  await repository.deleteBookmark(noteId);
+  const unbookmarkedNote = await repository.getById(noteId);
+  if (!unbookmarkedNote) throw new Error('unbookmarkedNote is undefined');
+  expect(unbookmarkedNote.bookmarked).toBe(false);
 });
 
 test('should count notes with search criteria', async () => {
@@ -132,16 +144,25 @@ test('should modify notes based on callback', async () => {
     n.meta.title = 'Modified title';
   });
 
-  const modifiedNote = await repository.getById(note.id);
-  expect(modifiedNote?.meta.title).toBe('Modified title');
+  const noteId = note.id;
+  if (!noteId) throw new Error('note.id is undefined');
+  const modifiedNote = await repository.getById(noteId);
+  if (!modifiedNote) throw new Error('modifiedNote is undefined');
+  expect(modifiedNote.meta.title).toBe('Modified title');
 });
 
 test('should retrieve IDs of notes based on filter callback', async () => {
   const notes = Array.from({ length: 3 }, createMockNote);
   await repository.saveNotes(notes);
 
-  const ids = await repository.getIds((n) => n.meta.fileTags?.includes(notes[0].meta.fileTags[0]));
-  expect(ids).toContain(notes[0].id);
+  const firstNote = notes[0];
+  if (!firstNote) throw new Error('firstNote is undefined');
+  const fileTags = firstNote.meta.fileTags;
+  if (!fileTags) throw new Error('firstNote.meta.fileTags is undefined');
+  const firstTag = fileTags[0];
+  if (!firstTag) throw new Error('firstTag is undefined');
+  const ids = await repository.getIds((n) => n.meta.fileTags?.includes(firstTag) ?? false);
+  expect(ids).toContain(firstNote.id);
 });
 
 test('should not modify non-existing note', async () => {
@@ -160,13 +181,17 @@ test('should not modify non-existing note', async () => {
 test('should not double delete already deleted notes', async () => {
   const note = createMockNote();
   await repository.putNote(note);
-  await repository.markAsDeleted([note.id]);
+  const noteId = note.id;
+  if (!noteId) throw new Error('note.id is undefined');
+  await repository.markAsDeleted([noteId]);
 
-  await repository.markAsDeleted([note.id]); // Повторная попытка удалить
+  await repository.markAsDeleted([noteId]);
   const deletedNotes = await repository.getDeletedNotes();
 
   expect(deletedNotes).toHaveLength(1);
-  expect(deletedNotes[0]?.id).toBe(note.id);
+  const deletedNote = deletedNotes[0];
+  if (!deletedNote) throw new Error('deletedNote is undefined');
+  expect(deletedNote.id).toBe(noteId);
 });
 
 test('should handle empty updates in bulkPartialUpdate', async () => {

@@ -9,6 +9,7 @@
 import { useI18n } from 'vue-i18n';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { I18N } from 'orgnote-api';
+import { isNullable } from 'src/utils/nullable-guards';
 
 const props = defineProps<{
   messageKey?: I18N;
@@ -24,19 +25,19 @@ const label = computed(() => {
 });
 
 const dotCount = ref(0);
-let timer: number | null = null;
+let timer: number | undefined;
 
 const start = () => {
-  if (timer !== null) return;
+  if (isNullable(timer)) return;
   timer = window.setInterval(() => {
     dotCount.value = (dotCount.value + 1) % 4;
   }, 400);
 };
 
 const stop = () => {
-  if (timer === null) return;
+  if (isNullable(timer)) return;
   window.clearInterval(timer);
-  timer = null;
+  timer = undefined;
 };
 
 onMounted(start);

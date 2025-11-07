@@ -51,7 +51,7 @@ test('has edit note route configured', () => {
   expect(editNoteRoute?.meta?.titleGenerator).toBeDefined();
 });
 
-test('initial page title generator returns null', () => {
+test('initial page title generator returns empty string', () => {
   const initialPageRoute = router
     .getRoutes()
     .find((route) => route.name === RouteNames.InitialPage);
@@ -71,7 +71,10 @@ test('initial page title generator returns null', () => {
     redirectedFrom: undefined,
   } as RouteLocationNormalized;
 
-  expect(titleGenerator(mockRoute)).toBe(null);
+  if (!titleGenerator) {
+    throw new Error('Expected titleGenerator to be defined');
+  }
+  expect(titleGenerator(mockRoute)).toBe('');
 });
 
 test('edit note title generator extracts filename from path', () => {
@@ -92,10 +95,13 @@ test('edit note title generator extracts filename from path', () => {
     redirectedFrom: undefined,
   } as RouteLocationNormalized;
 
+  if (!titleGenerator) {
+    throw new Error('Expected titleGenerator to be defined');
+  }
   expect(titleGenerator(mockRoute)).toBe('test-file.org');
 });
 
-test('edit note title generator returns default title for empty path', () => {
+test('edit note title generator returns empty string for empty path', () => {
   const editNoteRoute = router.getRoutes().find((route) => route.name === RouteNames.EditNote);
   const titleGenerator = editNoteRoute?.meta?.titleGenerator;
 
@@ -113,7 +119,10 @@ test('edit note title generator returns default title for empty path', () => {
     redirectedFrom: undefined,
   } as RouteLocationNormalized;
 
-  expect(titleGenerator(mockRoute)).toBe(null);
+  if (!titleGenerator) {
+    throw new Error('Expected titleGenerator to be defined');
+  }
+  expect(titleGenerator(mockRoute)).toBe('');
 });
 
 test('edit note title generator returns default title for path without filename', () => {
@@ -134,6 +143,9 @@ test('edit note title generator returns default title for path without filename'
     redirectedFrom: undefined,
   } as RouteLocationNormalized;
 
+  if (!titleGenerator) {
+    throw new Error('Expected titleGenerator to be defined');
+  }
   expect(titleGenerator(mockRoute)).toBe('Untitled');
 });
 
@@ -191,5 +203,8 @@ test('handles complex file paths correctly', () => {
     redirectedFrom: undefined,
   } as RouteLocationNormalized;
 
+  if (!titleGenerator) {
+    throw new Error('Expected titleGenerator to be defined');
+  }
   expect(titleGenerator(complexPathRoute)).toBe('meeting-notes.org');
 });

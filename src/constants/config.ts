@@ -2,6 +2,8 @@ import type { OrgNoteConfig } from 'orgnote-api';
 
 export const DEFAULT_PANE_PERSISTENCE_SAVE_DELAY = 500;
 
+export const DEFAULT_FUST_THRESHOLD = 0.4;
+
 export const DEFAULT_CONFIG: OrgNoteConfig = {
   editor: {
     showSpecialSymbols: false,
@@ -17,7 +19,7 @@ export const DEFAULT_CONFIG: OrgNoteConfig = {
   completion: {
     showGroup: false,
     defaultCompletionLimit: 500,
-    fuseThreshold: 0.4,
+    fuseThreshold: DEFAULT_FUST_THRESHOLD,
   },
   synchronization: {
     type: 'api',

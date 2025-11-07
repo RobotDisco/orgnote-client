@@ -5,7 +5,7 @@
       @close="modal.close()"
       :class="{
         mini: m.config?.mini,
-        [`position-${m.config?.position ?? 'center'}`]: m.config.position,
+        [`position-${m.config?.position ?? 'center'}`]: m.config?.position ?? 'center',
         'full-screen': m.config?.fullScreen,
         'modal-wide': m.config?.wide,
       }"
@@ -56,7 +56,7 @@ const modalDialogRefs = ref<HTMLDialogElement[]>([]);
 
 const initDialog = async () => {
   await nextTick();
-  modalDialogRefs.value[modals.value.length - 1].showModal();
+  modalDialogRefs.value[modals.value.length - 1]?.showModal();
 };
 
 const closeDialog = () => {

@@ -4,13 +4,13 @@ import ConfirmationModalCmp from 'src/components/ConfirmationModal.vue';
 import { createPromise } from 'src/utils/create-promise';
 
 export function useConfirmationModal(): ConfirmationModal {
-  let resolveConfirmation: (data?: boolean) => void;
+  let resolveConfirmation: (data?: boolean) => void = () => {};
 
   const modal = api.ui.useModal();
 
   const confirm = async (params = {}) => {
     const [promise, resolver] = createPromise<boolean>();
-    resolveConfirmation = resolver;
+    resolveConfirmation = (data?: boolean) => resolver(data ?? false);
     modal.open(ConfirmationModalCmp, {
       mini: true,
       modalProps: {
@@ -24,7 +24,7 @@ export function useConfirmationModal(): ConfirmationModal {
   };
 
   const resetModal = () => {
-    resolveConfirmation = null;
+    resolveConfirmation = () => {};
   };
 
   return {

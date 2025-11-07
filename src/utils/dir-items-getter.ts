@@ -31,8 +31,9 @@ export const dirItemsGetter = async (
       title: `${dir.path}/`,
       data: dir,
       commandHandler: (data: DiskFile) => {
-        completion.activeCompletion.searchQuery = `${data.path}/`;
-        return;
+        const activeCompletion = completion.activeCompletion;
+        if (!activeCompletion) return;
+        activeCompletion.searchQuery = `${data.path}/`;
       },
     })),
   };

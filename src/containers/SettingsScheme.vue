@@ -2,21 +2,23 @@
   <div class="settings-scheme">
     <h5 v-if="name" class="capitalize description">{{ name.toUpperCase() }}</h5>
     <div
-      v-if="scheme.type === 'union' && Object.keys(conditionalOption ?? {}).length"
+      v-if="
+        scheme.type === 'union' && conditionalKey && Object.keys(conditionalOption ?? {}).length
+      "
       class="union-settings"
     >
       <card-wrapper>
         <menu-item
-          @click="changeConditionalType(o.entries[conditionalKey].literal)"
-          :selected="o.entries[conditionalKey].literal === encryptionConfig"
-          :active="o.entries[conditionalKey].literal === encryptionConfig"
           v-for="(o, i) of scheme.options"
           :key="i"
+          :selected="o.entries?.[conditionalKey!]?.literal === encryptionConfig"
+          :active="o.entries?.[conditionalKey!]?.literal === encryptionConfig"
+          @click="changeConditionalType(o.entries?.[conditionalKey!]?.literal)"
         >
-          {{ camelCaseToWords(o.entries[conditionalKey].literal) }}
+          {{ camelCaseToWords(o.entries?.[conditionalKey!]?.literal) }}
         </menu-item>
       </card-wrapper>
-      <settings-scheme :scheme="conditionalOption" :path="path" />
+      <settings-scheme :scheme="conditionalOption!" :path="path" />
     </div>
     <card-wrapper v-else>
       <settings-item
@@ -40,6 +42,7 @@ import { api } from 'src/boot/api';
 import { type OrgNoteConfig } from 'orgnote-api';
 import { storeToRefs } from 'pinia';
 import { camelCaseToWords } from 'src/utils/camel-case-to-words';
+import { isPresent } from 'src/utils/nullable-guards';
 
 const props = defineProps<{
   path: keyof OrgNoteConfig;
@@ -50,23 +53,43 @@ const props = defineProps<{
 const { config } = storeToRefs(api.core.useConfig());
 
 const metadata = props.scheme.pipe?.find((e) => e.type === 'metadata')?.metadata;
-const conditionalKey = metadata?.conditionalKey;
+const conditionalKey: string | undefined = metadata?.conditionalKey;
 
-const encryptionConfig = computed(() => config.value[props.path]?.[conditionalKey]);
-
-const isOption = (v: ValibotScheme) =>
-  v.entries[conditionalKey]?.literal === encryptionConfig.value;
-
-const rawConditionalOption = computed(() => conditionalKey && props.scheme.options?.find(isOption));
-const conditionalOption = computed(() => {
-  const option = { ...rawConditionalOption.value };
-  const entries = { ...option.entries };
-  delete entries[conditionalKey];
-  option.entries = entries;
-  return option;
+const encryptionConfig = computed(() => {
+  if (!isPresent(conditionalKey)) return;
+  return config.value[props.path]?.[conditionalKey];
 });
 
-const changeConditionalType = (t: string) => {
+const isOption = (v: ValibotScheme): boolean => {
+  if (!isPresent(conditionalKey)) return false;
+  return v.entries?.[conditionalKey]?.literal === encryptionConfig.value;
+};
+
+const rawConditionalOption = computed(() => {
+  if (!isPresent(conditionalKey)) return;
+  return props.scheme.options?.find(isOption);
+});
+
+const conditionalOption = computed(() => {
+  const rawOption = rawConditionalOption.value;
+
+  if (!isPresent(rawOption) || !isPresent(conditionalKey)) return;
+
+  const entries = { ...rawOption.entries };
+  delete entries[conditionalKey];
+
+  return {
+    type: rawOption.type,
+    ...(rawOption.options && { options: rawOption.options }),
+    ...(rawOption.pipe && { pipe: rawOption.pipe }),
+    entries,
+    ...(rawOption.literal && { literal: rawOption.literal }),
+    ...(rawOption.wrapped && { wrapped: rawOption.wrapped }),
+  };
+});
+
+const changeConditionalType = (t?: string): void => {
+  if (!isPresent(conditionalKey)) return;
   config.value[props.path][conditionalKey] = t;
 };
 </script>

@@ -6,7 +6,7 @@ export function platformSpecificValue<TData = unknown>(datasource: {
   server?: TData;
   mobile?: TData;
   desktop?: TData;
-}): TData {
+}): TData | undefined {
   if (process.env.SERVER) {
     return datasource.server ?? datasource.data;
   }
@@ -15,7 +15,6 @@ export function platformSpecificValue<TData = unknown>(datasource: {
     return datasource.data;
   }
 
-  // NOTE: order is important!
   const datasourceKeys = ['desktop', 'nativeMobile', 'mobile'] as const;
 
   for (const platform of datasourceKeys) {

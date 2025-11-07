@@ -2,6 +2,7 @@ import { expect, test } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { usePaneStore } from 'src/stores/pane';
 import { useLayoutStore } from 'src/stores/layout';
+import { isPresent } from 'src/utils/nullable-guards';
 
 test('initNewPane followed by setting activePaneId should populate layout with correct paneId', async () => {
   setActivePinia(createPinia());
@@ -39,7 +40,7 @@ test('getPane with valid id should return pane', async () => {
   const retrievedPane = paneStore.getPane(pane.id);
 
   expect(retrievedPane?.value).toBeDefined();
-  expect(retrievedPane?.value.id).toBe(pane.id);
+  expect(retrievedPane?.value?.id).toBe(pane.id);
 });
 
 test('layout should be updated when activePaneId is set', async () => {
@@ -56,6 +57,12 @@ test('layout should be updated when activePaneId is set', async () => {
   layoutStore.initLayout();
 
   const layout = layoutStore.layout;
+  if (!isPresent(layout)) {
+    throw new Error('Layout not found');
+  }
+
   expect(layout.type).toBe('pane');
-  expect((layout as { paneId?: string }).paneId).toBe(pane2.id);
+  if (layout.type === 'pane') {
+    expect(layout.paneId).toBe(pane2.id);
+  }
 });

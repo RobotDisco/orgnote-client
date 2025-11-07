@@ -2,6 +2,7 @@ import { expect, test, vi } from 'vitest';
 import { usePaneStore } from './pane';
 import { createPinia, setActivePinia } from 'pinia';
 import type { PaneSnapshot } from 'orgnote-api';
+import { isNullable } from 'src/utils/nullable-guards';
 
 const mockRouter = {
   push: vi.fn(),
@@ -20,14 +21,26 @@ vi.mock('src/utils/pane-router', () => ({
   createPaneRouter: vi.fn(() => Promise.resolve(mockRouter)),
 }));
 
+function assertDefined<T>(value: T | null | undefined, message: string): asserts value is T {
+  if (isNullable(value)) throw new Error(message);
+}
+
+function getPaneValue(paneStore: ReturnType<typeof usePaneStore>, paneId: string) {
+  const paneRef = paneStore.getPane(paneId);
+  const value = paneRef.value;
+  if (!value) throw new Error(`paneRef.value is nullable for pane ${paneId}`);
+  return value;
+}
+
 test('should create unique tab titles', async () => {
   setActivePinia(createPinia());
   const paneStore = usePaneStore();
 
   const pane = await paneStore.createPane();
   await paneStore.addTab(pane.id);
-  const paneRef = paneStore.getPane(pane.id);
-  expect(paneRef.value.tabs.value[paneRef.value.activeTabId].title).toBe('Untitled');
+  const paneValue = getPaneValue(paneStore, pane.id);
+  const activeTab = paneValue.tabs.value[paneValue.activeTabId];
+  expect(activeTab?.title).toBe('Untitled');
 
   const secondTab = await paneStore.addTab(pane.id);
   expect(secondTab?.title).toBe('Untitled 2');
@@ -42,8 +55,9 @@ test('should respect custom titles', async () => {
 
   const pane = await paneStore.createPane();
   await paneStore.addTab(pane.id, { title: 'Custom Title' });
-  const paneRef = paneStore.getPane(pane.id);
-  expect(paneRef.value.tabs.value[paneRef.value.activeTabId].title).toBe('Custom Title');
+  const paneValue = getPaneValue(paneStore, pane.id);
+  const activeTab = paneValue.tabs.value[paneValue.activeTabId];
+  expect(activeTab?.title).toBe('Custom Title');
 
   const secondTab = await paneStore.addTab(pane.id);
   expect(secondTab?.title).toBe('Untitled');
@@ -59,8 +73,9 @@ test('should switch to another tab when active tab is closed', async () => {
   const pane = await paneStore.createPane();
   await paneStore.addTab(pane.id);
   const paneId = pane.id;
-  const paneRef = paneStore.getPane(paneId);
-  const firstTabId = paneRef.value.activeTabId;
+  const paneValue = getPaneValue(paneStore, paneId);
+  const firstTabId = paneValue.activeTabId;
+  assertDefined(firstTabId, 'firstTabId is nullable');
 
   const secondTab = await paneStore.addTab(paneId);
   const secondTabId = secondTab!.id;
@@ -81,8 +96,9 @@ test('should close inactive tab without changing active tab', async () => {
   const pane = await paneStore.createPane();
   await paneStore.addTab(pane.id);
   const paneId = pane.id;
-  const paneRef = paneStore.getPane(paneId);
-  const firstTabId = paneRef.value.activeTabId;
+  const paneValue = getPaneValue(paneStore, paneId);
+  const firstTabId = paneValue.activeTabId;
+  assertDefined(firstTabId, 'firstTabId is nullable');
 
   const secondTab = await paneStore.addTab(paneId);
   const secondTabId = secondTab!.id;
@@ -101,8 +117,9 @@ test('should not remove pane when closing last tab but reset route', async () =>
   const pane = await paneStore.createPane();
   await paneStore.addTab(pane.id);
   const paneId = pane.id;
-  const paneRef = paneStore.getPane(paneId);
-  const tabId = paneRef.value.activeTabId;
+  const paneValue = getPaneValue(paneStore, paneId);
+  const tabId = paneValue.activeTabId;
+  assertDefined(tabId, 'tabId is nullable');
 
   expect(paneStore.panes[paneId]).toBeDefined();
   expect(paneStore.activePaneId).toBe(paneId);
@@ -153,10 +170,12 @@ test('should create panes snapshot correctly', async () => {
   const snapshot = paneStore.getPanesData();
 
   expect(snapshot).toHaveLength(1);
-  expect(snapshot[0].id).toBe(pane.id);
-  expect(snapshot[0].tabs).toHaveLength(2);
-  expect(snapshot[0].tabs[0].title).toBe('First Tab');
-  expect(snapshot[0].tabs[1].title).toBe('Second Tab');
+  const snapshotItem = snapshot[0];
+  if (isNullable(snapshotItem)) throw new Error('snapshotItem is nullable');
+  expect(snapshotItem.id).toBe(pane.id);
+  expect(snapshotItem.tabs).toHaveLength(2);
+  expect(snapshotItem.tabs[0]?.title).toBe('First Tab');
+  expect(snapshotItem.tabs[1]?.title).toBe('Second Tab');
 });
 
 test('should restore panes from snapshot', async () => {
@@ -165,23 +184,29 @@ test('should restore panes from snapshot', async () => {
 
   const originalPane = await paneStore.createPane();
   await paneStore.addTab(originalPane.id, { title: 'Original Tab' });
-  const secondTab = await paneStore.addTab(originalPane.id, { title: 'Second Tab' });
+  const originalSecondTab = await paneStore.addTab(originalPane.id, { title: 'Second Tab' });
 
   const snapshot = paneStore.getPanesData();
 
-  paneStore.closeTab(originalPane.id, secondTab!.id);
+  paneStore.closeTab(originalPane.id, originalSecondTab!.id);
   expect(Object.keys(paneStore.panes)).toHaveLength(1);
-  const paneRef = paneStore.getPane(originalPane.id);
-  expect(Object.keys(paneRef.value.tabs.value)).toHaveLength(1);
+  const paneValue = getPaneValue(paneStore, originalPane.id);
+  expect(Object.keys(paneValue.tabs.value)).toHaveLength(1);
 
   await paneStore.restorePanesData(snapshot);
 
   expect(Object.keys(paneStore.panes)).toHaveLength(1);
-  expect(paneStore.activePaneId).toBe(snapshot[0].id);
+  const snapshotItem = snapshot[0];
+  if (isNullable(snapshotItem)) throw new Error('snapshotItem is nullable');
+  expect(paneStore.activePaneId).toBe(snapshotItem.id);
 
-  const restoredPaneRef = paneStore.getPane(snapshot[0].id);
-  expect(restoredPaneRef.value.tabs.value).toHaveProperty(snapshot[0].tabs[0].id);
-  expect(restoredPaneRef.value.tabs.value).toHaveProperty(snapshot[0].tabs[1].id);
+  const restoredPaneValue = getPaneValue(paneStore, snapshotItem.id);
+  const firstTab = snapshotItem.tabs[0];
+  const restoredSecondTab = snapshotItem.tabs[1];
+  assertDefined(firstTab, 'firstTab is nullable');
+  assertDefined(restoredSecondTab, 'secondTab is nullable');
+  expect(restoredPaneValue.tabs.value).toHaveProperty(firstTab.id);
+  expect(restoredPaneValue.tabs.value).toHaveProperty(restoredSecondTab.id);
 });
 
 test('should create empty snapshot when no panes exist', async () => {
@@ -206,7 +231,7 @@ test('should handle restoring empty snapshot', async () => {
   await paneStore.restorePanesData(emptySnapshot);
 
   expect(Object.keys(paneStore.panes)).toHaveLength(0);
-  expect(paneStore.activePaneId).toBeNull();
+  expect(paneStore.activePaneId).toBeUndefined();
 });
 
 test('should handle selectTab with non-existent pane', async () => {
@@ -250,8 +275,8 @@ test('should set active pane when selecting tab', async () => {
   paneStore.selectTab(pane1.id, tab1!.id);
 
   expect(paneStore.activePaneId).toBe(pane1.id);
-  expect(paneStore.activePane.id).toBe(pane1.id);
-  expect(paneStore.activeTab.id).toBe(tab1!.id);
+  expect(paneStore.activePane?.id).toBe(pane1.id);
+  expect(paneStore.activeTab?.id).toBe(tab1!.id);
 });
 
 test('should throw error when navigate without active pane', async () => {
@@ -293,8 +318,9 @@ test('closeTab should remove empty pane when other panes exist', async () => {
   const secondPane = await paneStore.createPane();
   await paneStore.addTab(secondPane.id, { title: 'Second Pane' });
   const secondPaneId = secondPane.id;
-  const secondPaneRef = paneStore.getPane(secondPaneId);
-  const secondTabId = secondPaneRef.value.activeTabId;
+  const secondPaneValue = getPaneValue(paneStore, secondPaneId);
+  const secondTabId = secondPaneValue.activeTabId;
+  assertDefined(secondTabId, 'secondTabId is nullable');
 
   expect(Object.keys(paneStore.panes)).toHaveLength(2);
   expect(paneStore.activePaneId).toBe(secondPaneId);
@@ -314,8 +340,9 @@ test('closeTab should keep last pane and show InitialPage when its only tab is c
   const pane = await paneStore.createPane();
   await paneStore.addTab(pane.id, { title: 'Only Pane' });
   const paneId = pane.id;
-  const paneRef = paneStore.getPane(paneId);
-  const tabId = paneRef.value.activeTabId;
+  const paneValue = getPaneValue(paneStore, paneId);
+  const tabId = paneValue.activeTabId;
+  assertDefined(tabId, 'tabId is nullable');
 
   expect(Object.keys(paneStore.panes)).toHaveLength(1);
 
@@ -338,14 +365,17 @@ test('cleanupEmptyPane should be reachable and remove pane correctly', async () 
   const secondPane = await paneStore.createPane();
   await paneStore.addTab(secondPane.id);
   const secondPaneId = secondPane.id;
-  const secondPaneRef = paneStore.getPane(secondPaneId);
-  const secondTabId = secondPaneRef.value.activeTabId;
+  const secondPaneValue = getPaneValue(paneStore, secondPaneId);
+  const secondTabId = secondPaneValue.activeTabId;
+  assertDefined(secondTabId, 'secondTabId is nullable');
 
   const thirdTab = await paneStore.addTab(secondPaneId, { title: 'Third tab' });
-  expect(Object.keys(paneStore.getPane(secondPaneId).value.tabs.value)).toHaveLength(2);
+  const secondPaneValueForCheck = getPaneValue(paneStore, secondPaneId);
+  expect(Object.keys(secondPaneValueForCheck.tabs.value)).toHaveLength(2);
 
   paneStore.closeTab(secondPaneId, secondTabId);
-  expect(Object.keys(paneStore.getPane(secondPaneId).value.tabs.value)).toHaveLength(1);
+  const secondPaneValueAfterClose = getPaneValue(paneStore, secondPaneId);
+  expect(Object.keys(secondPaneValueAfterClose.tabs.value)).toHaveLength(1);
 
   paneStore.closeTab(secondPaneId, thirdTab!.id);
 
@@ -415,9 +445,9 @@ test('getPane should return pane ref', async () => {
   const pane = await paneStore.createPane();
   await paneStore.addTab(pane.id);
 
-  const paneRef = paneStore.getPane(pane.id);
+  const paneValue = getPaneValue(paneStore, pane.id);
 
-  expect(paneRef.value.id).toBe(pane.id);
+  expect(paneValue.id).toBe(pane.id);
 });
 
 test('getPane should throw error for non-existent pane', async () => {
@@ -436,7 +466,7 @@ test('activePane should return active pane', async () => {
   const pane = await paneStore.createPane();
   await paneStore.addTab(pane.id);
 
-  expect(paneStore.activePane.id).toBe(pane.id);
+  expect(paneStore.activePane?.id).toBe(pane.id);
 });
 
 test('activeTab should return active tab', async () => {
@@ -446,7 +476,7 @@ test('activeTab should return active tab', async () => {
   const pane = await paneStore.createPane();
   await paneStore.addTab(pane.id, { title: 'Test Tab' });
 
-  expect(paneStore.activeTab.title).toBe('Test Tab');
+  expect(paneStore.activeTab?.title).toBe('Test Tab');
 });
 
 test('startDraggingTab should set dragging state', async () => {
@@ -455,8 +485,9 @@ test('startDraggingTab should set dragging state', async () => {
 
   const pane = await paneStore.createPane();
   await paneStore.addTab(pane.id);
-  const paneRef = paneStore.getPane(pane.id);
-  const tabId = paneRef.value.activeTabId;
+  const paneValue = getPaneValue(paneStore, pane.id);
+  const tabId = paneValue.activeTabId;
+  if (isNullable(tabId)) throw new Error('tabId is nullable');
 
   paneStore.startDraggingTab(tabId, pane.id);
 
@@ -470,14 +501,15 @@ test('stopDraggingTab should clear dragging state', async () => {
 
   const pane = await paneStore.createPane();
   await paneStore.addTab(pane.id);
-  const paneRef = paneStore.getPane(pane.id);
-  const tabId = paneRef.value.activeTabId;
+  const paneValue = getPaneValue(paneStore, pane.id);
+  const tabId = paneValue.activeTabId;
+  if (isNullable(tabId)) throw new Error('tabId is nullable');
 
   paneStore.startDraggingTab(tabId, pane.id);
   paneStore.stopDraggingTab();
 
   expect(paneStore.isDraggingTab).toBe(false);
-  expect(paneStore.draggedTabData).toBeNull();
+  expect(paneStore.draggedTabData).toBeUndefined();
 });
 
 test('should move tab between panes', async () => {
@@ -495,7 +527,7 @@ test('should move tab between panes', async () => {
 
   expect(movedTab).toBeTruthy();
   expect(movedTab?.paneId).toBe(pane2.id);
-  expect(paneStore.getPane(pane2.id).value.tabs.value[tab1!.id]).toBeDefined();
+  expect(getPaneValue(paneStore, pane2.id).tabs.value[tab1!.id]).toBeDefined();
 });
 
 test('should move tab to specific index', async () => {
@@ -511,7 +543,7 @@ test('should move tab to specific index', async () => {
 
   await paneStore.moveTab(tab1!.id, pane1.id, pane2.id, 1);
 
-  const tabKeys = Object.keys(paneStore.getPane(pane2.id).value.tabs.value);
+  const tabKeys = Object.keys(getPaneValue(paneStore, pane2.id).tabs.value);
   expect(tabKeys[1]).toBe(tab1!.id);
 });
 
@@ -527,7 +559,7 @@ test('should activate moved tab in target pane', async () => {
 
   await paneStore.moveTab(tab1!.id, pane1.id, pane2.id);
 
-  expect(paneStore.getPane(pane2.id).value.activeTabId).toBe(tab1!.id);
+  expect(getPaneValue(paneStore, pane2.id).activeTabId).toBe(tab1!.id);
   expect(paneStore.activePaneId).toBe(pane2.id);
 });
 
@@ -544,7 +576,7 @@ test('should remove tab from source pane', async () => {
 
   await paneStore.moveTab(tab1!.id, pane1.id, pane2.id);
 
-  expect(paneStore.getPane(pane1.id).value.tabs.value[tab1!.id]).toBeUndefined();
+  expect(getPaneValue(paneStore, pane1.id).tabs.value[tab1!.id]).toBeUndefined();
 });
 
 test('should handle moving last tab from pane with multiple panes', async () => {
@@ -593,7 +625,7 @@ test('should activate moved tab when it was active', async () => {
   await paneStore.moveTab(tab1!.id, pane1.id, pane2.id);
 
   expect(paneStore.activePaneId).toBe(pane2.id);
-  expect(paneStore.getPane(pane2.id).value.activeTabId).toBe(tab1!.id);
+  expect(getPaneValue(paneStore, pane2.id).activeTabId).toBe(tab1!.id);
 });
 
 test('should activate first tab in source pane after move', async () => {
@@ -611,7 +643,7 @@ test('should activate first tab in source pane after move', async () => {
 
   await paneStore.moveTab(tab2!.id, pane1.id, pane2.id);
 
-  expect(paneStore.getPane(pane1.id).value.activeTabId).toBe(tab1!.id);
+  expect(getPaneValue(paneStore, pane1.id).activeTabId).toBe(tab1!.id);
 });
 
 test('should return moved tab', async () => {
@@ -666,7 +698,7 @@ test('should handle moving to same pane', async () => {
   const result = await paneStore.moveTab(tab1!.id, pane1.id, pane1.id);
 
   expect(result).toBeTruthy();
-  expect(paneStore.getPane(pane1.id).value.tabs.value[tab1!.id]).toBeDefined();
+  expect(getPaneValue(paneStore, pane1.id).tabs.value[tab1!.id]).toBeDefined();
 });
 
 test('navigate should call router push on active tab in active pane', async () => {
@@ -825,8 +857,8 @@ test('closeTab should not affect other panes', async () => {
 
   paneStore.closeTab(pane2.id, tab2!.id);
 
-  expect(paneStore.getPane(pane1.id).value.tabs.value[tab1!.id]).toBeDefined();
-  expect(paneStore.getPane(pane1.id).value.tabs.value[tab1!.id].title).toBe('Pane 1 Tab');
+  expect(getPaneValue(paneStore, pane1.id).tabs.value[tab1!.id]).toBeDefined();
+  expect(getPaneValue(paneStore, pane1.id).tabs.value[tab1!.id]?.title).toBe('Pane 1 Tab');
 });
 
 test('should handle multiple tabs with same title pattern', async () => {
@@ -896,10 +928,13 @@ test('BUG: should activate tab in remaining pane when it has no active tab', asy
   const pane2 = await paneStore.createPane();
   const tab2 = await paneStore.addTab(pane2.id, { title: 'Pane 2 Tab' });
 
-  paneStore.panes[pane1.id].value = {
-    ...paneStore.panes[pane1.id].value,
-    activeTabId: '',
-  };
+  const pane1Ref = paneStore.panes[pane1.id];
+  if (pane1Ref?.value) {
+    pane1Ref.value = {
+      ...pane1Ref.value,
+      activeTabId: '',
+    };
+  }
 
   paneStore.setActivePane(pane2.id);
 

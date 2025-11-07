@@ -9,7 +9,7 @@ import { DEFAULT_FOLDER_NAME } from 'src/constants/default-folder-name';
 
 export const useFileManagerStore = defineStore<string, FileManagerStore>('file-manager', () => {
   const path = ref<string>('/');
-  const focusFile = shallowRef<DiskFile | null>(null);
+  const focusFile = shallowRef<DiskFile | undefined>();
 
   const fs = useFileSystemStore();
 
@@ -26,6 +26,9 @@ export const useFileManagerStore = defineStore<string, FileManagerStore>('file-m
   });
 
   const deleteFile = async (path?: string): Promise<void> => {
+    if (!path) {
+      return;
+    }
     await fs.deleteFile(path ?? focusFile.value?.path);
   };
 

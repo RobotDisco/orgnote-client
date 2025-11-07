@@ -12,8 +12,8 @@ export function getNoteCommands(): Command[] {
       title: DefaultCommands.OPEN_NOTE,
       group: 'note',
       icon: 'sym_o_edit_square',
-      handler: async (api: OrgNoteApi, params: CommandHandlerParams<{ path: string }>) => {
-        const path = params.data?.path ?? (await useNotePickCompletion(api, '/'));
+      handler: async (api: OrgNoteApi, params?: CommandHandlerParams<{ path: string }>) => {
+        const path = params?.data?.path ?? (await useNotePickCompletion(api, '/'));
 
         if (!path) {
           return;
