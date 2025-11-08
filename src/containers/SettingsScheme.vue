@@ -102,7 +102,9 @@ const changeConditionalType = (t?: string): void => {
 .menu-item-content {
   @include flexify(row, space-between, center);
 
-  width: 100%;
+  & {
+    width: 100%;
+  }
 }
 
 .union-settings {

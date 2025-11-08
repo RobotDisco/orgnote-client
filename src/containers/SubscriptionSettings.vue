@@ -61,7 +61,9 @@ const inputRef = ref<typeof AppInput | undefined>();
 .subscription-settings {
   @include flexify(column, flex-start, center, var(--gap-lg));
 
-  width: 100%;
+  & {
+    width: 100%;
+  }
 }
 .reference {
   padding-top: var(--padding-lg);

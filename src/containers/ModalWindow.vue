@@ -92,14 +92,16 @@ const { t } = useI18n({
 <style lang="scss" scoped>
 dialog {
   @include flexify(column, flex-start, stretch);
-  max-width: var(--modal-max-width);
-  max-height: var(--modal-max-height);
-  margin: var(--modal-safe-margin) auto;
 
-  border: var(--modal-border);
-  border-radius: var(--modal-border-radius);
-  padding: 0;
-  position: fixed;
+  & {
+    max-width: var(--modal-max-width);
+    max-height: var(--modal-max-height);
+    margin: var(--modal-safe-margin) auto;
+    border: var(--modal-border);
+    border-radius: var(--modal-border-radius);
+    padding: 0;
+    position: fixed;
+  }
 
   &:not(.full-screen) {
     max-width: var(--modal-max-width);
@@ -117,8 +119,11 @@ dialog {
 
 :deep(.safe-area) {
   @include flexify(column, flex-start, stretch);
-  flex: 1 1 auto;
-  min-height: 0;
+
+  & {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
 }
 
 @include desktop-below {

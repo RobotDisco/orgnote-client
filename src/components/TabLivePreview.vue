@@ -71,24 +71,28 @@ defineEmits<{
 
 .preview-overlay {
   @include flexify(row, space-between, center);
-  width: 100%;
 
-  position: absolute;
-  height: var(--tab-preview-header-height);
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
-  z-index: 10;
-  padding: var(--tab-preview-overlay-padding);
+  & {
+    width: 100%;
+    position: absolute;
+    height: var(--tab-preview-header-height);
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
+    z-index: 10;
+    padding: var(--tab-preview-overlay-padding);
+  }
 }
 
 .tab-title {
   @include line-limit(1);
 
-  color: var(--bg);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  flex: 1;
-  margin-right: var(--margin-sm);
+  & {
+    color: var(--bg);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    flex: 1;
+    margin-right: var(--margin-sm);
+  }
 }
 
 .preview-content {

@@ -46,7 +46,10 @@ const errorText = computed(() => {
 .error-display {
   @include fit;
   @include flexify(column, center, center);
-  padding: var(--padding-lg);
+
+  & {
+    padding: var(--padding-lg);
+  }
 
   &.centered {
     text-align: center;

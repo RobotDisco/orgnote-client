@@ -59,9 +59,12 @@ const closeTab = async (tab: Tab) => {
 <style lang="scss" scoped>
 .tab-grid-container {
   @include fit;
-  padding: var(--tab-overview-container-padding);
-  flex: 1;
-  height: 100%;
+
+  & {
+    padding: var(--tab-overview-container-padding);
+    flex: 1;
+    height: 100%;
+  }
 }
 
 .empty-state {
