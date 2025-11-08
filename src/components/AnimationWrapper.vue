@@ -1,14 +1,14 @@
 <template>
-  <transition v-if="config.ui.enableAnimations" :name="animationName" :mode="mode" :css="css">
+  <transition :name="transitionName" :mode="transitionMode" :css="shouldUseCss">
     <slot />
   </transition>
-  <slot v-else />
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue';
 import { useConfigStore } from 'src/stores/config';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     animationName?: 'bounce';
     mode?: 'in-out' | 'out-in';
@@ -22,6 +22,14 @@ withDefaults(
 );
 
 const { config } = useConfigStore();
+
+const shouldUseCss = computed(() => config.ui.enableAnimations && props.css);
+const transitionMode = computed(() =>
+  config.ui.enableAnimations ? props.mode : undefined,
+);
+const transitionName = computed(() =>
+  config.ui.enableAnimations ? props.animationName : undefined,
+);
 </script>
 
 <style scoped>
