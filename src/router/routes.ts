@@ -4,6 +4,11 @@ import type { RouteRecordRaw } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
   {
+    path: '/error',
+    name: 'Error',
+    component: () => import('pages/ErrorPage.vue'),
+  },
+  {
     path: '/onboarding',
     name: RouteNames.Onboarding,
     component: () => import('pages/OnboardingPage.vue'),
@@ -39,6 +44,11 @@ const routes: RouteRecordRaw[] = [
         path: 'panes',
         name: RouteNames.Panes,
         component: () => import('pages/PanesPage.vue'),
+      },
+      {
+        path: 'error-test',
+        name: 'ErrorTest',
+        component: () => import('pages/ErrorTestPage.vue'),
       },
     ],
   },

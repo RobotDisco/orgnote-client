@@ -19,6 +19,166 @@
     <link rel="icon" type="image/ico" href="favicon.ico" />
   </head>
   <body style="background-color: var(--bg, #9356e8)">
+    <script>
+      window.__errorBuffer = (function () {
+        const errors = [];
+        const MAX_ERRORS = 50;
+
+        const serializeError = function (error) {
+          if (error instanceof Error) return error.message;
+          if (typeof error === 'string') return error;
+          try {
+            return JSON.stringify(error);
+          } catch {
+            return String(error);
+          }
+        };
+
+        return {
+          capture: function (error, type, meta) {
+            errors.unshift({
+              timestamp: Date.now(),
+              message: serializeError(error),
+              stack: error?.stack,
+              type: type,
+              meta: meta,
+            });
+            if (errors.length > MAX_ERRORS) errors.pop();
+          },
+          getAll: function () {
+            return errors.slice();
+          },
+          clear: function () {
+            errors.length = 0;
+          },
+          exportAsText: function () {
+            if (errors.length === 0) return 'No errors recorded';
+            return errors
+              .map(function (e, i) {
+                const date = new Date(e.timestamp).toISOString();
+                let text = '\n[' + (errors.length - i) + '] ' + date + ' - ' + e.type.toUpperCase();
+                text += '\n' + e.message;
+                if (e.stack) text += '\n' + e.stack;
+                if (e.meta) text += '\nMeta: ' + JSON.stringify(e.meta, null, 2);
+                return text;
+              })
+              .join('\n---\n');
+          },
+        };
+      })();
+
+      let errorScreenMounted = false;
+
+      function showMinimalErrorScreen() {
+        if (errorScreenMounted) return;
+        errorScreenMounted = true;
+
+        const root = document.getElementById('q-app') || document.body;
+        root.innerHTML =
+          '\
+          <div style="\
+            position: fixed;\
+            inset: 0;\
+           display: flex;\
+            flex-direction: column;\
+            align-items: center;\
+            justify-content: center;\
+            background: var(--bg, #ffffff);\
+            color: var(--fg, #000000);\
+            padding: var(--padding-lg, 20px);\
+            font-family: system-ui, -apple-system, sans-serif;\
+            z-index: 9999;\
+          ">\
+            <div style="max-width: 600px; width: 100%; text-align: center;">\
+              <h1 style="font-size: var(--font-size-2xl, 24px); margin-bottom: var(--margin-md, 16px); color: var(--red, #ef4444);">\
+                Critical Error\
+              </h1>\
+              <p style="margin-bottom: var(--margin-lg, 24px); color: var(--fg-alt, #666666); line-height: var(--line-height-relaxed, 1.625);">\
+                The application encountered an unexpected error during startup and cannot continue.\
+              </p>\
+              <div style="display: flex; gap: var(--gap-sm, 12px); justify-content: center; flex-wrap: wrap; margin-bottom: var(--margin-lg, 24px);">\
+                <button onclick="location.reload()" style="\
+                  padding: var(--button-padding, 12px 16px);\
+                  background: var(--default-red, #f65866);\
+                  color: var(--btn-text, white);\
+                  border: var(--btn-action-border, none);\
+                  border-radius: var(--button-border-radius, var(--border-radius-md, 8px));\
+                  cursor: pointer;\
+                  font-size: var(--font-size-base, 16px);\
+                  font-weight: var(--font-weight-bold, 500);\
+                  min-width: var(--button-min-width, 120px);\
+                ">\
+                  Reload\
+                </button>\
+                <button onclick="\
+                  var text = window.__errorBuffer.exportAsText();\
+                  navigator.clipboard.writeText(text).then(function() {\
+                    alert(\'Error log copied to clipboard\');\
+                  }).catch(function() {\
+                    var textarea = document.createElement(\'textarea\');\
+                    textarea.value = text;\
+                    textarea.style.position = \'fixed\';\
+                    textarea.style.opacity = \'0\';\
+                    document.body.appendChild(textarea);\
+                    textarea.select();\
+                    document.execCommand(\'copy\');\
+                    document.body.removeChild(textarea);\
+                    alert(\'Error log copied to clipboard\');\
+                  });\
+                " style="\
+                  padding: var(--button-padding, 12px 16px);\
+                  background: var(--bg-alt, #f5f5f5);\
+                  color: var(--fg, #000000);\
+                  border: 1px solid var(--border-default, #e5e5e5);\
+                  border-radius: var(--button-border-radius, var(--border-radius-md, 8px));\
+                  cursor: pointer;\
+                  font-size: var(--font-size-base, 16px);\
+                  font-weight: var(--font-weight-bold, 500);\
+                  min-width: var(--button-min-width, 120px);\
+                ">\
+                  Copy Error Log\
+                </button>\
+              </div>\
+              <details style="text-align: left; border: 1px solid var(--border-default, #e5e5e5); border-radius: var(--border-radius-md, 8px); padding: var(--padding-md, 16px); background: var(--bg-alt, #f5f5f5);">\
+                <summary style="cursor: pointer; color: var(--fg-alt, #666666); font-weight: var(--font-weight-medium, 500); user-select: none;">\
+                  Show Error Details\
+                </summary>\
+                <pre style="\
+                  margin-top: var(--margin-md, 12px);\
+                  padding: var(--padding-md, 16px);\
+                  background: var(--bg, #ffffff);\
+                  border-radius: var(--border-radius-sm, 4px);\
+                  overflow: auto;\
+                  max-height: 300px;\
+                  font-size: var(--font-size-sm, 12px);\
+                  white-space: pre-wrap;\
+                  word-break: break-word;\
+                  font-family: ui-monospace, monospace;\
+                ">' +
+          window.__errorBuffer.exportAsText() +
+          '</pre>\
+              </details>\
+            </div>\
+          </div>\
+        ';
+      }
+
+      window.addEventListener('error', function (event) {
+        window.__errorBuffer.capture(event.error, 'error', {
+          url: event.filename,
+          line: event.lineno,
+          col: event.colno,
+        });
+        console.error('[FALLBACK] Uncaught error:', event.error);
+        showMinimalErrorScreen();
+      });
+
+      window.addEventListener('unhandledrejection', function (event) {
+        window.__errorBuffer.capture(event.reason, 'rejection');
+        console.error('[FALLBACK] Unhandled rejection:', event.reason);
+        showMinimalErrorScreen();
+      });
+    </script>
     <!-- quasar:entry-point -->
   </body>
 </html>

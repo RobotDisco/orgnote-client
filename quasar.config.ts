@@ -17,6 +17,7 @@ export default defineConfig((ctx) => {
       'logger',
       'repositories',
       'report',
+      { server: false, path: 'error-handler' },
       'default-file-systems',
       'i18n',
       'api',

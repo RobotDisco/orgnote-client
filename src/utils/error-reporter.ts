@@ -106,6 +106,17 @@ const createErrorReporter = (logger: Logger, notifications: ErrorReporterNotific
     const reportFn = createReportFunction(logger, notifications, 'info');
     reportFn(error, { notification });
   },
+
+  reportCritical: (error: unknown, meta?: Record<string, unknown>): void => {
+    const message = pickMessage(error, 'Critical error');
+    const context = { ...toLogContext(error), ...meta };
+    logger.error(`FATAL: ${message}`, context);
+    notifications.notify({
+      message: `Critical error: ${message}`,
+      level: 'danger',
+      timeout: 0,
+    });
+  },
 });
 
 type ErrorReporter = ReturnType<typeof createErrorReporter>;
