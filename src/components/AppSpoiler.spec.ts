@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 import AppSpoiler from './AppSpoiler.vue';
 import { test, expect, vi } from 'vitest';
 import { nextTick } from 'vue';
@@ -23,7 +23,7 @@ test('AppSpoiler should render collapsed by default', () => {
   expect(wrapper.find('.spoiler-body').exists()).toBe(false);
 });
 
-test('AppSpoiler should start expanded when defaultExpanded is true', () => {
+test('AppSpoiler should start expanded when defaultExpanded is true', async () => {
   const wrapper = mount(AppSpoiler, {
     props: {
       defaultExpanded: true,
@@ -34,7 +34,12 @@ test('AppSpoiler should start expanded when defaultExpanded is true', () => {
     },
   });
 
+  await flushPromises();
+
   expect(wrapper.find('.spoiler-body').exists()).toBe(true);
+
+  await wrapper.find('.spoiler-header').trigger('click');
+  expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
 });
 
 test('AppSpoiler should toggle expanded state on header click', async () => {
@@ -138,10 +143,11 @@ test('AppSpoiler should handle multiple rapid clicks', async () => {
   expect(wrapper.find('.spoiler-body').exists()).toBe(true);
 });
 
-test('AppSpoiler should use defaultExpanded when modelValue is undefined', () => {
+test('AppSpoiler should use defaultExpanded when modelValue is undefined', async () => {
   const wrapper = mount(AppSpoiler, {
     props: {
       defaultExpanded: true,
+      modelValue: undefined,
     },
     slots: {
       title: 'Test Title',
@@ -149,7 +155,8 @@ test('AppSpoiler should use defaultExpanded when modelValue is undefined', () =>
     },
   });
 
-  expect(wrapper.find('.spoiler-body').exists()).toBe(true);
+  await wrapper.find('.spoiler-header').trigger('click');
+  expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
 });
 
 test('AppSpoiler should render without body slot', async () => {
@@ -226,7 +233,3 @@ test('AppSpoiler should use CardWrapper with plain type', () => {
   expect(cardWrapper.exists()).toBe(true);
   expect(cardWrapper.props('type')).toBe('plain');
 });
-
-
-
-

@@ -8,12 +8,12 @@
         name="sym_o_expand_more"
         size="sm"
         color="fg-alt"
-        :class="{ rotated: isExpanded }"
+        :class="{ rotated: expanded }"
         class="spoiler-icon"
       />
     </div>
     <animation-wrapper animation-name="expand">
-      <div v-if="isExpanded" class="spoiler-body">
+      <div v-if="expanded" class="spoiler-body">
         <slot name="body" />
       </div>
     </animation-wrapper>
@@ -21,45 +21,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import CardWrapper from './CardWrapper.vue';
 import AppIcon from './AppIcon.vue';
 import AnimationWrapper from './AnimationWrapper.vue';
 
 const props = withDefaults(
   defineProps<{
-    modelValue?: boolean;
     defaultExpanded?: boolean;
     maxHeight?: string;
   }>(),
   {
+    defaultExpanded: false,
     maxHeight: '100px',
   },
 );
 
-const emit = defineEmits<{
-  'update:modelValue': [value: boolean];
-}>();
+const model = defineModel<boolean | undefined>({
+  type: null,
+});
 
-const isExpanded = ref(props.modelValue ?? props.defaultExpanded ?? false);
+const localExpanded = ref(props.defaultExpanded ?? false);
 
-const toggle = (): void => {
-  isExpanded.value = !isExpanded.value;
-  emit('update:modelValue', isExpanded.value);
-};
+const expanded = computed(() => model.value ?? localExpanded.value);
 
 watch(
-  () => props.modelValue,
+  model,
   (newValue) => {
     if (newValue !== undefined) {
-      isExpanded.value = newValue;
+      localExpanded.value = newValue;
     }
   },
+  { immediate: true },
 );
 
-defineExpose({
-  isExpanded,
-});
+const toggle = (): void => {
+  const nextValue = !expanded.value;
+  localExpanded.value = nextValue;
+  model.value = nextValue;
+};
 </script>
 
 <style scoped lang="scss">
