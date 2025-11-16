@@ -17,8 +17,8 @@ vi.mock('src/boot/i18n', () => ({
   },
 }));
 
-vi.mock('./config', () => {
-  const { ref } = require('vue');
+vi.mock('./config', async () => {
+  const { ref } = await import('vue');
   return {
     useConfigStore: vi.fn(() => ({
       config: ref({ ui: { notificationTimeout: 3000 } }),

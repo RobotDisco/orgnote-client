@@ -5,10 +5,10 @@ import type { RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/error',
-    name: 'Error',
+    name: RouteNames.Error,
     component: () => import('pages/ErrorPage.vue'),
     beforeEnter: () => {
-      api.core.useNotifications().clear();
+      api.core.useNotifications().hideAll();
       return true;
     },
   },

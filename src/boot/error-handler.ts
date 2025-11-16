@@ -1,11 +1,12 @@
 import { defineBoot } from '@quasar/app-vite/wrappers';
 import { reporter } from './report';
 import type { Router } from 'vue-router';
+import { RouteNames } from 'orgnote-api';
 
 const handleError = (error: unknown, meta: Record<string, unknown>, router: Router): void => {
   reporter.reportCritical(error, meta);
 
-  router.push('/error').catch(() => {
+  router.push({ name: RouteNames.Error }).catch(() => {
     throw error;
   });
 };
@@ -19,10 +20,10 @@ export default defineBoot(({ app, router }) => {
       handleError(
         event.error,
         { url: event.filename, line: event.lineno, col: event.colno },
-        router
+        router,
       );
     },
-    { capture: true }
+    { capture: true },
   );
 
   window.addEventListener(
@@ -32,7 +33,7 @@ export default defineBoot(({ app, router }) => {
 
       handleError(event.reason, {}, router);
     },
-    { capture: true }
+    { capture: true },
   );
 
   app.config.errorHandler = (err, instance, info): void => {

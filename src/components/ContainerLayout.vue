@@ -1,5 +1,5 @@
 <template>
-  <div class="layout" :class="{ reverse }" :style="{ '--layout-gap': gap }">
+  <div class="layout" :class="{ reverse }" :style="{ '--layout-gap': gapVariable }">
     <div v-if="slots.header" class="layout-header" :class="{ border: headerBorder }">
       <slot name="header" />
     </div>
@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { useSlots, computed } from 'vue';
+import { computed, useSlots } from 'vue';
 import type { StyleSize } from 'orgnote-api';
 
 const props = withDefaults(
@@ -34,6 +34,8 @@ const props = withDefaults(
 );
 
 const slots = useSlots();
+
+const gapVariable = computed(() => `var(--gap-${props.gap})`);
 </script>
 
 <style scoped lang="scss">

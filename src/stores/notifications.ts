@@ -1,5 +1,10 @@
 import { defineStore, storeToRefs } from 'pinia';
-import { I18N, type NotificationConfig, type NotificationsStore } from 'orgnote-api';
+import {
+  I18N,
+  type Notification,
+  type NotificationConfig,
+  type NotificationsStore,
+} from 'orgnote-api';
 import { ref } from 'vue';
 import { Notify } from 'quasar';
 import { i18n } from 'src/boot/i18n';
@@ -9,13 +14,7 @@ import { useScreenDetection } from 'src/composables/use-screen-detection';
 export const useNotificationsStore = defineStore<'notifications', NotificationsStore>(
   'notifications',
   (): NotificationsStore => {
-    const notifications = ref<
-      {
-        read?: boolean;
-        dismiss: ReturnType<typeof Notify.create>;
-        config: NotificationConfig;
-      }[]
-    >([]);
+    const notifications = ref<Notification[]>([]);
 
     const { config } = storeToRefs(useConfigStore());
 
@@ -43,7 +42,7 @@ export const useNotificationsStore = defineStore<'notifications', NotificationsS
 
     const clear = (): void => {
       notifications.value.forEach((notification) => {
-        notification.dismiss();
+        notification.dismiss?.();
       });
       notifications.value = [];
     };
@@ -52,9 +51,7 @@ export const useNotificationsStore = defineStore<'notifications', NotificationsS
       const notification = notifications.value.find(
         (notification) => notification.config.id === notificationId,
       );
-      if (notification) {
-        notification.dismiss();
-      }
+      notification?.dismiss?.();
       notifications.value = notifications.value.filter(
         (notification) => notification.config.id !== notificationId,
       );
@@ -69,9 +66,17 @@ export const useNotificationsStore = defineStore<'notifications', NotificationsS
       }
     };
 
+    const hideAll = (): void => {
+      notifications.value.forEach((n) => {
+        n.dismiss?.();
+        n.dismiss = undefined;
+      });
+    };
+
     return {
       notify,
       clear,
+      hideAll,
       delete: deleteNotification,
       markAsRead,
       notifications,
