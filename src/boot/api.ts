@@ -45,6 +45,7 @@ import { useConfigStore } from 'src/stores/config';
 import { useNotificationsStore } from 'src/stores/notifications';
 import { useFileReaderStore } from 'src/stores/file-reader';
 import { useBufferStore } from 'src/stores/buffer';
+import { useLogStore } from 'src/stores/log';
 import type { Router } from 'vue-router';
 import { logger } from './logger';
 
@@ -71,6 +72,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useNotifications: useNotificationsStore,
       useFileReader: useFileReaderStore,
       useBuffers: useBufferStore,
+      useLog: useLogStore,
       app,
     },
     utils: {

@@ -1,6 +1,7 @@
 import type { LoggerRepository, LogRecord } from 'orgnote-api';
 
 import { to } from './to-error';
+import { api } from 'src/boot/api';
 
 type LogSink = {
   write: (record: LogRecord) => void;
@@ -43,7 +44,11 @@ const createBufferedSink = (options: BufferedSinkOptions): LogSink => {
 
     if (res.isErr()) {
       console.error('Failed to flush log records:', res.error);
+      return;
     }
+
+    const logStore = api.core.useLog();
+    logStore.addLogs(chunk);
   };
 
   const drain = async (): Promise<void> => {
