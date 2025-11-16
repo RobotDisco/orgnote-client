@@ -17,6 +17,29 @@
   }
 }
 
+@mixin fontify($size, $weight, $color: false, $line-height: null) {
+  @if type-of($size) == 'string' {
+    font-size: $size;
+  } @else {
+    font-size: #{$size}px;
+  }
+  font-weight: $weight;
+
+  @if round($size) == $size {
+    font-size: #{$size}px;
+  } @else {
+    font-size: #{$size};
+  }
+
+  @if $color {
+    color: $color;
+  }
+
+  @if $line-height {
+    line-height: $line-height;
+  }
+}
+
 @mixin dark-mode {
   body.body--dark {
     @content;

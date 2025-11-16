@@ -1,18 +1,28 @@
 <template>
-  <div class="completion-wrapper" :class="{ 'full-screen': config!.fullScreen }">
-    <div class="header">
-      <completion-input :placeholder="placeholder" />
-    </div>
-    <div class="content">
+  <container-layout
+    class="completion-wrapper"
+    :class="{ 'full-screen': config!.fullScreen }"
+    :reverse="shouldReverse"
+    header-border
+    footer-border
+  >
+    <template #header>
+      <div class="header">
+        <completion-input :placeholder="placeholder" />
+      </div>
+    </template>
+    <template #body>
       <completion-result v-if="activeCompletion!.candidates?.length" />
       <div v-else class="not-found" :style="{ height: completionItemHeight + 'px' }">
         {{ t(I18N.NOT_FOUND).toUpperCase() }}
       </div>
-    </div>
-    <div class="footer">
-      {{ (activeCompletion!.selectedCandidateIndex ?? 0) + 1 }}/{{ activeCompletion!.total }}
-    </div>
-  </div>
+    </template>
+    <template #footer>
+      <div class="footer">
+        {{ (activeCompletion!.selectedCandidateIndex ?? 0) + 1 }}/{{ activeCompletion!.total }}
+      </div>
+    </template>
+  </container-layout>
 </template>
 
 <script lang="ts" setup>
@@ -24,6 +34,7 @@ import CompletionResult from './CompletionResult.vue';
 import { computed } from 'vue';
 import { DEFAULT_COMPLETIO_ITEM_HEIGHT } from 'src/constants/completion-item';
 import { useI18n } from 'vue-i18n';
+import ContainerLayout from 'src/components/ContainerLayout.vue';
 defineProps<
   {
     placeholder?: string;
@@ -38,6 +49,9 @@ const completionItemHeight = computed(
   () => activeCompletion.value!.itemHeight ?? DEFAULT_COMPLETIO_ITEM_HEIGHT,
 );
 
+const { desktopBelow } = api.ui.useScreenDetection();
+const shouldReverse = computed(() => desktopBelow.value);
+
 const { t } = useI18n({
   useScope: 'global',
   inheritLocale: true,
@@ -46,35 +60,27 @@ const { t } = useI18n({
 
 <style lang="scss" scoped>
 .completion-wrapper {
-  @include flexify(column, flex-start, stretch, 0);
-
-  & {
-    max-width: var(--completion-max-width);
-    width: var(--completion-width) !important;
-  }
+  max-width: var(--completion-max-width);
+  width: var(--completion-width) !important;
 
   &.full-screen {
     max-width: unset;
   }
+
+  .layout-body {
+    padding: var(--completion-padding);
+    padding-right: calc(var(--completion-padding) - var(--scroll-bar-width));
+  }
 }
 
 .header {
-  border-bottom: var(--border-default);
   padding: var(--completion-padding);
-}
-
-.content {
-  flex: 1;
-  overflow-y: overlay;
-  padding: var(--completion-padding);
-  padding-right: calc(var(--completion-padding) - var(--scroll-bar-width));
 }
 
 .footer {
   @include flexify(row, center, center);
 
   & {
-    border-top: var(--border-default);
     padding: var(--padding-lg);
     height: var(--completion-footer-height);
     color: var(--fg-alt);
@@ -90,21 +96,6 @@ const { t } = useI18n({
 @include desktop-below {
   .completion-wrapper {
     @include completion-fullframe();
-  }
-
-  .header {
-    border-top: var(--border-default);
-    border-bottom: none;
-    order: 2;
-  }
-
-  .content {
-    order: 1;
-  }
-
-  .footer {
-    order: 0;
-    border-top: none;
   }
 }
 

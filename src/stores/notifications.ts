@@ -12,6 +12,7 @@ export const useNotificationsStore = defineStore<'notifications', NotificationsS
     const notifications = ref<
       {
         read?: boolean;
+        dismiss: ReturnType<typeof Notify.create>;
         config: NotificationConfig;
       }[]
     >([]);
@@ -22,12 +23,12 @@ export const useNotificationsStore = defineStore<'notifications', NotificationsS
     const position = screenDetection.tabletBelow.value ? 'bottom' : 'bottom-right';
 
     const notify = (notificationConfig: NotificationConfig): void => {
-      Notify.create({
+      const dismiss = Notify.create({
         message: notificationConfig.message,
         caption: notificationConfig.caption,
         timeout: notificationConfig.timeout ?? config.value.ui.notificationTimeout ?? 5000,
         type: notificationConfig.level || 'info',
-        group: notificationConfig.group ?? notificationConfig.message,
+        group: notificationConfig.group !== false ? notificationConfig.message : false,
         classes: 'notification',
         closeBtn: notificationConfig.closable && i18n.global.t(I18N.CLOSE),
         position,
@@ -35,15 +36,25 @@ export const useNotificationsStore = defineStore<'notifications', NotificationsS
 
       notifications.value.push({
         read: false,
+        dismiss,
         config: notificationConfig,
       });
     };
 
     const clear = (): void => {
+      notifications.value.forEach((notification) => {
+        notification.dismiss();
+      });
       notifications.value = [];
     };
 
     const deleteNotification = (notificationId: string): void => {
+      const notification = notifications.value.find(
+        (notification) => notification.config.id === notificationId,
+      );
+      if (notification) {
+        notification.dismiss();
+      }
       notifications.value = notifications.value.filter(
         (notification) => notification.config.id !== notificationId,
       );

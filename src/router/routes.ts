@@ -7,6 +7,10 @@ const routes: RouteRecordRaw[] = [
     path: '/error',
     name: 'Error',
     component: () => import('pages/ErrorPage.vue'),
+    beforeEnter: () => {
+      api.core.useNotifications().clear();
+      return true;
+    },
   },
   {
     path: '/onboarding',
@@ -44,11 +48,6 @@ const routes: RouteRecordRaw[] = [
         path: 'panes',
         name: RouteNames.Panes,
         component: () => import('pages/PanesPage.vue'),
-      },
-      {
-        path: 'error-test',
-        name: 'ErrorTest',
-        component: () => import('pages/ErrorTestPage.vue'),
       },
     ],
   },

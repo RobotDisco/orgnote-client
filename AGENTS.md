@@ -1179,6 +1179,8 @@ When you receive a task, BEFORE starting work:
       });
     });
 
+-   All test names should start with the testing entity name
+
 
 # Architecture Requirements
 
@@ -1356,6 +1358,7 @@ When you receive a task, BEFORE starting work:
 -   **Quasar components** - leverage built-in components when possible
 -   **Theme support** - dark/light mode via CSS custom properties
 -   **Responsive** - mobile-first breakpoints
+-   **Mixins** Always use mixins when possible `src/css/mixins.scss`
 
 
 # Internationalization (i18n)

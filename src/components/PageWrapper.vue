@@ -1,5 +1,5 @@
 <template>
-  <div class="page" :class="{ padding }">
+  <div class="page" :class="{ padding, constrained }">
     <slot />
   </div>
 </template>
@@ -7,6 +7,7 @@
 <script lang="ts" setup>
 defineProps<{
   padding?: boolean;
+  constrained?: boolean;
 }>();
 </script>
 
@@ -22,6 +23,13 @@ defineProps<{
 
   &.padding {
     padding: var(--page-padding);
+  }
+
+  &.constrained {
+    max-width: var(--page-max-width);
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 </style>

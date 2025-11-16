@@ -5,6 +5,7 @@
     :style="{
       '--action-border-color': getCssVariableName(activeColor),
       '--btn-action-hover-color': safeHoverColor,
+      color: getCssVariableName(activeColor),
     }"
   >
     <animation-wrapper>
@@ -20,6 +21,7 @@ import AnimationWrapper from './AnimationWrapper.vue';
 import { computed, ref, useSlots } from 'vue';
 import { ICON_CHANGE_DURATION } from 'src/constants/animations';
 import { getCssVariableName } from 'src/utils/css-utils';
+// TODO: feat/stable-beta wrong place to logic
 import { copyToClipboard } from 'src/utils/clipboard';
 import type { StyleSize, ThemeVariable } from 'orgnote-api';
 
@@ -109,7 +111,7 @@ button {
 
   &.text {
     width: var(--btn-action-text-width);
-    justify-content: flex-start;
+    justify-content: center;
   }
 
   &:not(.outline) {

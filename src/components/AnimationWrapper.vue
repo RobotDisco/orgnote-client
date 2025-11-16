@@ -10,7 +10,7 @@ import { useConfigStore } from 'src/stores/config';
 
 const props = withDefaults(
   defineProps<{
-    animationName?: 'bounce';
+    animationName?: 'bounce' | 'expand';
     mode?: 'in-out' | 'out-in';
     css?: boolean;
   }>(),
@@ -58,5 +58,31 @@ const transitionName = computed(() =>
 .bounce-leave-to {
   transform: scale(0.5) rotate(90deg);
   opacity: 0;
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition:
+    grid-template-rows 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.expand-enter-active > *,
+.expand-leave-active > * {
+  overflow: hidden;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.expand-enter-to,
+.expand-leave-from {
+  grid-template-rows: 1fr;
+  opacity: 1;
 }
 </style>

@@ -1,18 +1,19 @@
 <template>
-  <div class="settings-title">
+  <header-wrapper>
     <visibility-wrapper v-if="currentRouteName !== RouteNames.SettingsPage" desktop-below>
       <navigation-history :router="settingsRouter" :on-return-back="handleReturnBack" />
     </visibility-wrapper>
     <h1 class="title capitalize">
       {{ camelCaseToWords(currentRouteName) }}
     </h1>
-  </div>
+  </header-wrapper>
 </template>
 
 <script lang="ts" setup>
 import { RouteNames } from 'orgnote-api';
 import NavigationHistory from 'src/components/NavigationHistory.vue';
 import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
+import HeaderWrapper from 'src/components/HeaderWrapper.vue';
 import { SETTINGS_ROUTER_PROVIDER_TOKEN } from 'src/constants/app-providers';
 import { camelCaseToWords } from 'src/utils/camel-case-to-words';
 import { computed, inject } from 'vue';
@@ -33,9 +34,3 @@ const handleReturnBack = async () => {
   settingsRouter.push({ name: RouteNames.SettingsPage });
 };
 </script>
-
-<style lang="scss" scoped>
-.settings-title {
-  @include flexify(row, flex-start, center, var(--gap-md));
-}
-</style>

@@ -1,9 +1,5 @@
 <template>
-  <div
-    class="icon"
-    :style="{ backgroundColor: bgColor, color: color }"
-    :class="[{ rounded, bordered }, size]"
-  >
+  <div class="icon" :style="iconStyle" :class="[{ rounded, bordered }, size]">
     <q-icon v-bind="$props" color="inherit" :size="iconSize" />
   </div>
 </template>
@@ -27,8 +23,15 @@ const props = withDefaults(defineProps<QIconProps & Props>(), {
 });
 
 const bgColor = computed(() => props.background && getCssVariableName(props.background));
-const color = computed(() => getCssVariableName(props.color ?? 'fg'));
+const color = computed(() => (props.color ? getCssVariableName(props.color) : undefined));
 const size = computed(() => `icon-${props.size}`);
+
+const iconStyle = computed(() => {
+  const style: Record<string, string> = {};
+  if (bgColor.value) style.backgroundColor = bgColor.value;
+  if (color.value) style.color = color.value;
+  return Object.keys(style).length > 0 ? style : undefined;
+});
 
 const iconSizeMap: { [key in StyleSize]?: string } = {
   xs: '1em',
@@ -42,6 +45,7 @@ const iconSize = computed(() => iconSizeMap[props.size]);
 <style lang="scss">
 .icon {
   @include flexify(flex-start, center, center);
+
   $btn-sizes: (
     xs: var(--btn-action-xs-size),
     sm: var(--btn-action-sm-size),

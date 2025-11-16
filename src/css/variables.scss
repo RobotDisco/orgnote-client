@@ -148,6 +148,7 @@ body {
 
   // Pages
   --page-padding: var(--padding-lg);
+  --page-max-width: 960px;
 
   // Panes
   --splitter-size: 2px;
@@ -192,6 +193,13 @@ body {
   --drop-zone-border: 4px dashed var(--accent);
   --drop-zone-background: none;
   --drop-zone-opacity: 0.3;
+
+  // Spoiler
+
+  --spoiler-max-height: 400px;
+
+  // layout
+  --layout-gap: 0;
 }
 
 @include desktop-below {

@@ -1,9 +1,11 @@
 <template>
   <card-wrapper :type="type">
-    <h5 v-if="slots.cardTitle" class="card-title text-bold" :style="{ color: bg }">
-      <app-icon v-if="type !== 'plain'" size="sm" :name="icon" :color="background" />
-      <slot name="cardTitle" />
-    </h5>
+    <div v-if="slots.cardTitle || shouldShowIcon" class="card-header">
+      <app-icon v-if="shouldShowIcon" size="sm" :name="computedIcon" :color="background" />
+      <h5 v-if="slots.cardTitle" class="card-title text-bold" :style="{ color: bg }">
+        <slot name="cardTitle" />
+      </h5>
+    </div>
     <div class="card-content">
       <slot />
     </div>
@@ -25,6 +27,7 @@ const props = withDefaults(
     bordered?: boolean;
     outline?: boolean;
     type?: StyleVariant;
+    icon?: string;
   }>(),
   {
     type: 'plain',
@@ -44,8 +47,12 @@ const typeIconMap: { [key in StyleVariant]?: string } = {
   danger: 'sym_o_dangerous',
 };
 
-const icon = computed(() => {
-  return typeIconMap[props.type];
+const computedIcon = computed(() => {
+  return props.icon || typeIconMap[props.type];
+});
+
+const shouldShowIcon = computed(() => {
+  return props.icon || props.type !== 'plain';
 });
 
 const bg = computed(() => background.value && getCssVariableName(background.value));
@@ -58,11 +65,16 @@ const bg = computed(() => background.value && getCssVariableName(background.valu
   & {
     box-sizing: border-box;
     padding: var(--padding-lg);
+    overflow: auto;
   }
 }
 
-h5 {
+.card-header {
   @include flexify(row, flex-start, center, var(--gap-sm));
+}
+
+h5 {
+  margin: 0;
 }
 
 @include for-each-view-type using ($type, $color) {
@@ -71,5 +83,9 @@ h5 {
       color: color-mix(in srgb, $color, var(--bg) 35%) !important;
     }
   }
+}
+
+.card-content {
+  width: 100%;
 }
 </style>
