@@ -81,7 +81,7 @@ test('ContainerLayout should apply gap style when gap prop is provided', () => {
   });
 
   const layout = wrapper.find('.layout');
-  expect(layout.attributes('style')).toContain('--layout-gap: md');
+  expect(layout.attributes('style')).toContain('--layout-gap: var(--gap-md)');
 });
 
 test('ContainerLayout should apply gap style for each size variant', () => {
@@ -94,7 +94,7 @@ test('ContainerLayout should apply gap style for each size variant', () => {
     });
 
     const layout = wrapper.find('.layout');
-    expect(layout.attributes('style')).toContain(`--layout-gap: ${size}`);
+    expect(layout.attributes('style')).toContain(`--layout-gap: var(--gap-${size})`);
   });
 });
 
@@ -194,7 +194,7 @@ test('ContainerLayout should apply all props together', () => {
   });
 
   const layout = wrapper.find('.layout');
-  expect(layout.attributes('style')).toContain('--layout-gap: lg');
+  expect(layout.attributes('style')).toContain('--layout-gap: var(--gap-lg)');
   expect(layout.classes()).toContain('reverse');
   expect(wrapper.find('.layout-header').classes()).toContain('border');
   expect(wrapper.find('.layout-footer').classes()).toContain('border');

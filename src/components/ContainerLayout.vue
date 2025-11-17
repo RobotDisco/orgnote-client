@@ -1,5 +1,5 @@
 <template>
-  <div class="layout" :class="{ reverse }" :style="{ '--layout-gap': gapVariable }">
+  <div class="layout" :class="{ reverse }" :style="layoutStyles">
     <div v-if="slots.header" class="layout-header" :class="{ border: headerBorder }">
       <slot name="header" />
     </div>
@@ -35,7 +35,7 @@ const props = withDefaults(
 
 const slots = useSlots();
 
-const gapVariable = computed(() => `var(--gap-${props.gap})`);
+const layoutStyles = computed(() => (props.gap ? { '--layout-gap': `var(--gap-${props.gap})` } : {}));
 </script>
 
 <style scoped lang="scss">

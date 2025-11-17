@@ -24,16 +24,46 @@ const getBrowserConfig = () => ({
       send: (lvl: string, logEvent: pino.LogEvent) => {
         const mapped = LEVEL_MAP[lvl] ?? 'info';
         const ts = new Date(logEvent.ts);
-        const first = logEvent.messages?.[0];
-        const msg = typeof first === 'string' ? first : String(first);
+        const messages = logEvent.messages ?? [];
+        const first = messages[0];
+        const second = messages[1];
+        
+        let msg: string;
+        let ctx: Record<string, unknown> | undefined;
+        
+        if (typeof first === 'string') {
+          msg = first;
+          ctx = typeof second === 'object' && isPresent(second) 
+            ? (second as Record<string, unknown>) 
+            : undefined;
+        } else if (first instanceof Error) {
+          msg = first.message;
+          ctx = { cause: first.cause, stack: first.stack };
+        } else if (typeof first === 'object' && isPresent(first)) {
+          const obj = first as Record<string, unknown>;
+          if (typeof obj.stack === 'string') {
+            const stackLines = obj.stack.split('\n');
+            msg = stackLines[0] ?? 'Error';
+            ctx = obj;
+          } else if (typeof second === 'string') {
+            msg = second;
+            ctx = obj;
+          } else {
+            try {
+              msg = JSON.stringify(first);
+            } catch {
+              msg = String(first);
+            }
+            ctx = obj;
+          }
+        } else {
+          msg = String(first);
+        }
+        
         const b0 =
           Array.isArray(logEvent.bindings) && logEvent.bindings.length > 0
             ? logEvent.bindings[0]
             : {};
-        const ctx =
-          typeof first === 'object' && isPresent(first)
-            ? (first as Record<string, unknown>)
-            : undefined;
         const record: LogRecord = { ts, level: mapped, message: msg, bindings: b0, context: ctx };
         sink.write(record);
       },
@@ -61,11 +91,37 @@ const getServerConfig = () => ({
       const mapped = LEVEL_MAP[key] ?? 'info';
       const a0 = inputArgs[0];
       const a1 = inputArgs[1];
-      const msg0 = typeof a0 === 'string' ? a0 : '';
-      const msg1 = typeof a1 === 'string' ? a1 : '';
-      const msg = msg0 || msg1;
-      const ctx =
-        typeof a0 === 'object' && isPresent(a0) ? (a0 as Record<string, unknown>) : undefined;
+      
+      let msg: string;
+      let ctx: Record<string, unknown> | undefined;
+      
+      if (typeof a0 === 'string') {
+        msg = a0;
+        ctx = typeof a1 === 'object' && isPresent(a1) ? (a1 as Record<string, unknown>) : undefined;
+      } else if (a0 instanceof Error) {
+        msg = a0.message;
+        ctx = { cause: a0.cause, stack: a0.stack };
+      } else if (typeof a0 === 'object' && isPresent(a0)) {
+        const obj = a0 as Record<string, unknown>;
+        if (typeof obj.stack === 'string') {
+          const stackLines = obj.stack.split('\n');
+          msg = stackLines[0] ?? 'Error';
+          ctx = obj;
+        } else if (typeof a1 === 'string') {
+          msg = a1;
+          ctx = obj;
+        } else {
+          try {
+            msg = JSON.stringify(a0);
+          } catch {
+            msg = String(a0);
+          }
+          ctx = obj;
+        }
+      } else {
+        msg = String(a0);
+      }
+      
       const record: LogRecord = {
         ts: new Date(),
         level: mapped,

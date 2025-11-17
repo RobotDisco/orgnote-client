@@ -11,14 +11,32 @@
       </template>
 
       <app-card class="error-log-card">
-        <pre v-if="errorLog">{{ errorLog }}</pre>
-        <p v-else class="no-errors">{{ $t('error.no_errors') }}</p>
+        <div v-if="hasFallbackErrors" class="fallback-errors">
+          <h3 class="section-title">{{ $t('error.boot_errors') }}</h3>
+          <pre class="fallback-text">{{ fallbackErrors }}</pre>
+        </div>
+
+        <div v-if="hasStoreErrors" class="store-errors">
+          <h3 v-if="hasFallbackErrors" class="section-title">{{ $t('error.app_errors') }}</h3>
+          <div class="log-list">
+            <log-entry
+              v-for="(log, index) in allErrorLogs"
+              :key="index"
+              :log="log"
+              :position="allErrorLogs.length - index"
+            />
+          </div>
+        </div>
+
+        <p v-if="!hasFallbackErrors && !hasStoreErrors" class="no-errors">
+          {{ $t('error.no_errors') }}
+        </p>
       </app-card>
 
       <template #footer>
         <app-card>
           <action-buttons position="right">
-            <action-button icon="content_copy" fire-icon="check" :copy-text="errorLog" border>
+            <action-button icon="content_copy" fire-icon="check" :copy-text="errorLogText" border>
               <template #text>{{ $t('error.copy_log') }}</template>
             </action-button>
             <app-button @click="reload" type="danger">{{ $t('error.reload') }}</app-button>
@@ -30,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppButton from 'src/components/AppButton.vue';
 import ActionButton from 'src/components/ActionButton.vue';
@@ -39,7 +57,10 @@ import PageWrapper from 'src/components/PageWrapper.vue';
 import ContainerLayout from 'src/components/ContainerLayout.vue';
 import InfoCard from 'src/components/InfoCard.vue';
 import AppCard from 'src/components/AppCard.vue';
+import LogEntry from 'src/components/LogEntry.vue';
 import { api } from 'src/boot/api';
+import { repositories } from 'src/boot/repositories';
+import type { LogRecord } from 'orgnote-api';
 
 interface ErrorBuffer {
   exportAsText: () => string;
@@ -49,15 +70,17 @@ interface ErrorBuffer {
 type WindowWithErrorBuffer = Window & { __errorBuffer?: ErrorBuffer };
 
 const NO_ERRORS_MARKER = 'No errors recorded';
+const ERROR_LIMIT = 50;
 
 const { t } = useI18n();
 const logStore = api.core.useLog();
+const dbErrorLogs = ref<LogRecord[]>([]);
 
 const reload = (): void => {
   window.location.assign('/');
 };
 
-const getFallbackErrors = (): string => {
+const fallbackErrors = computed(() => {
   const buffer = (window as WindowWithErrorBuffer).__errorBuffer;
   if (!buffer) return '';
 
@@ -65,23 +88,46 @@ const getFallbackErrors = (): string => {
   if (!errors || errors === NO_ERRORS_MARKER) return '';
 
   return errors;
+});
+
+const hasFallbackErrors = computed(() => fallbackErrors.value.length > 0);
+
+const storeErrorLogs = computed(() => logStore.getLogsByLevel('error'));
+
+const allErrorLogs = computed(() => {
+  const storeIds = new Set(storeErrorLogs.value.map((log) => `${log.ts}-${log.message}`));
+  const uniqueDbLogs = dbErrorLogs.value.filter((log) => !storeIds.has(`${log.ts}-${log.message}`));
+  return [...storeErrorLogs.value, ...uniqueDbLogs];
+});
+
+const hasStoreErrors = computed(() => allErrorLogs.value.length > 0);
+
+const loadErrorLogs = async (): Promise<void> => {
+  try {
+    const records = await repositories.logRepository.query({
+      level: 'error',
+      limit: ERROR_LIMIT,
+      offset: 0,
+    });
+    dbErrorLogs.value = records;
+  } catch (error) {
+    console.error('Failed to load error logs from database:', error);
+  }
 };
 
-const combineErrorLogs = (fallbackErrors: string, storeErrors: string): string => {
-  const hasFallback = fallbackErrors.length > 0;
-  const hasStore = storeErrors.length > 0;
+onMounted(() => {
+  loadErrorLogs();
+});
 
-  if (!hasFallback && !hasStore) return t('error.no_errors');
-  if (!hasFallback) return storeErrors;
-  if (!hasStore) return fallbackErrors;
+const errorLogText = computed(() => {
+  const storeText = logStore.exportAsText();
+  const fallbackText = fallbackErrors.value;
 
-  return `=== ${t('error.boot_errors')} ===\n${fallbackErrors}\n\n=== ${t('error.app_errors')} ===\n${storeErrors}`;
-};
+  if (!hasFallbackErrors.value && !hasStoreErrors.value) return t('error.no_errors');
+  if (!hasFallbackErrors.value) return storeText;
+  if (!hasStoreErrors.value) return fallbackText;
 
-const errorLog = computed(() => {
-  const fallbackErrors = getFallbackErrors();
-  const storeErrors = logStore.exportAsText();
-  return combineErrorLogs(fallbackErrors, storeErrors);
+  return `=== ${t('error.boot_errors')} ===\n${fallbackText}\n\n=== ${t('error.app_errors')} ===\n${storeText}`;
 });
 </script>
 
@@ -94,7 +140,26 @@ const errorLog = computed(() => {
   }
 }
 
-pre {
+.fallback-errors,
+.store-errors {
+  margin-bottom: var(--margin-lg);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.section-title {
+  @include fontify(var(--font-size-lg), var(--font-weight-bold), var(--fg));
+
+  & {
+    margin: 0 0 var(--margin-md) 0;
+    padding-bottom: var(--padding-xs);
+    border-bottom: 2px solid var(--border-default);
+  }
+}
+
+.fallback-text {
   @include fontify(var(--font-size-sm), var(--font-weight-normal));
 
   & {
@@ -105,12 +170,19 @@ pre {
   }
 }
 
+.log-list {
+  display: flex;
+  flex-direction: column;
+}
+
 .no-errors {
   @include fontify(var(--font-size-base), var(--font-weight-normal), var(--fg-alt));
 
   & {
     margin: 0;
     font-style: italic;
+    text-align: center;
+    padding: var(--padding-lg);
   }
 }
 </style>

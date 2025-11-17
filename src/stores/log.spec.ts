@@ -145,8 +145,8 @@ test('useLogStore getLogsSince filters by timestamp', () => {
   const secondLog = recentLogs[1]!;
   const firstLogDate = firstLog.ts instanceof Date ? firstLog.ts : new Date(firstLog.ts);
   const secondLogDate = secondLog.ts instanceof Date ? secondLog.ts : new Date(secondLog.ts);
-  expect(firstLogDate.getHours()).toBe(14);
-  expect(secondLogDate.getHours()).toBe(13);
+  expect(firstLogDate.getUTCHours()).toBe(14);
+  expect(secondLogDate.getUTCHours()).toBe(13);
 });
 
 test('useLogStore clearLogs removes all logs', () => {
@@ -245,4 +245,34 @@ test('useLogStore exportAsText omits empty context', () => {
   const result = store.exportAsText();
 
   expect(result).not.toContain('Context:');
+});
+
+test('useLogStore exportAsText formats object message as JSON', () => {
+  const store = useLogStore();
+  const log = createMockLogRecord({
+    message: { error: 'test', code: 123 } as unknown as string,
+  });
+
+  store.addLog(log);
+
+  const result = store.exportAsText();
+
+  expect(result).toContain('error');
+  expect(result).toContain('test');
+  expect(result).toContain('code');
+  expect(result).toContain('123');
+});
+
+test('useLogStore exportAsText formats Error object message', () => {
+  const store = useLogStore();
+  const error = new Error('Test error message');
+  const log = createMockLogRecord({
+    message: error as unknown as string,
+  });
+
+  store.addLog(log);
+
+  const result = store.exportAsText();
+
+  expect(result).toContain('Test error message');
 });
