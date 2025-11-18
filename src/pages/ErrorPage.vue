@@ -4,20 +4,20 @@
       <template #header>
         <info-card
           icon="sym_o_error"
-          :title="$t('error.critical_error')"
-          :description="$t('error.description')"
+          :title="$t(I18N.CRITICAL_ERROR)"
+          :description="$t(I18N.ERROR_DESCRIPTION)"
           type="danger"
         />
       </template>
 
       <app-card class="error-log-card">
         <div v-if="hasFallbackErrors" class="fallback-errors">
-          <h3 class="section-title">{{ $t('error.boot_errors') }}</h3>
+          <h3 class="section-title">{{ $t(I18N.BOOT_ERRORS) }}</h3>
           <pre class="fallback-text">{{ fallbackErrors }}</pre>
         </div>
 
         <div v-if="hasStoreErrors" class="store-errors">
-          <h3 v-if="hasFallbackErrors" class="section-title">{{ $t('error.app_errors') }}</h3>
+          <h3 v-if="hasFallbackErrors" class="section-title">{{ $t(I18N.APP_ERRORS) }}</h3>
           <div class="log-list">
             <log-entry
               v-for="(log, index) in allErrorLogs"
@@ -29,7 +29,7 @@
         </div>
 
         <p v-if="!hasFallbackErrors && !hasStoreErrors" class="no-errors">
-          {{ $t('error.no_errors') }}
+          {{ $t(I18N.NO_ERRORS) }}
         </p>
       </app-card>
 
@@ -37,9 +37,9 @@
         <app-card>
           <action-buttons position="right">
             <action-button icon="content_copy" fire-icon="check" :copy-text="errorLogText" border>
-              <template #text>{{ $t('error.copy_log') }}</template>
+              <template #text>{{ $t(I18N.COPY_LOG) }}</template>
             </action-button>
-            <app-button @click="reload" type="danger">{{ $t('error.reload') }}</app-button>
+            <app-button @click="reload" type="danger">{{ $t(I18N.RELOAD) }}</app-button>
           </action-buttons>
         </app-card>
       </template>
@@ -60,6 +60,7 @@ import AppCard from 'src/components/AppCard.vue';
 import LogEntry from 'src/components/LogEntry.vue';
 import { api } from 'src/boot/api';
 import { repositories } from 'src/boot/repositories';
+import { I18N } from 'orgnote-api';
 import type { LogRecord } from 'orgnote-api';
 
 interface ErrorBuffer {
@@ -123,11 +124,11 @@ const errorLogText = computed(() => {
   const storeText = logStore.exportAsText();
   const fallbackText = fallbackErrors.value;
 
-  if (!hasFallbackErrors.value && !hasStoreErrors.value) return t('error.no_errors');
+  if (!hasFallbackErrors.value && !hasStoreErrors.value) return t(I18N.NO_ERRORS);
   if (!hasFallbackErrors.value) return storeText;
   if (!hasStoreErrors.value) return fallbackText;
 
-  return `=== ${t('error.boot_errors')} ===\n${fallbackText}\n\n=== ${t('error.app_errors')} ===\n${storeText}`;
+  return `=== ${t(I18N.BOOT_ERRORS)} ===\n${fallbackText}\n\n=== ${t(I18N.APP_ERRORS)} ===\n${storeText}`;
 });
 </script>
 

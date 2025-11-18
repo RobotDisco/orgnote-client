@@ -1,185 +1,212 @@
-import pino from 'pino';
-import type { OrgNoteApi, LogRecord, LogLevel, LoggerRepository } from 'orgnote-api';
-import { createBufferedSink } from './log-sink';
-import type { LogSink } from './log-sink';
-import { isPresent } from './nullable-guards';
+import type { OrgNoteApi, LogLevel, LogRecord } from 'orgnote-api';
+import { SpectralLoggerWeb } from 'spectrallogs/web';
+import createRedact from '@pinojs/redact';
+import { submitLogRecord } from 'src/stores/log-dispatcher';
+import { isPresent, isNullable } from './nullable-guards';
 
 type Logger = OrgNoteApi['utils']['logger'];
+type Bindings = Record<string, unknown>;
 
-const LEVEL_MAP: Record<string, LogLevel> = {
+const spectralMethodMap: Record<LogLevel, 'error' | 'warn' | 'info' | 'debug'> = {
   error: 'error',
   warn: 'warn',
   info: 'info',
   debug: 'debug',
-  trace: 'trace',
-  fatal: 'error',
+  trace: 'debug',
 };
 
-const getBrowserConfig = () => ({
-  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
-  browser: {
-    asObject: true,
-    transmit: {
-      level: 'trace',
-      send: (lvl: string, logEvent: pino.LogEvent) => {
-        const mapped = LEVEL_MAP[lvl] ?? 'info';
-        const ts = new Date(logEvent.ts);
-        const messages = logEvent.messages ?? [];
-        const first = messages[0];
-        const second = messages[1];
-        
-        let msg: string;
-        let ctx: Record<string, unknown> | undefined;
-        
-        if (typeof first === 'string') {
-          msg = first;
-          ctx = typeof second === 'object' && isPresent(second) 
-            ? (second as Record<string, unknown>) 
-            : undefined;
-        } else if (first instanceof Error) {
-          msg = first.message;
-          ctx = { cause: first.cause, stack: first.stack };
-        } else if (typeof first === 'object' && isPresent(first)) {
-          const obj = first as Record<string, unknown>;
-          if (typeof obj.stack === 'string') {
-            const stackLines = obj.stack.split('\n');
-            msg = stackLines[0] ?? 'Error';
-            ctx = obj;
-          } else if (typeof second === 'string') {
-            msg = second;
-            ctx = obj;
-          } else {
-            try {
-              msg = JSON.stringify(first);
-            } catch {
-              msg = String(first);
-            }
-            ctx = obj;
-          }
-        } else {
-          msg = String(first);
-        }
-        
-        const b0 =
-          Array.isArray(logEvent.bindings) && logEvent.bindings.length > 0
-            ? logEvent.bindings[0]
-            : {};
-        const record: LogRecord = { ts, level: mapped, message: msg, bindings: b0, context: ctx };
-        sink.write(record);
-      },
-    },
-  },
+const SECRET_PLACEHOLDER = '***';
+const EMAIL_REGEX = /([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/gi;
+const PHONE_REGEX = /(\+?\d[\d\s-]{7,}\d)/g;
+
+const SENSITIVE_PATHS = [
+  'password',
+  'pass',
+  'pwd',
+  'secret',
+  'token',
+  'apiKey',
+  'apikey',
+  'api_key',
+  'email',
+  'phone',
+  'context.password',
+  'context.pass',
+  'context.pwd',
+  'context.secret',
+  'context.token',
+  'context.apiKey',
+  'context.apikey',
+  'context.api_key',
+  'context.email',
+  'context.phone',
+  'context.*.password',
+  'context.*.pass',
+  'context.*.pwd',
+  'context.*.secret',
+  'context.*.token',
+  'context.*.apiKey',
+  'context.*.apikey',
+  'context.*.api_key',
+  'context.*.email',
+  'context.*.phone',
+  'context.*.*.password',
+  'context.*.*.secret',
+  'context.*.*.token',
+  'context.*.*.email',
+  'context.*.*.phone',
+  'bindings.password',
+  'bindings.pass',
+  'bindings.pwd',
+  'bindings.secret',
+  'bindings.token',
+  'bindings.apiKey',
+  'bindings.apikey',
+  'bindings.api_key',
+  'bindings.email',
+  'bindings.phone',
+  'bindings.*.password',
+  'bindings.*.secret',
+  'bindings.*.token',
+  'bindings.*.email',
+  'bindings.*.phone',
+  'bindings.*.*.password',
+  'bindings.*.*.secret',
+  'bindings.*.*.token',
+  'bindings.*.*.email',
+  'bindings.*.*.phone',
+];
+
+const pathRedactor = createRedact({
+  paths: SENSITIVE_PATHS,
+  censor: SECRET_PLACEHOLDER,
+  serialize: false,
+  strict: false,
 });
 
-const getServerConfig = () => ({
-  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
-  transport:
-    process.env.NODE_ENV === 'development'
-      ? {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-            translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
-            ignore: 'pid,hostname',
-          },
-        }
-      : undefined,
-  hooks: {
-    logMethod(inputArgs: unknown[], method: (...args: unknown[]) => void, level: number) {
-      const keys = Object.keys(LEVEL_MAP);
-      const key = keys[level] ?? 'info';
-      const mapped = LEVEL_MAP[key] ?? 'info';
-      const a0 = inputArgs[0];
-      const a1 = inputArgs[1];
-      
-      let msg: string;
-      let ctx: Record<string, unknown> | undefined;
-      
-      if (typeof a0 === 'string') {
-        msg = a0;
-        ctx = typeof a1 === 'object' && isPresent(a1) ? (a1 as Record<string, unknown>) : undefined;
-      } else if (a0 instanceof Error) {
-        msg = a0.message;
-        ctx = { cause: a0.cause, stack: a0.stack };
-      } else if (typeof a0 === 'object' && isPresent(a0)) {
-        const obj = a0 as Record<string, unknown>;
-        if (typeof obj.stack === 'string') {
-          const stackLines = obj.stack.split('\n');
-          msg = stackLines[0] ?? 'Error';
-          ctx = obj;
-        } else if (typeof a1 === 'string') {
-          msg = a1;
-          ctx = obj;
-        } else {
-          try {
-            msg = JSON.stringify(a0);
-          } catch {
-            msg = String(a0);
-          }
-          ctx = obj;
-        }
-      } else {
-        msg = String(a0);
-      }
-      
-      const record: LogRecord = {
-        ts: new Date(),
-        level: mapped,
-        message: msg,
-        bindings: {},
-        context: ctx,
-      };
-      sink.write(record);
-      method.apply(this, inputArgs);
-    },
-  },
-});
+const maskEmail = (value: string): string =>
+  value.replace(EMAIL_REGEX, (_match, local, domain) => {
+    if (!local) return _match;
+    const visibleStart = local.slice(0, 1);
+    const masked = local.length > 1 ? '***' : '';
+    return `${visibleStart}${masked}@${domain}`;
+  });
 
-const sink: LogSink = createBufferedSink({
-  batchSize: 25,
-  flushIntervalMs: 2000,
-  maxQueue: 5000,
-  retentionDays: 14,
-  maxRecords: 50000,
-});
+const maskPhone = (value: string): string =>
+  value.replace(PHONE_REGEX, (match) => {
+    const digits = match.replace(/\D/g, '');
+    if (digits.length < 8) return match;
+    const maskedDigits = `${'*'.repeat(Math.max(0, digits.length - 2))}${digits.slice(-2)}`;
+    let index = 0;
+    return match.replace(/\d/g, () => maskedDigits[index++] ?? '*');
+  });
 
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === 'object' && isPresent(v);
+const sanitizeString = (value: string): string => maskPhone(maskEmail(value));
 
-const createLogMethod =
-  (pinoLogger: pino.Logger, method: keyof pino.Logger) =>
-  (msg: string, ...args: unknown[]) => {
-    const first = args[0];
-    const hasObjectArg = isRecord(first);
-    if (hasObjectArg) {
-      (pinoLogger[method] as (obj: Record<string, unknown>, msg: string) => void)(first, msg);
-      return;
-    }
-    (pinoLogger[method] as (msg: string) => void)(msg);
+const cloneObject = (value: Record<string, unknown>): Record<string, unknown> => {
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch {
+    return { ...value };
+  }
+};
+
+const maskDeep = (value: unknown): unknown => {
+  if (typeof value === 'string') return sanitizeString(value);
+  if (Array.isArray(value)) return value.map((entry) => maskDeep(entry));
+  if (value instanceof Error) return errorContext(value);
+  if (value && typeof value === 'object') {
+    const result: Record<string, unknown> = {};
+    Object.entries(value as Record<string, unknown>).forEach(([key, entry]) => {
+      result[key] = maskDeep(entry);
+    });
+    return result;
+  }
+  return value;
+};
+
+const sanitizeObject = (value: Record<string, unknown>): Record<string, unknown> => {
+  const clone = cloneObject(value);
+  const redacted = pathRedactor(clone);
+  return maskDeep(redacted) as Record<string, unknown>;
+};
+
+const toMessage = (value: unknown): string => {
+  if (typeof value === 'string') return sanitizeString(value);
+  if (value instanceof Error) return sanitizeString(`${value.name}: ${value.message}`);
+  if (value === undefined) return 'undefined';
+  if (isNullable(value)) return 'null';
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value);
+  if (typeof value === 'symbol') return value.toString();
+  if (!isPresent(value)) return '';
+  try {
+    return sanitizeString(JSON.stringify(value));
+  } catch {
+    return sanitizeString(String(value));
+  }
+};
+
+const errorContext = (error: Error): Record<string, unknown> => {
+  const context: Record<string, unknown> = {
+    name: error.name,
+    message: error.message,
+  };
+  if (error.stack) context.stack = error.stack;
+  const hasCause = 'cause' in error && isPresent((error as { cause?: unknown }).cause);
+  if (hasCause) context.cause = (error as { cause?: unknown }).cause;
+  return context;
+};
+
+const extractContext = (value: unknown): Record<string, unknown> | undefined => {
+  if (value instanceof Error) return errorContext(value);
+  if (!isPresent(value)) return undefined;
+  if (typeof value !== 'object') return undefined;
+  return value as Record<string, unknown>;
+};
+
+const mergeContext = (segments: Array<Record<string, unknown> | undefined>): Record<string, unknown> | undefined => {
+  const validSegments = segments.filter((segment): segment is Record<string, unknown> => Boolean(segment));
+  if (!validSegments.length) return undefined;
+  return validSegments.reduce<Record<string, unknown>>((acc, segment) => ({ ...acc, ...segment }), {});
+};
+
+const hasEntries = (record?: Record<string, unknown>): record is Record<string, unknown> =>
+  Boolean(record && Object.keys(record).length > 0);
+
+const buildRecord = (level: LogLevel, primary: unknown, extras: unknown[], bindings: Bindings): LogRecord => {
+  const mergedContext = mergeContext([primary, ...extras].map(extractContext));
+  const record: LogRecord = { ts: new Date(), level, message: toMessage(primary) };
+  if (mergedContext) record.context = sanitizeObject(mergedContext);
+  if (hasEntries(bindings)) record.bindings = sanitizeObject(bindings);
+  return record;
+};
+
+const shouldRecordLogs = (): boolean => !!process.env.CLIENT;
+
+const createLoggerAdapter = (base: SpectralLoggerWeb, bindings: Bindings = {}): Logger => {
+  const emit = (level: LogLevel, primary: unknown, extras: unknown[]): void => {
+    const method = spectralMethodMap[level];
+    const spectralMessage = toMessage(primary);
+    const target = base[method] as (message: string) => void;
+    target.call(base, spectralMessage);
+    if (!shouldRecordLogs()) return;
+    const record = buildRecord(level, primary, extras, bindings);
+    submitLogRecord(record);
   };
 
-const createLoggerAdapter = (pinoLogger: pino.Logger): Logger => ({
-  info: createLogMethod(pinoLogger, 'info'),
-  error: createLogMethod(pinoLogger, 'error'),
-  warn: createLogMethod(pinoLogger, 'warn'),
-  debug: createLogMethod(pinoLogger, 'debug'),
-  trace: createLogMethod(pinoLogger, 'trace'),
-  child: (bindings: Record<string, unknown>) => {
-    const childPino = pinoLogger.child(bindings);
-    return createLoggerAdapter(childPino);
-  },
-});
-
-const createPinoLogger = (): Logger => {
-  const isClient = !!process.env.CLIENT;
-  const config = isClient ? getBrowserConfig() : getServerConfig();
-  const pinoInstance = pino(config);
-
-  return createLoggerAdapter(pinoInstance);
+  return {
+    info: (msg: unknown, ...args: unknown[]) => emit('info', msg, args),
+    error: (msg: unknown, ...args: unknown[]) => emit('error', msg, args),
+    warn: (msg: unknown, ...args: unknown[]) => emit('warn', msg, args),
+    debug: (msg: unknown, ...args: unknown[]) => emit('debug', msg, args),
+    trace: (msg: unknown, ...args: unknown[]) => emit('trace', msg, args),
+    child: (extraBindings: Bindings) => createLoggerAdapter(base, { ...bindings, ...extraBindings }),
+  };
 };
 
-const attachLogRepository = (repo: LoggerRepository): void => {
-  sink.attachRepository(repo);
+const createSpectralLogger = (): Logger => {
+  const spectralInstance = new SpectralLoggerWeb();
+  return createLoggerAdapter(spectralInstance);
 };
 
-export { createPinoLogger, attachLogRepository };
+export { createSpectralLogger, toMessage, extractContext, mergeContext, buildRecord };

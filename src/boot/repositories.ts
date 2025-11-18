@@ -5,7 +5,6 @@ import {
   LOGS_REPOSITORY_PROVIDER_TOKEN,
   REPOSITORIES_PROVIDER_TOKEN,
 } from 'src/constants/app-providers';
-import { attachLogRepository } from './logger';
 
 let repositories: OrgNoteApi['infrastructure'];
 
@@ -18,7 +17,6 @@ export default defineBoot(async ({ app }) => {
   await initRepositories();
   app.provide(REPOSITORIES_PROVIDER_TOKEN, repositories);
   app.provide(LOGS_REPOSITORY_PROVIDER_TOKEN, repositories.logRepository);
-  attachLogRepository(repositories.logRepository);
 });
 
 export { repositories };

@@ -1,27 +1,44 @@
-import { test, expect, vi, beforeEach } from 'vitest';
-import { createPinoLogger } from './logger';
+import { test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createSpectralLogger } from './logger';
 
-vi.mock('pino', () => {
-  const mockChild = vi.fn(() => mockPinoInstance);
-  const mockPinoInstance = {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-    trace: vi.fn(),
-    child: mockChild,
+const createMockSpectral = () =>
+  class MockSpectral {
+    info = vi.fn();
+    error = vi.fn();
+    warn = vi.fn();
+    debug = vi.fn();
+    log = vi.fn();
+    child = vi.fn(() => new MockSpectral());
   };
 
-  return {
-    default: vi.fn(() => mockPinoInstance),
-  };
+vi.mock('spectrallogs', () => {
+  const MockSpectral = createMockSpectral();
+  return { SpectralLogger: MockSpectral };
 });
 
-let logger: ReturnType<typeof createPinoLogger>;
+vi.mock('spectrallogs/web', () => {
+  const MockSpectralWeb = createMockSpectral();
+  return { SpectralLoggerWeb: MockSpectralWeb };
+});
+
+let logger: ReturnType<typeof createSpectralLogger>;
+const originalClient = process.env.CLIENT;
+const originalWindow = globalThis.window;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  logger = createPinoLogger();
+  delete (globalThis as { window?: unknown }).window;
+  process.env.CLIENT = '';
+  logger = createSpectralLogger();
+});
+
+afterEach(() => {
+  process.env.CLIENT = originalClient;
+  if (originalWindow) {
+    globalThis.window = originalWindow;
+  } else {
+    delete (globalThis as { window?: unknown }).window;
+  }
 });
 
 test('creates logger with correct interface', () => {

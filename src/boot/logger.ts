@@ -1,5 +1,5 @@
 import { defineBoot } from '@quasar/app-vite/wrappers';
-import { createPinoLogger, attachLogRepository as _attachLogRepository } from 'src/utils/logger';
+import { createSpectralLogger } from 'src/utils/logger';
 import type { OrgNoteApi } from 'orgnote-api';
 
 type Logger = OrgNoteApi['utils']['logger'];
@@ -7,7 +7,7 @@ type Logger = OrgNoteApi['utils']['logger'];
 let logger: Logger;
 
 const initLogger = (): Logger => {
-  logger = createPinoLogger();
+  logger = createSpectralLogger();
   logger.info('Application startup initiated');
   return logger;
 };
@@ -15,7 +15,4 @@ const initLogger = (): Logger => {
 export default defineBoot(() => {
   initLogger();
 });
-
-const attachLogRepository = _attachLogRepository;
-
-export { logger, initLogger, attachLogRepository };
+export { logger, initLogger };

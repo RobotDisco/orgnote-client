@@ -2,23 +2,11 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { LogRecord, LogLevel, LogStore } from 'orgnote-api';
 import { isPresent } from 'src/utils/nullable-guards';
-import { repositories } from 'src/boot/repositories';
 
-const MAX_LOGS = 500;
+export const MAX_LOGS = 500;
 
 export const useLogStore = defineStore('log', (): LogStore => {
   const logs = ref<LogRecord[]>([]);
-
-  const loadFromRepository = async (): Promise<void> => {
-    try {
-      const records = await repositories.logRepository.query({ limit: MAX_LOGS });
-      logs.value = records;
-    } catch (error) {
-      console.error('Failed to load logs from repository:', error);
-    }
-  };
-
-  loadFromRepository();
 
   const addLog = (log: LogRecord): void => {
     logs.value.unshift(log);
@@ -26,18 +14,6 @@ export const useLogStore = defineStore('log', (): LogStore => {
       logs.value.pop();
     }
   };
-
-  const initLogStoreFromRepository = async (): Promise<void> => {
-    const store = useLogStore();
-    try {
-      const records = await repositories.logRepository.query({ limit: MAX_LOGS });
-      store.addLogs(records);
-    } catch (error) {
-      console.error('Failed to load logs from repository:', error);
-    }
-  };
-
-  initLogStoreFromRepository().then();
 
   const addLogs = (newLogs: LogRecord[]): void => {
     logs.value.unshift(...newLogs);
@@ -138,3 +114,5 @@ export const useLogStore = defineStore('log', (): LogStore => {
     exportAsText,
   };
 });
+
+export type UseLogStore = ReturnType<typeof useLogStore>;

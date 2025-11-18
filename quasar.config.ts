@@ -16,6 +16,7 @@ export default defineConfig((ctx) => {
     boot: [
       'logger',
       'repositories',
+      'preload-store-data',
       'report',
       { server: false, path: 'error-handler' },
       'default-file-systems',
