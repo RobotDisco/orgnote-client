@@ -16,19 +16,19 @@
           <pre class="fallback-text">{{ fallbackErrors }}</pre>
         </div>
 
-        <div v-if="hasStoreErrors" class="store-errors">
+        <div v-if="hasStoreLogs" class="store-errors">
           <h3 v-if="hasFallbackErrors" class="section-title">{{ $t(I18N.APP_ERRORS) }}</h3>
           <div class="log-list">
             <log-entry
-              v-for="(log, index) in allErrorLogs"
+              v-for="(log, index) in storeLogs"
               :key="index"
               :log="log"
-              :position="allErrorLogs.length - index"
+              :position="storeLogs.length - index"
             />
           </div>
         </div>
 
-        <p v-if="!hasFallbackErrors && !hasStoreErrors" class="no-errors">
+        <p v-if="!hasFallbackErrors && !hasStoreLogs" class="no-errors">
           {{ $t(I18N.NO_ERRORS) }}
         </p>
       </app-card>
@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppButton from 'src/components/AppButton.vue';
 import ActionButton from 'src/components/ActionButton.vue';
@@ -59,9 +59,7 @@ import InfoCard from 'src/components/InfoCard.vue';
 import AppCard from 'src/components/AppCard.vue';
 import LogEntry from 'src/components/LogEntry.vue';
 import { api } from 'src/boot/api';
-import { repositories } from 'src/boot/repositories';
 import { I18N } from 'orgnote-api';
-import type { LogRecord } from 'orgnote-api';
 
 interface ErrorBuffer {
   exportAsText: () => string;
@@ -71,11 +69,9 @@ interface ErrorBuffer {
 type WindowWithErrorBuffer = Window & { __errorBuffer?: ErrorBuffer };
 
 const NO_ERRORS_MARKER = 'No errors recorded';
-const ERROR_LIMIT = 50;
 
 const { t } = useI18n();
 const logStore = api.core.useLog();
-const dbErrorLogs = ref<LogRecord[]>([]);
 
 const reload = (): void => {
   window.location.assign('/');
@@ -93,40 +89,16 @@ const fallbackErrors = computed(() => {
 
 const hasFallbackErrors = computed(() => fallbackErrors.value.length > 0);
 
-const storeErrorLogs = computed(() => logStore.getLogsByLevel('error'));
-
-const allErrorLogs = computed(() => {
-  const storeIds = new Set(storeErrorLogs.value.map((log) => `${log.ts}-${log.message}`));
-  const uniqueDbLogs = dbErrorLogs.value.filter((log) => !storeIds.has(`${log.ts}-${log.message}`));
-  return [...storeErrorLogs.value, ...uniqueDbLogs];
-});
-
-const hasStoreErrors = computed(() => allErrorLogs.value.length > 0);
-
-const loadErrorLogs = async (): Promise<void> => {
-  try {
-    const records = await repositories.logRepository.query({
-      level: 'error',
-      limit: ERROR_LIMIT,
-      offset: 0,
-    });
-    dbErrorLogs.value = records;
-  } catch (error) {
-    console.error('Failed to load error logs from database:', error);
-  }
-};
-
-onMounted(() => {
-  loadErrorLogs();
-});
+const storeLogs = computed(() => logStore.logs);
+const hasStoreLogs = computed(() => storeLogs.value.length > 0);
 
 const errorLogText = computed(() => {
   const storeText = logStore.exportAsText();
   const fallbackText = fallbackErrors.value;
 
-  if (!hasFallbackErrors.value && !hasStoreErrors.value) return t(I18N.NO_ERRORS);
+  if (!hasFallbackErrors.value && !hasStoreLogs.value) return t(I18N.NO_ERRORS);
   if (!hasFallbackErrors.value) return storeText;
-  if (!hasStoreErrors.value) return fallbackText;
+  if (!hasStoreLogs.value) return fallbackText;
 
   return `=== ${t(I18N.BOOT_ERRORS)} ===\n${fallbackText}\n\n=== ${t(I18N.APP_ERRORS)} ===\n${storeText}`;
 });

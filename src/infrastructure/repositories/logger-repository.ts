@@ -12,14 +12,20 @@ export const LOGGER_MIGRATIONS = migrator<LogRecord>()
 export const createLoggerRepository = (db: Dexie): LoggerRepository => {
   const store = db.table<LogRecord, number>(LOGGER_REPOSITORY_NAME);
 
-  const normalizeRecord = (r: LogRecord): LogRecord => ({
-    id: r.id,
-    ts: r.ts ?? new Date(),
-    level: r.level,
-    message: r.message,
-    bindings: r.bindings,
-    context: r.context,
-  });
+  const normalizeRecord = (r: LogRecord): LogRecord => {
+    const ts = r.ts ?? new Date();
+    return {
+      id: r.id,
+      ts,
+      level: r.level,
+      message: r.message,
+      bindings: r.bindings,
+      context: r.context,
+      repeatCount: r.repeatCount ?? 1,
+      firstTs: r.firstTs ?? ts,
+      lastTs: r.lastTs ?? ts,
+    };
+  };
 
   const add = async (record: LogRecord): Promise<void> => {
     const data = normalizeRecord(record);
@@ -43,6 +49,12 @@ export const createLoggerRepository = (db: Dexie): LoggerRepository => {
     return store.filter((r) => byLevel(r) && byFrom(r) && byTo(r) && byText(r));
   };
 
+  const resolveTimestamp = (record: LogRecord): number => {
+    const source = record.lastTs ?? record.ts;
+    const date = source instanceof Date ? source : new Date(source);
+    return date.getTime();
+  };
+
   const query = async (filter: LogFilter): Promise<LogRecord[]> => {
     const limit = filter.limit;
     const offset = filter.offset ?? 0;
@@ -50,9 +62,10 @@ export const createLoggerRepository = (db: Dexie): LoggerRepository => {
     const collection = applyFilter(filter).reverse().sortBy('ts');
 
     return collection.then((arr) => {
+      const sorted = [...arr].sort((left, right) => resolveTimestamp(right) - resolveTimestamp(left));
       const start = offset < 0 ? 0 : offset;
-      if (!limit || limit <= 0) return arr.slice(start);
-      return arr.slice(start, start + limit);
+      if (!limit || limit <= 0) return sorted.slice(start);
+      return sorted.slice(start, start + limit);
     });
   };
 

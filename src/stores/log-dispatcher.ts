@@ -79,6 +79,10 @@ const drain = async (): Promise<void> => {
 };
 
 export const submitLogRecord = (record: LogRecord): void => {
+  record.repeatCount = record.repeatCount ?? 1;
+  record.firstTs = record.firstTs ?? record.ts;
+  record.lastTs = record.lastTs ?? record.ts;
+
   if (logStore) {
     logStore.addLog(record);
   } else {
@@ -89,11 +93,16 @@ export const submitLogRecord = (record: LogRecord): void => {
 };
 
 export const initializeLogStore = (store: UseLogStore, records: LogRecord[]): void => {
+  const stagedPending = pendingRecords.splice(0, pendingRecords.length);
+  store.clearLogs();
+  store.addLogs(records);
+  stagedPending.forEach((record) => store.addLog(record));
+
   logStore = store;
-  logStore.logs = records.slice(0, MAX_LOGS);
+
   if (!pendingRecords.length) return;
-  pendingRecords.forEach((record) => logStore?.addLog(record));
-  pendingRecords.length = 0;
+  const lateRecords = pendingRecords.splice(0, pendingRecords.length);
+  lateRecords.forEach((record) => logStore?.addLog(record));
 };
 
 export const stopDispatcher = (): void => {

@@ -64,6 +64,22 @@ test('queues records until store is initialized', () => {
   expect(store.addLog).toHaveBeenCalledWith(record);
 });
 
+test('initializeLogStore processes records queued during initialization', () => {
+  const stagedRecord = createRecord({ message: 'staged' });
+  submitLogRecord(stagedRecord);
+  const store = createMockStore();
+  const lateRecord = createRecord({ message: 'late' });
+
+  (store.clearLogs as ReturnType<typeof vi.fn>).mockImplementation(() => {
+    submitLogRecord(lateRecord);
+  });
+
+  initializeLogStore(store, []);
+
+  expect(store.addLog).toHaveBeenCalledWith(stagedRecord);
+  expect(store.addLog).toHaveBeenCalledWith(lateRecord);
+});
+
 test('initializeLogStore truncates stored records', () => {
   const store = createMockStore();
   const seed = Array.from({ length: MAX_LOGS + 5 }, (_, index) => createRecord({ message: `seed-${index}` }));

@@ -128,7 +128,15 @@ const maskDeep = (value: unknown): unknown => {
 const sanitizeObject = (value: Record<string, unknown>): Record<string, unknown> => {
   const clone = cloneObject(value);
   const redacted = pathRedactor(clone);
-  return maskDeep(redacted) as Record<string, unknown>;
+  const masked = maskDeep(redacted);
+  try {
+    return JSON.parse(JSON.stringify(masked));
+  } catch {
+    if (typeof masked === 'object' && isPresent(masked)) {
+      return { ...masked } as Record<string, unknown>;
+    }
+    return {};
+  }
 };
 
 const toMessage = (value: unknown): string => {
@@ -174,8 +182,16 @@ const hasEntries = (record?: Record<string, unknown>): record is Record<string, 
   Boolean(record && Object.keys(record).length > 0);
 
 const buildRecord = (level: LogLevel, primary: unknown, extras: unknown[], bindings: Bindings): LogRecord => {
+  const timestamp = new Date();
   const mergedContext = mergeContext([primary, ...extras].map(extractContext));
-  const record: LogRecord = { ts: new Date(), level, message: toMessage(primary) };
+  const record: LogRecord = {
+    ts: timestamp,
+    level,
+    message: toMessage(primary),
+    repeatCount: 1,
+    firstTs: timestamp,
+    lastTs: timestamp,
+  };
   if (mergedContext) record.context = sanitizeObject(mergedContext);
   if (hasEntries(bindings)) record.bindings = sanitizeObject(bindings);
   return record;

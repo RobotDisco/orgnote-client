@@ -34,6 +34,32 @@ test('useLogStore addLog adds log to beginning of array', () => {
   expect(store.logs[1]?.message).toBe('First error');
 });
 
+test('useLogStore addLog aggregates identical consecutive logs', () => {
+  const store = useLogStore();
+  const base = createMockLogRecord({ message: 'Duplicate error' });
+
+  store.addLog(base);
+  store.addLog({ ...base });
+  store.addLog({ ...base, level: 'warn' });
+
+  expect(store.logs).toHaveLength(2);
+  expect(store.logs[1]?.message).toBe('Duplicate error');
+  expect(store.logs[1]?.repeatCount).toBe(2);
+});
+
+test('useLogStore aggregates logs separated by other levels when within window', () => {
+  const store = useLogStore();
+  const errorLog = createMockLogRecord({ message: 'Error', level: 'error' });
+  const infoLog = createMockLogRecord({ message: 'Info', level: 'info' });
+
+  store.addLog(errorLog);
+  store.addLog(infoLog);
+  store.addLog({ ...errorLog, ts: new Date(errorLog.ts.getTime() + 10_000) });
+
+  expect(store.logs).toHaveLength(2);
+  const aggregated = store.logs.find((log) => log.level === 'error');
+  expect(aggregated?.repeatCount).toBe(2);
+});
 test('useLogStore addLog respects MAX_LOGS limit', () => {
   const store = useLogStore();
 
@@ -69,6 +95,19 @@ test('useLogStore addLogs respects MAX_LOGS limit', () => {
   expect(store.logs).toHaveLength(500);
 });
 
+test('useLogStore addLogs aggregates duplicates during initialization', () => {
+  const store = useLogStore();
+  store.addLogs([
+    createMockLogRecord({ message: 'Same', level: 'error', ts: new Date('2024-01-15T10:00:00.000Z') }),
+    createMockLogRecord({ message: 'Same', level: 'error', ts: new Date('2024-01-15T10:00:10.000Z') }),
+    createMockLogRecord({ message: 'Other', level: 'warn' }),
+  ]);
+
+  expect(store.logs).toHaveLength(2);
+  expect(store.logs[0]?.message).toBe('Same');
+  expect(store.logs[0]?.repeatCount).toBe(2);
+});
+
 test('useLogStore getLogsByLevel filters only error level', () => {
   const store = useLogStore();
   store.addLog(createMockLogRecord({ level: 'error', message: 'Error 1' }));
@@ -98,28 +137,28 @@ test('useLogStore getLogsByLevel filters only warn level', () => {
 
 test('useLogStore getCountByLevel returns correct error count', () => {
   const store = useLogStore();
-  store.addLog(createMockLogRecord({ level: 'error' }));
+  store.addLog(createMockLogRecord({ level: 'error', message: 'Error 1' }));
   store.addLog(createMockLogRecord({ level: 'warn' }));
-  store.addLog(createMockLogRecord({ level: 'error' }));
+  store.addLog(createMockLogRecord({ level: 'error', message: 'Error 2' }));
 
   expect(store.getCountByLevel('error')).toBe(2);
 });
 
 test('useLogStore getCountByLevel returns correct warn count', () => {
   const store = useLogStore();
-  store.addLog(createMockLogRecord({ level: 'warn' }));
+  store.addLog(createMockLogRecord({ level: 'warn', message: 'Warn 1' }));
   store.addLog(createMockLogRecord({ level: 'error' }));
-  store.addLog(createMockLogRecord({ level: 'warn' }));
+  store.addLog(createMockLogRecord({ level: 'warn', message: 'Warn 2' }));
 
   expect(store.getCountByLevel('warn')).toBe(2);
 });
 
 test('useLogStore getLogsByLevel works with all levels', () => {
   const store = useLogStore();
-  store.addLog(createMockLogRecord({ level: 'error' }));
-  store.addLog(createMockLogRecord({ level: 'warn' }));
-  store.addLog(createMockLogRecord({ level: 'info' }));
-  store.addLog(createMockLogRecord({ level: 'error' }));
+  store.addLog(createMockLogRecord({ level: 'error', message: 'E1' }));
+  store.addLog(createMockLogRecord({ level: 'warn', message: 'W1' }));
+  store.addLog(createMockLogRecord({ level: 'info', message: 'I1' }));
+  store.addLog(createMockLogRecord({ level: 'error', message: 'E2' }));
 
   const errorLogs = store.getLogsByLevel('error');
   const warnLogs = store.getLogsByLevel('warn');
@@ -130,29 +169,30 @@ test('useLogStore getLogsByLevel works with all levels', () => {
   expect(infoLogs).toHaveLength(1);
 });
 
-test('useLogStore getLogsSince filters by timestamp', () => {
+test('useLogStore getLogsSince filters by timestamp using last occurrence', () => {
   const store = useLogStore();
   const cutoffDate = new Date('2024-01-15T12:00:00.000Z');
 
-  store.addLog(createMockLogRecord({ ts: new Date('2024-01-15T10:00:00.000Z') }));
-  store.addLog(createMockLogRecord({ ts: new Date('2024-01-15T13:00:00.000Z') }));
-  store.addLog(createMockLogRecord({ ts: new Date('2024-01-15T14:00:00.000Z') }));
+  const early = createMockLogRecord({ ts: new Date('2024-01-15T10:00:00.000Z'), message: 'Early' });
+  const mid1 = createMockLogRecord({ ts: new Date('2024-01-15T13:00:00.000Z'), message: 'Mid' });
+  const mid2 = createMockLogRecord({ ts: new Date('2024-01-15T13:00:10.000Z'), message: 'Mid' });
+
+  store.addLogs([early, mid1, mid2]);
 
   const recentLogs = store.getLogsSince(cutoffDate);
 
-  expect(recentLogs).toHaveLength(2);
-  const firstLog = recentLogs[0]!;
-  const secondLog = recentLogs[1]!;
-  const firstLogDate = firstLog.ts instanceof Date ? firstLog.ts : new Date(firstLog.ts);
-  const secondLogDate = secondLog.ts instanceof Date ? secondLog.ts : new Date(secondLog.ts);
-  expect(firstLogDate.getUTCHours()).toBe(14);
-  expect(secondLogDate.getUTCHours()).toBe(13);
+  expect(recentLogs).toHaveLength(1);
+  const aggregated = recentLogs[0]!;
+  expect(aggregated.message).toBe('Mid');
+  expect(aggregated.repeatCount).toBe(2);
+  expect(new Date(aggregated.lastTs!).getUTCMinutes()).toBe(0);
+  expect(new Date(aggregated.lastTs!).getUTCSeconds()).toBe(10);
 });
 
 test('useLogStore clearLogs removes all logs', () => {
   const store = useLogStore();
-  store.addLog(createMockLogRecord());
-  store.addLog(createMockLogRecord());
+  store.addLog(createMockLogRecord({ message: 'A' }));
+  store.addLog(createMockLogRecord({ message: 'B' }));
 
   expect(store.logs).toHaveLength(2);
 

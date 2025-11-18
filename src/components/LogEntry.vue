@@ -4,6 +4,7 @@
       <span class="number">[{{ position }}]</span>
       <span class="timestamp">{{ formattedTimestamp }}</span>
       <span class="level">{{ log.level.toUpperCase() }}</span>
+      <span v-if="hasRepeats" class="repeat">×{{ log.repeatCount }}</span>
     </div>
 
     <div class="message">
@@ -85,6 +86,8 @@ const hasContext = computed(() => {
   return Object.keys(ctx).length > 0;
 });
 
+const hasRepeats = computed(() => (props.log.repeatCount ?? 1) > 1);
+
 const formattedContext = computed(() => {
   const ctx = extractContext(props.log.context);
   return JSON.stringify(ctx, null, 2);
@@ -100,6 +103,16 @@ const formatLogAsText = (): string => {
     parts.push(String(props.log.context.stack));
   } else {
     parts.push(formattedMessage.value);
+  }
+
+  if (hasRepeats.value) {
+    parts.push(`Repeat count: ${props.log.repeatCount ?? 1}`);
+    if (props.log.firstTs && props.log.lastTs) {
+      parts.push(
+        `First occurrence: ${new Date(props.log.firstTs).toISOString()}`,
+        `Last occurrence: ${new Date(props.log.lastTs).toISOString()}`,
+      );
+    }
   }
 
   if (hasContext.value) {
@@ -132,7 +145,7 @@ $level-colors: (
 .log-entry {
   padding: var(--padding-lg);
   border-radius: var(--border-radius-md);
-  margin-bottom: var(--margin-lg);
+  margin-bottom: var(--margin-sm);
   background: transparent;
   cursor: pointer;
   transition: background 0.2s ease;
@@ -181,6 +194,17 @@ $level-colors: (
       color: $color;
       background: color-mix(in srgb, $color, transparent 85%);
     }
+  }
+}
+
+.repeat {
+  @include fontify(var(--font-size-xs), var(--font-weight-bold), var(--fg));
+
+  & {
+    margin-left: auto;
+    padding: 0 var(--padding-md);
+    border-radius: var(--border-radius-sm);
+    background: var(--border-default);
   }
 }
 
