@@ -1,5 +1,6 @@
 <template>
-  <page-wrapper
+  <div
+    class="main-layout"
     v-touch-swipe.mouse.left="mobileOnly(sidebar.close)"
     v-touch-swipe.mouse.right="mobileOnly(sidebar.open)"
   >
@@ -14,12 +15,11 @@
       </visibility-wrapper>
     </div>
     <modal-window />
-  </page-wrapper>
+  </div>
 </template>
 
 <script setup lang="ts">
 import MainFooter from 'src/containers/MainFooter.vue';
-import PageWrapper from 'src/components/PageWrapper.vue';
 import MainSidebar from 'src/containers/MainSidebar.vue';
 import ModalWindow from 'src/containers/ModalWindow.vue';
 import { api } from 'src/boot/api';
@@ -40,6 +40,11 @@ const closeMainSidebar = () => {
 </script>
 
 <style lang="scss" scoped>
+.main-layout {
+  @include fit();
+  @include flexify(row, flex-start, flex-start);
+}
+
 .content {
   height: 100%;
   flex: 1;

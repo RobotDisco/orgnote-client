@@ -23,7 +23,6 @@ defineProps<{
 
   &.padding {
     padding: var(--page-padding);
-    padding-top: calc(var(--page-padding) + env(safe-area-inset-top));
   }
 
   &.constrained {

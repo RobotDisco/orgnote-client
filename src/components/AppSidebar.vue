@@ -41,7 +41,7 @@ withDefaults(
     border-right: var(--sidebar-border-right);
     background: var(--sidebar-background);
     position: relative;
-    height: 100vh;
+    height: calc(100vh - var(--device-padding-top, 0px) - env(safe-area-inset-top));
     height: 100mvh;
   }
 
