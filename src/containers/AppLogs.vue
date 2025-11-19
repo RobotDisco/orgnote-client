@@ -1,38 +1,103 @@
 <template>
-  <app-card class="error-log-card">
-    <div v-if="hasFallbackErrors" class="fallback-errors">
-      <h3 class="section-title">{{ $t(I18N.BOOT_ERRORS) }}</h3>
-      <pre class="fallback-text">{{ fallbackErrors }}</pre>
-    </div>
+  <div class="logs">
+            <app-dropdown
+              v-model="selectedLogLevelOption"
+              :options="logLevelOptions"
+              option-label="label"
+              class="log-filter"
+            >
+    </app-dropdown>
 
-    <div v-if="hasStoreLogs" class="store-errors">
-      <h3 v-if="hasFallbackErrors" class="section-title">{{ $t(I18N.APP_ERRORS) }}</h3>
-      <div class="log-list">
-        <log-entry
-          v-for="(log, index) in storeLogs"
-          :key="index"
-          :log="log"
-          :position="storeLogs.length - index"
-        />
+    <app-card class="error-log-card">
+      <div v-if="hasFallbackErrors" class="fallback-errors">
+        <h3 class="section-title">{{ $t(I18N.BOOT_ERRORS) }}</h3>
+        <pre class="fallback-text">{{ fallbackErrors }}</pre>
       </div>
-    </div>
 
-    <p v-if="!hasFallbackErrors && !hasStoreLogs" class="no-errors">
-      {{ $t(I18N.NO_ERRORS) }}
-    </p>
-  </app-card>
+      <div v-if="hasStoreLogs" class="store-errors">
+        <div class="log-list">
+          <log-entry
+            v-for="(log, index) in filteredLogs"
+            :key="index"
+            :log="log"
+            :position="getLogPosition(index)"
+          />
+        </div>
+
+        <p v-if="filteredLogs.length === 0" class="no-filtered-logs">
+          No logs match the selected filter
+        </p>
+      </div>
+
+      <p v-if="!hasFallbackErrors && !hasStoreLogs" class="no-errors">
+        {{ $t(I18N.NO_ERRORS) }}
+      </p>
+    </app-card>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue';
 import AppCard from 'src/components/AppCard.vue';
+import AppDropdown from 'src/components/AppDropdown.vue';
 import LogEntry from 'src/components/LogEntry.vue';
 import { useAppLogs } from 'src/composables/useAppLogs';
-import { I18N } from 'orgnote-api';
+import { I18N, type LogLevel } from 'orgnote-api';
 
-const { fallbackErrors, hasFallbackErrors, storeLogs, hasStoreLogs } = useAppLogs();
+interface LogLevelOption {
+  label: string;
+  value: LogLevel;
+}
+
+const { fallbackErrors, hasFallbackErrors, storeLogs, hasStoreLogs, errorLogText } = useAppLogs();
+
+const logLevelOptions: LogLevelOption[] = [
+  { label: 'All levels', value: null as unknown as LogLevel },
+  { label: 'Error', value: 'error' },
+  { label: 'Warning', value: 'warn' },
+  { label: 'Info', value: 'info' },
+  { label: 'Debug', value: 'debug' },
+  { label: 'Trace', value: 'trace' },
+];
+
+const selectedLogLevelOption = ref<LogLevelOption | null>(logLevelOptions[0]!);
+
+const filteredLogs = computed(() => {
+  if (!selectedLogLevelOption.value || !selectedLogLevelOption.value.value) {
+    return storeLogs.value;
+  }
+  return storeLogs.value.filter((log) => log.level === selectedLogLevelOption.value?.value);
+});
+
+const getLogPosition = (index: number): number => {
+  if (!selectedLogLevelOption.value) {
+    return storeLogs.value.length - index;
+  }
+  const log = filteredLogs.value[index];
+  if (!log) return 0;
+
+  const originalIndex = storeLogs.value.indexOf(log);
+  return storeLogs.value.length - originalIndex;
+};
+
+const getErrorLogText = (): string => {
+  return errorLogText.value;
+};
+
+defineExpose({
+  getErrorLogText,
+});
 </script>
 
 <style scoped lang="scss">
+.logs {
+  @include flexify(column, flex-start, stretch, var(--gap-md));
+
+  & {
+    height: 100%;
+  }
+}
+
 .error-log-card {
   @include fit;
 
@@ -48,6 +113,29 @@ const { fallbackErrors, hasFallbackErrors, storeLogs, hasStoreLogs } = useAppLog
   &:last-child {
     margin-bottom: 0;
   }
+}
+
+.store-errors-header {
+  @include flexify(row, space-between, center, var(--gap-md));
+
+  & {
+    margin-bottom: var(--margin-md);
+  }
+
+  .section-title {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  @include mobile {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.log-filter {
+  width: 100%;
 }
 
 .section-title {
@@ -76,7 +164,8 @@ const { fallbackErrors, hasFallbackErrors, storeLogs, hasStoreLogs } = useAppLog
   flex-direction: column;
 }
 
-.no-errors {
+.no-errors,
+.no-filtered-logs {
   @include fontify(var(--font-size-base), var(--font-weight-normal), var(--fg-alt));
 
   & {

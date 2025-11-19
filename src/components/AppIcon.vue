@@ -1,10 +1,13 @@
 <template>
-  <div class="icon" :style="iconStyle" :class="[{ rounded, bordered }, size]">
+  <div class="icon" :style="iconStyle" :class="[{ rounded, bordered }, size, $attrs.class]">
     <q-icon v-bind="$props" color="inherit" :size="iconSize" />
   </div>
 </template>
 
 <script lang="ts" setup>
+defineOptions({
+  inheritAttrs: false,
+});
 import type { StyleSize, ThemeVariable } from 'orgnote-api';
 import type { QIconProps } from 'quasar';
 import { getCssVariableName } from 'src/utils/css-utils';
