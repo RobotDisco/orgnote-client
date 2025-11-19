@@ -9,7 +9,9 @@
       <visibility-wrapper tablet-below>
         <div @click="closeMainSidebar" v-if="sidebar.opened" class="backdrop"></div>
       </visibility-wrapper>
-      <router-view />
+      <safe-area>
+        <router-view />
+      </safe-area>
       <visibility-wrapper tablet-below>
         <main-footer />
       </visibility-wrapper>
@@ -26,6 +28,7 @@ import { api } from 'src/boot/api';
 import { ref } from 'vue';
 import { mobileOnly } from 'src/utils/platform-specific';
 import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
+import SafeArea from 'src/components/SafeArea.vue';
 
 const sidebar = api.ui.useSidebar();
 const sidebarRef = ref(null);
