@@ -24,7 +24,7 @@ const paddingStyle = computed(() => ({
 
 <style scoped lang="scss">
 .header-wrapper {
-  @include flexify(row, space-between, center, var(--gap-md));
+  @include flexify(row, left, center, var(--gap-md));
 
   @include desktop-below {
     padding-top: var(--padding-sm);
