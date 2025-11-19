@@ -94,7 +94,7 @@ import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
 import DropZoneOverlay from 'src/components/DropZoneOverlay.vue';
 import CommandActionButton from 'src/containers/CommandActionButton.vue';
 import { generateTabTitle } from 'src/utils/generate-tab-title';
-import { shallowRef, ref, onMounted } from 'vue';
+import { shallowRef, ref } from 'vue';
 import { provide } from 'vue';
 import { computed, watch } from 'vue';
 import type { Router } from 'vue-router';
@@ -106,10 +106,6 @@ import { isPresent } from 'src/utils/nullable-guards';
 const props = defineProps<{
   paneId: string;
 }>();
-
-onMounted(() => {
-  throw new Error('Test error from AppPane.vue');
-});
 
 const pane = api.core.usePane();
 const layout = api.core.useLayout();
