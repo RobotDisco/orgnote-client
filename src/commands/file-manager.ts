@@ -39,6 +39,10 @@ export function getFileManagerCommands(): Command[] {
       icon: 'folder',
       handler: (api: OrgNoteApi) => {
         const sidebar = api.ui.useSidebar();
+        if (sidebar.opened) {
+          sidebar.close();
+          return;
+        }
         sidebar.openComponent(
           defineAsyncComponent(() => import('src/containers/FileManager.vue')),
           {
