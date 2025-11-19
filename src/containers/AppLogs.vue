@@ -1,11 +1,11 @@
 <template>
   <div class="logs">
-            <app-dropdown
-              v-model="selectedLogLevelOption"
-              :options="logLevelOptions"
-              option-label="label"
-              class="log-filter"
-            >
+    <app-dropdown
+      v-model="selectedLogLevelOption"
+      :options="logLevelOptions"
+      option-label="label"
+      class="log-filter"
+    >
     </app-dropdown>
 
     <app-card class="error-log-card">
@@ -25,6 +25,7 @@
         </div>
 
         <p v-if="filteredLogs.length === 0" class="no-filtered-logs">
+          {{ $t(I18N.NO_LOGS_MATCH_BY_FILTER) }}
           No logs match the selected filter
         </p>
       </div>
