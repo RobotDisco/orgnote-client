@@ -28,7 +28,10 @@ export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
     const settingsStore = useSettingsStore();
 
     watch(currentFsInfo, () => {
-      settingsStore.settings.vault = currentFsInfo.value?.initialVault;
+      if (settingsStore.settings.vault) {
+        return;
+      }
+      settingsStore.settings.vault ??= currentFsInfo.value?.initialVault;
     });
 
     const normalizePath = (path: string | string[]): string => {

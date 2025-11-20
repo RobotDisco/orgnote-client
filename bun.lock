@@ -6,7 +6,6 @@
       "name": "orgnote-client",
       "dependencies": {
         "@capacitor/keyboard": "7.0.1",
-        "@capacitor/preferences": "^7.0.2",
         "@codemirror/autocomplete": "6.18.6",
         "@codemirror/language": "6.11.0",
         "@codemirror/state": "6.5.2",
@@ -283,8 +282,6 @@
     "@capacitor/filesystem": ["@capacitor/filesystem@7.0.1", "", { "peerDependencies": { "@capacitor/core": ">=7.0.0" } }, "sha512-dxuKNLFoUejm7tBKkQPs1j7+BLpDh5JKPSVu7nT8jgCbA/KXt5FoCLiepfkjWkYfq60X0JNFzGnIquc5FPOLzQ=="],
 
     "@capacitor/keyboard": ["@capacitor/keyboard@7.0.1", "", { "peerDependencies": { "@capacitor/core": ">=7.0.0" } }, "sha512-Gi064vOARMac+x9/DmEFeywN9oAETMf3OYsMuYm9gA8SvdsDJ3QJqMoFnSEIORYXe21Jzt2SIEdLlpT65P/b2g=="],
-
-    "@capacitor/preferences": ["@capacitor/preferences@7.0.2", "", { "peerDependencies": { "@capacitor/core": ">=7.0.0" } }, "sha512-JVCy0/oc6RsRencLOZ8rMqjNxAlHs7awPJU/MXqangsJ48oO2PnYGHfCvci6WgIJlqyC0QhvWZaO1BR1lVkHWQ=="],
 
     "@capacitor/status-bar": ["@capacitor/status-bar@7.0.1", "", { "peerDependencies": { "@capacitor/core": ">=7.0.0" } }, "sha512-iDv3mXYo9CdxYRVwt3/pRyuk25p7Sn4GfaS/zMZyVIqTzsvKLCIIH3GdKK+ta+nsNcAVpCw/t5jFEBt1D18ctA=="],
 
