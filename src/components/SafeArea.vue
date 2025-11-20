@@ -1,5 +1,5 @@
 <template>
-  <div class="safe-area" :class="{ enabled }">
+  <div class="safe-area" :class="{ enabled, fit }">
     <slot />
   </div>
 </template>
@@ -8,9 +8,12 @@
 withDefaults(
   defineProps<{
     enabled?: boolean;
+    /* Safe area will occupy 100% width */
+    fit?: boolean;
   }>(),
   {
     enabled: true,
+    fit: false,
   },
 );
 </script>
@@ -21,6 +24,10 @@ withDefaults(
     padding-top: env(safe-area-inset-top);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+  }
+
+  &.fit {
+    @include fit;
   }
 
   & {

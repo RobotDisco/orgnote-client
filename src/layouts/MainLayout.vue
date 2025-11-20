@@ -9,7 +9,7 @@
       <visibility-wrapper tablet-below>
         <div @click="closeMainSidebar" v-if="sidebar.opened" class="backdrop"></div>
       </visibility-wrapper>
-      <safe-area>
+      <safe-area fit>
         <router-view />
       </safe-area>
       <visibility-wrapper tablet-below>
