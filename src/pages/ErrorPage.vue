@@ -1,28 +1,30 @@
 <template>
   <page-wrapper padding constrained>
-    <container-layout gap="lg" :body-scroll="false">
-      <template #header>
-        <info-card
-          icon="sym_o_error"
-          :title="$t(I18N.CRITICAL_ERROR)"
-          :description="$t(I18N.ERROR_DESCRIPTION)"
-          type="danger"
-        />
-      </template>
+    <safe-area>
+      <container-layout gap="lg" :body-scroll="false">
+        <template #header>
+          <info-card
+            icon="sym_o_error"
+            :title="$t(I18N.CRITICAL_ERROR)"
+            :description="$t(I18N.ERROR_DESCRIPTION)"
+            type="danger"
+          />
+        </template>
 
-      <app-logs />
+        <app-logs />
 
-      <template #footer>
-        <card-wrapper>
-          <menu-item type="info" @click="copyToClipboard(errorLogText)">
-            {{ $t(I18N.COPY_LOG) }}
-          </menu-item>
-          <menu-item type="danger" @click="reload">
-            {{ $t(I18N.RELOAD) }}
-          </menu-item>
-        </card-wrapper>
-      </template>
-    </container-layout>
+        <template #footer>
+          <card-wrapper>
+            <menu-item type="info" @click="copyToClipboard(errorLogText)">
+              {{ $t(I18N.COPY_LOG) }}
+            </menu-item>
+            <menu-item type="danger" @click="reload">
+              {{ $t(I18N.RELOAD) }}
+            </menu-item>
+          </card-wrapper>
+        </template>
+      </container-layout>
+    </safe-area>
   </page-wrapper>
 </template>
 
@@ -36,6 +38,7 @@ import { useAppLogs } from 'src/composables/useAppLogs';
 import { copyToClipboard } from 'src/utils/clipboard';
 import MenuItem from 'src/containers/MenuItem.vue';
 import CardWrapper from 'src/components/CardWrapper.vue';
+import SafeArea from 'src/components/SafeArea.vue';
 
 const { errorLogText } = useAppLogs();
 
