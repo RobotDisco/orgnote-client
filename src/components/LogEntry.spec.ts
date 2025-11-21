@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { test, expect, vi } from 'vitest';
+import { test, expect, vi, beforeEach } from 'vitest';
 import LogEntry from './LogEntry.vue';
 import type { LogRecord } from 'orgnote-api';
 import * as clipboard from 'src/utils/clipboard';
@@ -14,6 +14,14 @@ vi.mock('src/boot/api', () => ({
   },
 }));
 
+const mockTranslate = vi.fn((key: string) => key);
+
+vi.mock('vue-i18n', () => ({
+  useI18n: () => ({
+    t: mockTranslate,
+  }),
+}));
+
 const createMockLog = (overrides?: Partial<LogRecord>): LogRecord => ({
   ts: new Date('2024-01-15T10:30:00.000Z'),
   level: 'error',
@@ -21,56 +29,53 @@ const createMockLog = (overrides?: Partial<LogRecord>): LogRecord => ({
   ...overrides,
 });
 
+const mountLogEntry = (log: LogRecord, position = 1) =>
+  mount(LogEntry, {
+    props: { log, position },
+  });
+
+beforeEach(() => {
+  mockTranslate.mockClear();
+});
+
 test('LogEntry displays position number', () => {
   const log = createMockLog();
-  const wrapper = mount(LogEntry, {
-    props: { log, position: 5 },
-  });
+  const wrapper = mountLogEntry(log, 5);
 
   expect(wrapper.find('.number').text()).toBe('[5]');
 });
 
 test('LogEntry displays formatted timestamp', () => {
   const log = createMockLog({ ts: new Date('2024-01-15T10:30:00.000Z') });
-  const wrapper = mount(LogEntry, {
-    props: { log, position: 1 },
-  });
+  const wrapper = mountLogEntry(log);
 
   expect(wrapper.find('.timestamp').text()).toBe('2024-01-15T10:30:00.000Z');
 });
 
 test('LogEntry displays log level in uppercase', () => {
   const log = createMockLog({ level: 'warn' });
-  const wrapper = mount(LogEntry, {
-    props: { log, position: 1 },
-  });
+  const wrapper = mountLogEntry(log);
 
   expect(wrapper.find('.level').text()).toBe('WARN');
 });
 
 test('LogEntry displays message', () => {
   const log = createMockLog({ message: 'Custom error message' });
-  const wrapper = mount(LogEntry, {
-    props: { log, position: 1 },
-  });
+  const wrapper = mountLogEntry(log);
 
   expect(wrapper.find('.message').text()).toBe('Custom error message');
 });
 
 test('LogEntry applies error class for error level', () => {
   const log = createMockLog({ level: 'error' });
-  const wrapper = mount(LogEntry, {
-    props: { log, position: 1 },
-  });
+  const wrapper = mountLogEntry(log);
 
   expect(wrapper.find('.error').exists()).toBe(true);
 });
 
 test('LogEntry applies warn class for warn level', () => {
   const log = createMockLog({ level: 'warn' });
-  const wrapper = mount(LogEntry, {
-    props: { log, position: 1 },
-  });
+  const wrapper = mountLogEntry(log);
 
   expect(wrapper.find('.warn').exists()).toBe(true);
 });
@@ -78,9 +83,7 @@ test('LogEntry applies warn class for warn level', () => {
 test('LogEntry copies message to clipboard when no stack', async () => {
   const copyToClipboardSpy = vi.spyOn(clipboard, 'copyToClipboard').mockResolvedValue();
   const log = createMockLog({ message: 'Test error', context: undefined });
-  const wrapper = mount(LogEntry, {
-    props: { log, position: 1 },
-  });
+  const wrapper = mountLogEntry(log);
 
   await wrapper.find('.log-entry').trigger('click');
 
@@ -96,9 +99,7 @@ test('LogEntry copies stack to clipboard when present', async () => {
     message: 'Test error',
     context: { stack: 'Error: Test error\n  at file.ts:42' },
   });
-  const wrapper = mount(LogEntry, {
-    props: { log, position: 1 },
-  });
+  const wrapper = mountLogEntry(log);
 
   await wrapper.find('.log-entry').trigger('click');
 
@@ -114,9 +115,7 @@ test('LogEntry copies context as JSON', async () => {
     message: 'Test error',
     context: { userId: '123', action: 'delete' },
   });
-  const wrapper = mount(LogEntry, {
-    props: { log, position: 1 },
-  });
+  const wrapper = mountLogEntry(log);
 
   await wrapper.find('.log-entry').trigger('click');
 

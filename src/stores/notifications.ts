@@ -19,7 +19,7 @@ export const useNotificationsStore = defineStore<'notifications', NotificationsS
     const { config } = storeToRefs(useConfigStore());
 
     const screenDetection = useScreenDetection();
-    const position = screenDetection.tabletBelow.value ? 'bottom' : 'bottom-right';
+    const position = screenDetection.tabletBelow.value ? 'top' : 'bottom-right';
 
     const notify = (notificationConfig: NotificationConfig): void => {
       const dismiss = Notify.create({

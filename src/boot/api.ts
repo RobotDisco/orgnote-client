@@ -48,6 +48,7 @@ import { useBufferStore } from 'src/stores/buffer';
 import { useLogStore } from 'src/stores/log';
 import type { Router } from 'vue-router';
 import { logger } from './logger';
+import { useSystemInfo } from 'src/composables/use-system-info';
 
 let api: OrgNoteApi;
 async function initApi(app: App, router: Router): Promise<void> {
@@ -73,6 +74,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useFileReader: useFileReaderStore,
       useBuffers: useBufferStore,
       useLog: useLogStore,
+      useSystemInfo,
       app,
     },
     utils: {

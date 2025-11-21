@@ -1,5 +1,10 @@
-import { test, expect } from 'vitest';
+import { test, expect, beforeEach } from 'vitest';
 import { useLogStore } from 'src/stores/log';
+import { createPinia, setActivePinia } from 'pinia';
+
+beforeEach(() => {
+  setActivePinia(createPinia());
+});
 
 test('ErrorPage integration with LogStore works', () => {
   const logStore = useLogStore();

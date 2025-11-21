@@ -3,7 +3,7 @@
     <div class="header">
       <span class="number">[{{ position }}]</span>
       <span class="timestamp">{{ formattedTimestamp }}</span>
-      <span class="level">{{ log.level.toUpperCase() }}</span>
+      <span class="level">{{ (log.level ?? '').toUpperCase() }}</span>
       <span v-if="hasRepeats" class="repeat">×{{ log.repeatCount }}</span>
     </div>
 
@@ -28,9 +28,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { LogRecord } from 'orgnote-api';
+import { I18N, type LogRecord } from 'orgnote-api';
 import { copyToClipboard } from 'src/utils/clipboard';
 import { api } from 'src/boot/api';
+import { useI18n } from 'vue-i18n';
 
 interface Props {
   log: LogRecord;
@@ -122,11 +123,13 @@ const formatLogAsText = (): string => {
   return parts.join('\n');
 };
 
+const { t } = useI18n();
+
 const handleClick = async (): Promise<void> => {
   const text = formatLogAsText();
   await copyToClipboard(text);
   api.core.useNotifications().notify({
-    message: 'Log copied to clipboard',
+    message: t(I18N.COPIED_TO_CLIPBOARD),
     level: 'info',
     timeout: 2000,
   });

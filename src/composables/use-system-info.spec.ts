@@ -1,0 +1,175 @@
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { useSystemInfo } from './use-system-info';
+import { createPinia, setActivePinia } from 'pinia';
+
+vi.mock('src/boot/api', () => ({
+  api: {
+    core: {
+      useQuasar: vi.fn(() => ({
+        platform: {
+          is: {
+            nativeMobile: false,
+            android: false,
+            ios: false,
+            desktop: true,
+            electron: false,
+            mobile: false,
+          },
+        },
+      })),
+      useConfig: vi.fn(() => ({
+        config: {
+          encryption: {
+            type: 'disabled',
+          },
+        },
+      })),
+    },
+  },
+}));
+
+const ORIGINAL_ENV = { ...process.env };
+
+beforeEach(() => {
+  setActivePinia(createPinia());
+  process.env.CLIENT = 'true';
+  process.env.API_URL = 'https://api.example.com';
+  process.env.AUTH_URL = 'https://auth.example.com';
+  process.env.NODE_ENV = 'test';
+  process.env.APP_VERSION = '1.2.3';
+
+  global.screen = {
+    width: 1920,
+    height: 1080,
+    colorDepth: 24,
+  } as Screen;
+
+  global.window = {
+    devicePixelRatio: 2,
+    navigator: {
+      language: 'en-US',
+      standalone: false,
+    },
+  } as unknown as Window & typeof globalThis;
+
+  global.navigator = {
+    language: 'en-US',
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+  } as Navigator;
+});
+
+afterEach(() => {
+  process.env = { ...ORIGINAL_ENV };
+});
+
+test('getSystemInfo returns complete system information', async () => {
+  const systemInfo = useSystemInfo();
+  const info = await systemInfo.getSystemInfo();
+
+  expect(info).toHaveProperty('version');
+  expect(info).toHaveProperty('language');
+  expect(info).toHaveProperty('screen');
+  expect(info).toHaveProperty('encryption');
+  expect(info).toHaveProperty('environment');
+  expect(info).toHaveProperty('platform');
+});
+
+test('getSystemInfo includes screen information', async () => {
+  const systemInfo = useSystemInfo();
+  const info = await systemInfo.getSystemInfo();
+
+  expect(info.screen).toHaveProperty('width');
+  expect(info.screen).toHaveProperty('height');
+  expect(info.screen).toHaveProperty('colorDepth');
+  expect(info.screen).toHaveProperty('pixelRatio');
+});
+
+test('getSystemInfo includes encryption information with disabled type', async () => {
+  const systemInfo = useSystemInfo();
+  const info = await systemInfo.getSystemInfo();
+
+  expect(info.encryption).toHaveProperty('type');
+  expect(info.encryption.type).toBe('disabled');
+});
+
+test('getSystemInfo includes environment information', async () => {
+  const systemInfo = useSystemInfo();
+  const info = await systemInfo.getSystemInfo();
+
+  expect(info.environment.apiUrl).toBe('https://api.example.com');
+  expect(info.environment.authUrl).toBe('https://auth.example.com');
+  expect(info.environment.mode).toBe('test');
+});
+
+test('getSystemInfo includes platform information', async () => {
+  const systemInfo = useSystemInfo();
+  const info = await systemInfo.getSystemInfo();
+
+  expect(info.platform).toHaveProperty('isNativeMobile');
+  expect(info.platform).toHaveProperty('isAndroid');
+  expect(info.platform).toHaveProperty('isIOS');
+  expect(info.platform).toHaveProperty('isDesktop');
+  expect(info.platform).toHaveProperty('isElectron');
+  expect(info.platform).toHaveProperty('isStandalone');
+});
+
+test('getTextSystemInfo returns formatted string with all sections', async () => {
+  const systemInfo = useSystemInfo();
+  const formatted = await systemInfo.getTextSystemInfo();
+
+  expect(formatted).toContain('OrgNote:');
+  expect(formatted).toContain('Language:');
+  expect(formatted).toContain('Screen:');
+  expect(formatted).toContain('Encryption:');
+  expect(formatted).toContain('Environment:');
+  expect(formatted).toContain('Platform:');
+});
+
+test('getTextSystemInfo includes encryption type disabled', async () => {
+  const systemInfo = useSystemInfo();
+  const formatted = await systemInfo.getTextSystemInfo();
+
+  expect(formatted).toContain('Type: disabled');
+});
+
+test('getTextSystemInfo omits device section for non-native platforms', async () => {
+  const systemInfo = useSystemInfo();
+  const formatted = await systemInfo.getTextSystemInfo();
+
+  expect(formatted).not.toContain('Device:');
+});
+
+test('platform info contains only boolean values', async () => {
+  const systemInfo = useSystemInfo();
+  const info = await systemInfo.getSystemInfo();
+
+  Object.values(info.platform).forEach((value) => {
+    expect(typeof value).toBe('boolean');
+  });
+});
+
+test('getSystemInfo returns safe defaults without navigator', async () => {
+  const systemInfo = useSystemInfo();
+  const originalNavigator = global.navigator;
+  const originalWindow = global.window;
+  const originalScreen = global.screen;
+
+  // @ts-expect-error - simulate SSR by removing globals
+  delete global.navigator;
+  // @ts-expect-error - simulate SSR by removing window
+  delete global.window;
+  // @ts-expect-error - simulate SSR by removing screen
+  delete global.screen;
+  process.env.CLIENT = 'false';
+
+  const info = await systemInfo.getSystemInfo();
+
+  expect(info.language).toBe('');
+  expect(info.screen.width).toBe(0);
+  expect(info.platform.isStandalone).toBe(false);
+
+  global.navigator = originalNavigator;
+  global.window = originalWindow;
+  global.screen = originalScreen;
+  process.env.CLIENT = 'true';
+});

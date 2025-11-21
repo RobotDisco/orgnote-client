@@ -26,7 +26,6 @@
 
         <p v-if="filteredLogs.length === 0" class="no-filtered-logs">
           {{ $t(I18N.NO_LOGS_MATCH_BY_FILTER) }}
-          No logs match the selected filter
         </p>
       </div>
 

@@ -1,8 +1,8 @@
 import { test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createSpectralLogger } from './logger';
 
-const createMockSpectral = () =>
-  class MockSpectral {
+function createMockSpectral() {
+  return class MockSpectral {
     info = vi.fn();
     error = vi.fn();
     warn = vi.fn();
@@ -10,6 +10,7 @@ const createMockSpectral = () =>
     log = vi.fn();
     child = vi.fn(() => new MockSpectral());
   };
+}
 
 vi.mock('spectrallogs', () => {
   const MockSpectral = createMockSpectral();

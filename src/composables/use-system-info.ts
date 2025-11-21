@@ -1,0 +1,208 @@
+import type {
+  SystemInfo,
+  SystemInfoDefinition,
+  ScreenInfo,
+  DeviceInfo,
+  EncryptionInfo,
+  EnvironmentInfo,
+  PlatformInfo,
+} from 'orgnote-api';
+import { version } from '../../package.json';
+import { api } from 'src/boot/api';
+import { Device } from '@capacitor/device';
+
+const isClientEnvironment = (): boolean => (process.env.CLIENT ?? '').toString() === 'true';
+const hasNavigator = (): boolean => isClientEnvironment() && typeof navigator !== 'undefined';
+const hasWindow = (): boolean => isClientEnvironment() && typeof window !== 'undefined';
+
+const getNavigatorLanguage = (): string => {
+  if (!hasNavigator()) {
+    return '';
+  }
+  return navigator.language ?? '';
+};
+
+const getStandaloneStatus = (): boolean => {
+  if (!hasWindow()) {
+    return false;
+  }
+  const navigatorWithStandalone = window.navigator as Navigator & { standalone?: boolean };
+  return Boolean(navigatorWithStandalone?.standalone);
+};
+
+const getScreenInfo = (): ScreenInfo => {
+  if (!hasWindow() || typeof screen === 'undefined') {
+    return { width: 0, height: 0, colorDepth: 0, pixelRatio: 1 };
+  }
+  return {
+    width: screen.width,
+    height: screen.height,
+    colorDepth: screen.colorDepth,
+    pixelRatio: window.devicePixelRatio ?? 1,
+  };
+};
+
+const getEncryptionInfo = (): EncryptionInfo => {
+  if (!api?.core?.useConfig) {
+    return { type: 'disabled' };
+  }
+
+  const { config } = api.core.useConfig();
+  const encryption = config.encryption;
+
+  if (encryption.type === 'disabled') {
+    return { type: 'disabled' };
+  }
+
+  if (encryption.type === 'gpgPassword') {
+    return {
+      type: 'gpgPassword',
+      passwordProvided: !!encryption.password,
+    };
+  }
+
+  return {
+    type: 'gpgKeys',
+    publicKeyProvided: !!encryption.publicKey,
+    privateKeyProvided: !!encryption.privateKey,
+    passphraseProvided: !!encryption.privateKeyPassphrase,
+  };
+};
+
+const getPlatformInfo = (): PlatformInfo => {
+  const platform = api?.core?.useQuasar?.()?.platform?.is;
+
+  return {
+    isNativeMobile: platform?.nativeMobile ?? false,
+    isAndroid: platform?.android ?? false,
+    isIOS: platform?.ios ?? false,
+    isDesktop: platform?.desktop ?? true,
+    isElectron: platform?.electron ?? false,
+    isStandalone: getStandaloneStatus(),
+  };
+};
+
+const getEnvironmentInfo = (): EnvironmentInfo => ({
+  apiUrl: process.env.API_URL || '',
+  authUrl: process.env.AUTH_URL || '',
+  mode: process.env.NODE_ENV || '',
+});
+
+const getDeviceInfo = async (): Promise<DeviceInfo | undefined> => {
+  const $q = api?.core?.useQuasar?.();
+  if (!$q?.platform?.is?.nativeMobile) return undefined;
+
+  try {
+    const info = await Device.getInfo();
+    return {
+      model: info.model,
+      manufacturer: info.manufacturer,
+      osVersion: info.osVersion,
+      androidSDKVersion: $q.platform.is.android ? Number(info.androidSDKVersion) : undefined,
+    };
+  } catch {
+    return undefined;
+  }
+};
+
+const getSystemInfo = async (): Promise<SystemInfo> => {
+  const [device] = await Promise.all([getDeviceInfo()]);
+
+  return {
+    version,
+    language: getNavigatorLanguage(),
+    screen: getScreenInfo(),
+    encryption: getEncryptionInfo(),
+    environment: getEnvironmentInfo(),
+    platform: getPlatformInfo(),
+    device,
+  };
+};
+
+const formatHeader = (info: SystemInfo): string[] => [
+  `OrgNote: ${info.version}`,
+  `Language: ${info.language}`,
+];
+
+const formatScreen = (screen: ScreenInfo): string[] => [
+  '',
+  'Screen:',
+  `  Resolution: ${screen.width}x${screen.height}`,
+  `  Color depth: ${screen.colorDepth}`,
+  `  Pixel ratio: ${screen.pixelRatio}`,
+];
+
+const formatEncryptionDetails = (info: EncryptionInfo): string[] => {
+  if (info.type === 'gpgPassword') {
+    return [`  Password provided: ${info.passwordProvided}`];
+  }
+  if (info.type === 'gpgKeys') {
+    return [
+      `  Public key provided: ${info.publicKeyProvided}`,
+      `  Private key provided: ${info.privateKeyProvided}`,
+      `  Passphrase provided: ${info.passphraseProvided}`,
+    ];
+  }
+  return [];
+};
+
+const formatEncryption = (info: EncryptionInfo): string[] => {
+  const base = ['', 'Encryption:', `  Type: ${info.type}`];
+  return [...base, ...formatEncryptionDetails(info)];
+};
+
+const formatEnvironment = (env: EnvironmentInfo): string[] => [
+  '',
+  'Environment:',
+  `  API URL: ${env.apiUrl}`,
+  `  AUTH URL: ${env.authUrl}`,
+  `  Mode: ${env.mode}`,
+];
+
+const formatPlatform = (platform: PlatformInfo): string[] => {
+  const lines = ['', 'Platform:'];
+  const entries = Object.entries(platform)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `  ${key}: ${value}`);
+
+  return [...lines, ...entries];
+};
+
+const formatDevice = (device?: DeviceInfo): string[] => {
+  if (!device) {
+    return [];
+  }
+
+  const lines = [
+    '',
+    'Device:',
+    `  Model: ${device.model}`,
+    `  Manufacturer: ${device.manufacturer}`,
+    `  OS Version: ${device.osVersion}`,
+  ];
+
+  if (device.androidSDKVersion !== undefined) {
+    lines.push(`  Android SDK: ${device.androidSDKVersion}`);
+  }
+
+  return lines;
+};
+
+const getTextSystemInfo = async (): Promise<string> => {
+  const info = await getSystemInfo();
+  const sections = [
+    formatHeader(info),
+    formatScreen(info.screen),
+    formatEncryption(info.encryption),
+    formatEnvironment(info.environment),
+    formatPlatform(info.platform),
+    formatDevice(info.device),
+  ];
+
+  return sections.flat().join('\n');
+};
+
+export const useSystemInfo = (): SystemInfoDefinition => ({
+  getSystemInfo,
+  getTextSystemInfo,
+});
