@@ -38,7 +38,7 @@ test('CREATE_NOTE command calls OPEN_NOTE after successful file creation', async
   expect(createNoteCommand).toBeDefined();
   if (isNullable(createNoteCommand)) return;
 
-  await createNoteCommand.handler(mockApi as OrgNoteApi);
+  await createNoteCommand.handler(mockApi as OrgNoteApi, { data: {}, meta: {} });
 
   expect(mockFileManager.path).toBe(mockDirPath);
   expect(mockCommands.execute).toHaveBeenCalledWith(DefaultCommands.OPEN_NOTE, {
@@ -65,7 +65,7 @@ test('CREATE_NOTE command does not call OPEN_NOTE when file creation fails', asy
 
   if (isNullable(createNoteCommand)) return;
 
-  await createNoteCommand.handler(mockApi as OrgNoteApi);
+  await createNoteCommand.handler(mockApi as OrgNoteApi, { data: {}, meta: {} });
 
   expect(mockCommands.execute).not.toHaveBeenCalled();
 });

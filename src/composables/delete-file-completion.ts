@@ -3,10 +3,10 @@ import { dirItemsGetter } from 'src/utils/dir-items-getter';
 
 export const deleteFileCompletion = async (
   api: OrgNoteApi,
-  filePath: string,
+  filePath?: string,
 ): Promise<string | undefined> => {
   const fm = api.core.useFileManager();
-  const deletedFilePath = await getDeleteFileName(api, fm.focusFile?.path ?? filePath);
+  const deletedFilePath = await getDeleteFileName(api, fm.focusFile?.path ?? filePath ?? '/');
 
   if (!deletedFilePath) {
     return;
@@ -29,6 +29,7 @@ export const deleteFileCompletion = async (
 
 const getDeleteFileName = async (api: OrgNoteApi, filePath: string): Promise<string> => {
   const completion = api.core.useCompletion();
+  console.log('✎: [line 31][delete-file-completion.ts] filePath: ', filePath);
 
   return await completion.open<DiskFile, string>({
     type: 'input-choice',

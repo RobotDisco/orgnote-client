@@ -1,5 +1,5 @@
 import type { CommandHandlerParams, OrgNoteApi } from 'orgnote-api';
-import { DefaultCommands, type Command } from 'orgnote-api';
+import { DefaultCommands, I18N, type Command } from 'orgnote-api';
 import { reporter } from 'src/boot/report';
 import { createFileCompletion } from 'src/composables/create-file-completion';
 import { createFolderCompletion } from 'src/composables/create-folder-completion';
@@ -100,9 +100,40 @@ export function getFileManagerCommands(): Command[] {
       command: DefaultCommands.DELETE_FILE,
       group,
       icon: 'sym_o_delete',
-      handler: async (api: OrgNoteApi, params?: CommandHandlerParams<string>) => {
-        if (isNullable(params?.data)) return;
-        await deleteFileCompletion(api, params.data);
+      handler: async (
+        api: OrgNoteApi,
+        params: CommandHandlerParams<{
+          path?: string;
+          force?: boolean;
+        }>,
+      ) => {
+        console.log('✎: [line 106][file-manager.ts<commands>] params: ', params);
+        if (!params.data) {
+          await deleteFileCompletion(api);
+          return;
+        }
+
+        const fs = api.core.useFileSystem();
+        if (params?.data?.force) {
+          await fs.deleteFile(params.data.path!);
+          return;
+        }
+
+        if (isNullable(params?.data?.path)) {
+          return;
+        }
+
+        const confirmModal = api.ui.useConfirmationModal();
+        const del = await confirmModal.confirm({
+          title: I18N.CONFIRM_DELETE_FILE,
+          message: params.data.path,
+        });
+
+        if (!del) {
+          return;
+        }
+        await fs.deleteFile(params.data.path);
+        return;
       },
     },
   ];

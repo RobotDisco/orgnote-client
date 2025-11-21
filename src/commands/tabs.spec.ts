@@ -72,7 +72,7 @@ test('TABS command calls useTabCompletion', async () => {
 
   expect(tabsCommand).toBeDefined();
 
-  await tabsCommand!.handler(mockApi);
+  await tabsCommand!.handler(mockApi, { data: {}, meta: {} });
 
   expect(useTabCompletion).toHaveBeenCalledWith(mockApi);
 });

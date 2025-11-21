@@ -69,7 +69,7 @@ test('openSettingsRoute opens settings modal with wide layout', async () => {
 
   expect(settingsCommand).toBeDefined();
   if (settingsCommand) {
-    settingsCommand.handler(mockApi as never);
+    settingsCommand.handler(mockApi as never, { data: {}, meta: {} });
   }
 
   expect(mockModal.open).toHaveBeenCalledWith(
@@ -92,7 +92,7 @@ test('openSettingsRoute reuses existing modal without reopening', async () => {
   mockModal.component = TheSettingsComponent;
 
   if (settingsCommand) {
-    settingsCommand.handler(mockApi as never);
+    settingsCommand.handler(mockApi as never, { data: {}, meta: {} });
   }
 
   expect(mockModal.open).not.toHaveBeenCalled();

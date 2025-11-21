@@ -1,5 +1,6 @@
 <template>
   <menu-item @contextmenu.stop.prevent="openContextMenu()" :size="size" :active="active">
+    <!-- TODO: feat/stable-beta wrap with versatile context menu wrapper with provided key! -->
     <div class="file-info" ref="fileManageItemRef">
       <app-icon
         :name="file?.type === 'directory' || root ? 'sym_o_folder' : 'sym_o_draft'"
@@ -23,7 +24,7 @@
         :items="actionItems"
         ref="contextMenuRef"
         :target="fileManageItemRef"
-        :data="file?.path"
+        :data="{ path: file?.path }"
       />
     </div>
   </menu-item>
