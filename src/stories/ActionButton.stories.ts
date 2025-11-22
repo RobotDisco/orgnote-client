@@ -85,3 +85,26 @@ export const WithText: StoryObj<typeof ActionButton> = {
     template: `<story-list :items="listItems" />`,
   }),
 };
+
+export const WithAlignment: StoryObj<typeof ActionButton> = {
+  args: {
+    icon: 'sym_o_expand_content',
+    alignment: 'space-between',
+    outline: true,
+  },
+  render: (args) => ({
+    components: { StoryList, ActionButton, AppIcon },
+    setup() {
+      const listItems = computed(() => {
+        return sizes.map((size, i) => ({
+          component: ActionButton,
+          props: { ...args, size, style: 'width: 200px' },
+          description: size,
+          slots: { text: `Text ${i}` },
+        }));
+      });
+      return { args, listItems };
+    },
+    template: `<story-list :items="listItems" />`,
+  }),
+};

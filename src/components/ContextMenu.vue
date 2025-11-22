@@ -1,61 +1,94 @@
 <template>
-  <context-menu-wrapper :target="target" ref="contextMenuWrapperRef">
-    <div v-for="command of items" :key="command" class="context-menu-item">
-      <command-action-button
-        @click="handleItem()"
-        :command="command"
-        :data="data"
-        include-text
-        size="sm"
-      />
-    </div>
-  </context-menu-wrapper>
+  <div ref="wrapperRef" class="context-menu-trigger" @contextmenu.stop.prevent="handleContextMenu">
+    <slot />
+    <q-menu v-if="!disabled" context-menu :target="wrapperRef" ref="qMenuRef">
+      <div v-for="(item, index) of actions" :key="index" class="context-menu-item">
+        <command-action-button
+          v-if="isCommandAction(item)"
+          @click="handleItem()"
+          :command="item.command"
+          alignment="left"
+          :data="data"
+          include-text
+          size="sm"
+        />
+        <action-button v-else @click="handleManualAction(item)" :icon="item.icon" size="sm">
+          <template v-if="item.title" #text>{{ item.title }}</template>
+        </action-button>
+      </div>
+    </q-menu>
+  </div>
 </template>
 
-<script lang="ts">
-export interface ContextMenuItem {
-  label?: string;
-  icon?: string;
-}
-</script>
-
 <script lang="ts" setup>
-import { ref } from 'vue';
-import ContextMenuWrapper from './ContextMenuWrapper.vue';
-import { onClickOutside } from '@vueuse/core';
-import type { CommandName } from 'orgnote-api';
+import { computed, ref } from 'vue';
+import { QMenu } from 'quasar';
+import type {
+  ContextMenuAction,
+  ContextMenuActionCommand,
+  ContextMenuGroup,
+  ContextMenuManualAction,
+} from 'orgnote-api';
 import CommandActionButton from 'src/containers/CommandActionButton.vue';
+import ActionButton from 'src/components/ActionButton.vue';
+import { api } from 'src/boot/api';
 
-defineProps<{
-  target?: boolean | string | Element;
-  items: CommandName[];
+const props = defineProps<{
+  group: ContextMenuGroup;
   data?: unknown;
+  disabled?: boolean;
 }>();
 
-const contextMenuWrapperRef = ref<InstanceType<typeof ContextMenuWrapper> | null>(null);
+const emit = defineEmits<{
+  open: [];
+}>();
+
+const qMenuRef = ref<InstanceType<typeof QMenu>>();
+const wrapperRef = ref<HTMLElement>();
+
+const contextMenuStore = api.ui.useContextMenu();
+
+const actions = computed<ContextMenuAction[]>(() =>
+  contextMenuStore.getContextMenuActions(props.group),
+);
+
+const isCommandAction = (item: ContextMenuAction): item is ContextMenuActionCommand =>
+  'command' in item;
+
+const handleContextMenu = () => {
+  if (props.disabled) return;
+  open();
+};
 
 const open = () => {
-  contextMenuWrapperRef.value?.open();
+  emit('open');
+  qMenuRef.value?.show();
 };
 
 const close = () => {
-  contextMenuWrapperRef.value?.close();
+  qMenuRef.value?.hide();
 };
 
 defineExpose({
   open,
+  close,
 });
 
 const handleItem = () => {
   close();
 };
 
-onClickOutside(contextMenuWrapperRef, () => {
-  contextMenuWrapperRef.value?.close();
-});
+const handleManualAction = (item: ContextMenuManualAction) => {
+  item.handler(props.data);
+  close();
+};
 </script>
 
 <style lang="scss" scoped>
+.context-menu-trigger {
+  display: contents;
+}
+
 .context-menu-item {
   @include flexify(row, flex-start, center, var(--gap-sm));
 

@@ -49,6 +49,7 @@ import { useLogStore } from 'src/stores/log';
 import type { Router } from 'vue-router';
 import { logger } from './logger';
 import { useSystemInfo } from 'src/composables/use-system-info';
+import { useContextMenuStore } from 'src/stores/context-menu';
 
 let api: OrgNoteApi;
 async function initApi(app: App, router: Router): Promise<void> {
@@ -108,6 +109,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useSettingsUi: useSettingsUiStore,
       useConfirmationModal,
       useScreenDetection,
+      useContextMenu: useContextMenuStore,
     },
     vue: {
       router,

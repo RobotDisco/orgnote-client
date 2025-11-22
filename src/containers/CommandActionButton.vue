@@ -5,6 +5,7 @@
     :icon="extractDynamicValue(command.icon)"
     :size="size"
     classes="action-btn"
+    :alignment="alignment"
   >
     <template v-if="includeText || text" #text>{{
       text || camelCaseToWords(command.command)
@@ -13,7 +14,7 @@
 </template>
 
 <script lang="ts" setup>
-import ActionButton from 'src/components/ActionButton.vue';
+import ActionButton, { type ButtonAlignment } from 'src/components/ActionButton.vue';
 import type { CommandName, StyleSize } from 'orgnote-api';
 import { useCommandsStore } from 'src/stores/command';
 import { computed } from 'vue';
@@ -24,6 +25,7 @@ import { api } from 'src/boot/api';
 const props = withDefaults(
   defineProps<{
     command: CommandName;
+    alignment?: ButtonAlignment;
     size?: StyleSize;
     includeText?: boolean;
     text?: string;
@@ -31,6 +33,7 @@ const props = withDefaults(
   }>(),
   {
     size: 'md',
+    alignment: 'center',
   },
 );
 

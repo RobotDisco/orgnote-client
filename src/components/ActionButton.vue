@@ -25,6 +25,8 @@ import { getCssVariableName } from 'src/utils/css-utils';
 import { copyToClipboard } from 'src/utils/clipboard';
 import type { StyleSize, ThemeVariable } from 'orgnote-api';
 
+export type ButtonAlignment = 'center' | 'space-between' | 'left' | 'right';
+
 const props = withDefaults(
   defineProps<{
     icon?: string;
@@ -38,6 +40,7 @@ const props = withDefaults(
     border?: boolean;
     classes?: string;
     copyText?: string;
+    alignment?: ButtonAlignment;
   }>(),
   {
     active: false,
@@ -45,6 +48,7 @@ const props = withDefaults(
     color: 'fg',
     classes: '',
     fireColor: 'red',
+    alignment: 'center',
   },
 );
 
@@ -75,7 +79,7 @@ const slots = useSlots();
 
 <style lang="scss" scoped>
 button {
-  @include flexify(row, center, center, var(--gap-sm));
+  @include flexify(row, v-bind(alignment), center, var(--gap-sm));
 
   & {
     padding: var(--btn-action-padding);
@@ -111,7 +115,6 @@ button {
 
   &.text {
     width: var(--btn-action-text-width);
-    justify-content: center;
   }
 
   &:not(.outline) {
