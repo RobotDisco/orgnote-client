@@ -72,9 +72,10 @@ test('TABS command calls useTabCompletion', async () => {
 
   expect(tabsCommand).toBeDefined();
 
-  await tabsCommand!.handler(mockApi, { data: {}, meta: {} });
+  const params = { data: {}, meta: {} };
+  await tabsCommand!.handler(mockApi, params);
 
-  expect(useTabCompletion).toHaveBeenCalledWith(mockApi);
+  expect(useTabCompletion).toHaveBeenCalledWith(mockApi, params);
 });
 
 test('NEW_TAB should not execute when no active pane', async () => {

@@ -1,7 +1,7 @@
 import { I18N, isOrgFile, type DiskFile, type OrgNoteApi } from 'orgnote-api';
 import { ORG_EXTENSION } from 'src/constants/org-file-extension';
 import { createDirPath } from 'src/utils/create-dir-path';
-import { dirItemsGetter } from 'src/utils/dir-items-getter';
+import { createDirItemsGetter } from 'src/utils/dir-items-getter';
 
 export const createFileCompletion = async (api: OrgNoteApi): Promise<string> => {
   const fm = api.core.useFileManager();
@@ -26,6 +26,6 @@ const getNewFileName = async (api: OrgNoteApi, filePath: string): Promise<string
     type: 'input-choice',
     searchText: createDirPath(filePath),
     placeholder: I18N.FILE_NAME,
-    itemsGetter: (filter) => dirItemsGetter(api, filter),
+    itemsGetter: createDirItemsGetter(api),
   });
 };

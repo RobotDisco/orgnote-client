@@ -46,10 +46,20 @@ const toggleFullScreen = () => {
 };
 
 const handleCompletionInput = () => {
-  const isInputChoice = completion.activeCompletion!.type === 'input-choice';
-  if (isInputChoice) {
-    completion.close(completion.activeCompletion!.searchQuery);
+  const activeCompletion = completion.activeCompletion!;
+  const selectedIndex = activeCompletion.selectedCandidateIndex ?? 0;
+  const selectedCandidate = activeCompletion.candidates?.[selectedIndex];
+
+  const canSelectCandidate =
+    activeCompletion.type === 'choice' || activeCompletion.type === 'input-choice';
+
+  if (canSelectCandidate && selectedCandidate) {
+    selectedCandidate.commandHandler(selectedCandidate.data);
     return;
+  }
+
+  if (activeCompletion.type === 'input-choice') {
+    completion.close(activeCompletion.searchQuery);
   }
 };
 

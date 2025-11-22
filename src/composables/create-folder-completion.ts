@@ -1,5 +1,5 @@
 import { I18N, type DiskFile, type OrgNoteApi } from 'orgnote-api';
-import { dirItemsGetter } from 'src/utils/dir-items-getter';
+import { createDirItemsGetter } from 'src/utils/dir-items-getter';
 
 export const createFolderCompletion = async (api: OrgNoteApi): Promise<string> => {
   const fm = api.core.useFileManager();
@@ -20,6 +20,6 @@ const getNewFolderName = async (api: OrgNoteApi, filePath: string): Promise<stri
     type: 'input-choice',
     searchText: filePath,
     placeholder: I18N.FOLDER_NAME,
-    itemsGetter: (filter) => dirItemsGetter(api, filter),
+    itemsGetter: createDirItemsGetter(api),
   });
 };

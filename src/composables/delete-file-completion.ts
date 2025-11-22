@@ -1,5 +1,5 @@
 import { getFileName, I18N, type DiskFile, type OrgNoteApi } from 'orgnote-api';
-import { dirItemsGetter } from 'src/utils/dir-items-getter';
+import { createDirItemsGetter } from 'src/utils/dir-items-getter';
 
 export const deleteFileCompletion = async (
   api: OrgNoteApi,
@@ -29,12 +29,11 @@ export const deleteFileCompletion = async (
 
 const getDeleteFileName = async (api: OrgNoteApi, filePath: string): Promise<string> => {
   const completion = api.core.useCompletion();
-  console.log('✎: [line 31][delete-file-completion.ts] filePath: ', filePath);
 
   return await completion.open<DiskFile, string>({
-    type: 'input-choice',
+    type: 'choice',
     searchText: filePath,
     placeholder: I18N.FILE_NAME,
-    itemsGetter: (filter) => dirItemsGetter(api, filter, true),
+    itemsGetter: createDirItemsGetter(api, true),
   });
 };
