@@ -117,7 +117,6 @@ export const useCompletionStore = defineStore<'completion-store', CompletionStor
       }
       const { config } = useConfigStore();
       limit = config.completion.defaultCompletionLimit;
-      activeCompletion.value.selectedCandidateIndex = 0;
 
       const res = activeCompletion.value.itemsGetter(
         activeCompletion.value.searchQuery,
@@ -140,6 +139,7 @@ export const useCompletionStore = defineStore<'completion-store', CompletionStor
       if (!offset) {
         activeCompletion.value.candidates = r.result;
         activeCompletion.value.total = r.total;
+        activeCompletion.value.selectedCandidateIndex = 0;
         return;
       }
       if (!activeCompletion.value.candidates) {

@@ -79,6 +79,7 @@ const executeCompletionItem = async (e: MouseEvent) => {
     padding: var(--completion-item-padding);
   }
 
+  &.selected,
   &:hover,
   &:active {
     background: color-mix(in srgb, var(--fg), var(--bg) 90%);
