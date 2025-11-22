@@ -1,14 +1,22 @@
 <template>
   <div class="confirmation-modal">
     <h5 v-if="title" class="title capitalize">{{ t(title) }}</h5>
-    <div v-if="message" class="message capitalize">{{ t(message) }}</div>
+
+    <card-wrapper v-if="message">
+      <menu-item>
+        <div class="message capitalize">{{ t(message) }}</div>
+      </menu-item>
+    </card-wrapper>
+
     <div class="actions">
-      <app-button @click="resolver(true)" type="danger">{{
-        t(confirmText ?? I18N.CONFIRM)
-      }}</app-button>
-      <app-button @click="resolver(false)" type="info">{{
-        t(cancelText ?? I18N.CANCEL)
-      }}</app-button>
+      <card-wrapper>
+        <menu-item type="danger" @click="resolver(true)">
+          {{ t(confirmText ?? I18N.CONFIRM) }}
+        </menu-item>
+        <menu-item @click="resolver(false)">
+          {{ t(cancelText ?? I18N.CANCEL) }}
+        </menu-item>
+      </card-wrapper>
     </div>
   </div>
 </template>
@@ -16,8 +24,9 @@
 <script lang="ts" setup>
 import type { ConfirmationModalParams } from 'orgnote-api';
 import { I18N } from 'orgnote-api';
-import AppButton from './AppButton.vue';
 import { useI18n } from 'vue-i18n';
+import CardWrapper from './CardWrapper.vue';
+import MenuItem from 'src/containers/MenuItem.vue';
 defineProps<
   {
     resolver: (data?: boolean) => void;

@@ -94,9 +94,10 @@ dialog {
   @include flexify(column, flex-start, stretch);
 
   & {
+    min-width: var(--modal-min-width);
     max-width: var(--modal-max-width);
     max-height: var(--modal-max-height);
-    margin: var(--modal-safe-margin) auto;
+    margin: auto;
     border: var(--modal-border);
     border-radius: var(--modal-border-radius);
     padding: 0;
@@ -175,10 +176,12 @@ dialog.full-screen {
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
+    padding-bottom: var(--device-padding-bottom, 0px);
   }
 
   &:not(.no-padding) {
     padding: var(--modal-padding);
+    padding-bottom: calc(var(--modal-padding) + var(--device-padding-bottom, 0px));
   }
 
   div {

@@ -21,9 +21,10 @@ withDefaults(
 <style lang="scss" scoped>
 .safe-area {
   &.enabled {
-    padding-top: env(safe-area-inset-top);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--device-padding-bottom, 0px));
   }
 
   &.fit {
@@ -32,7 +33,6 @@ withDefaults(
 
   & {
     min-height: 0;
-    padding-bottom: env(safe-area-inset-bottom);
     box-sizing: border-box;
   }
 }

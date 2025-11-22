@@ -96,8 +96,8 @@ body {
   --modal-border-radius: var(--border-radius-md);
   --modal-padding: var(--padding-lg);
   --modal-max-width: min(1280px, calc(100vw - var(--padding-xl)));
+  --modal-min-width: 460px;
   --modal-max-height: min(860px, calc(100vh - 2 * var(--padding-xl)));
-  --modal-safe-margin: var(--padding-xl);
 
   // Cards
   --card-padding: var(--padding-lg);
@@ -207,10 +207,11 @@ body {
   body {
     --modal-max-width: 100%;
     --modal-max-height: 100%;
+    --modal-min-width: 100%;
     --modal-border: none;
+    --modal-border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
 
     --footer-height: 60px;
-    --modal-mini-padding-bottom: 32px;
 
     --tab-overview-container-padding: var(--padding-sm);
     --tab-overview-grid-gap: var(--gap-md);

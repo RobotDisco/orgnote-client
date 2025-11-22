@@ -1,6 +1,7 @@
 <template>
   <div
     class="menu-item"
+    role="button"
     :class="[{ disabled }, type, `prefer-${prefer}`, `size-${size}`, { active }]"
     :style="{ '--menu-item-lines': lines, '--current-menu-item-height': itemHeight }"
   >
