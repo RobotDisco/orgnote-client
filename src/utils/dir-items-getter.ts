@@ -44,14 +44,12 @@ export const createDirItemsGetter = (api: OrgNoteApi, includeFiles: boolean = fa
       total: results.length,
       result: results.map((item) => ({
         icon: item.type === 'directory' ? 'sym_o_folder' : 'sym_o_description',
-        title: item.path,
+        title: item.type === 'directory' ? `${item.path}/` : item.path,
         data: item,
-        commandHandler: (data: DiskFile) => {
-          completion.close(data.path);
+        commandHandler: (file: DiskFile) => {
+          completion.close(file.type === 'directory' ? `${file.path}/` : file.path);
         },
       })),
     };
   };
 };
-
-

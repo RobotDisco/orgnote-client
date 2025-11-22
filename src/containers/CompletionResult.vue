@@ -18,6 +18,7 @@
             :index="index"
             :selected="index === completion.activeCompletion!.selectedCandidateIndex"
             rounded
+            @select="$emit('select')"
           />
         </keep-alive>
       </template>
@@ -35,6 +36,10 @@ import { computed } from 'vue';
 import { DEFAULT_COMPLETIO_ITEM_HEIGHT } from 'src/constants/completion-item';
 import type { GroupedCompletionCandidate } from 'src/models/grouped-completion-candidate';
 import { extractDynamicValue } from 'src/utils/extract-dynamic-value';
+
+defineEmits<{
+  select: [];
+}>();
 
 const completion = api.core.useCompletion();
 const { config } = storeToRefs(api.core.useConfig());

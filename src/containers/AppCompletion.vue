@@ -8,11 +8,11 @@
   >
     <template #header>
       <div class="header">
-        <completion-input :placeholder="placeholder" />
+        <completion-input ref="completionInputRef" :placeholder="placeholder" />
       </div>
     </template>
     <template #body>
-      <completion-result v-if="activeCompletion!.candidates?.length" />
+      <completion-result v-if="activeCompletion!.candidates?.length" @select="handleResultSelect" />
       <div v-else class="not-found" :style="{ height: completionItemHeight + 'px' }">
         {{ t(I18N.NOT_FOUND).toUpperCase() }}
       </div>
@@ -28,6 +28,7 @@
 <script lang="ts" setup>
 import { I18N, type CompletionConfig } from 'orgnote-api';
 import CompletionInput from './CompletionInput.vue';
+import { ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { api } from 'src/boot/api';
 import CompletionResult from './CompletionResult.vue';
@@ -44,6 +45,9 @@ defineProps<
 const { config } = storeToRefs(api.ui.useModal());
 const completionStore = api.core.useCompletion();
 const { activeCompletion } = storeToRefs(completionStore);
+
+const completionInputRef = ref<InstanceType<typeof CompletionInput> | null>(null);
+const handleResultSelect = () => completionInputRef.value?.focusInput?.();
 
 const completionItemHeight = computed(
   () => activeCompletion.value!.itemHeight ?? DEFAULT_COMPLETIO_ITEM_HEIGHT,

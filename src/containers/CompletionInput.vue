@@ -28,7 +28,7 @@ import ActionButton from 'src/components/ActionButton.vue';
 import AppIcon from 'src/components/AppIcon.vue';
 import AppInput from 'src/components/AppInput.vue';
 import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
-import { ref } from 'vue';
+import { ref, defineExpose } from 'vue';
 
 defineProps<{
   placeholder?: string;
@@ -50,20 +50,26 @@ const handleCompletionInput = () => {
   const selectedIndex = activeCompletion.selectedCandidateIndex ?? 0;
   const selectedCandidate = activeCompletion.candidates?.[selectedIndex];
 
-  const canSelectCandidate =
-    activeCompletion.type === 'choice' || activeCompletion.type === 'input-choice';
-
-  if (canSelectCandidate && selectedCandidate) {
-    selectedCandidate.commandHandler(selectedCandidate.data);
+  if (activeCompletion.type === 'choice' && selectedCandidate) {
+    selectedCandidate.commandHandler?.(selectedCandidate.data);
     return;
   }
 
   if (activeCompletion.type === 'input-choice') {
     completion.close(activeCompletion.searchQuery);
+    return;
   }
 };
 
 const appInputRef = ref<InstanceType<typeof AppInput> | null>(null);
+
+const focusInput = () => {
+  appInputRef.value?.focus?.();
+};
+
+defineExpose({
+  focusInput,
+});
 </script>
 
 <style lang="scss" scoped>

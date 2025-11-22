@@ -14,9 +14,7 @@
     <app-icon v-if="item.icon" :name="extractDynamicValue(item.icon)" size="md" bordered></app-icon>
     <div class="text-bold color-main">
       <div class="line-limit-1">
-        <div class="capitalize">
-          {{ extractDynamicValue(item.title) }}
-        </div>
+        {{ extractDynamicValue(item.title) }}
       </div>
     </div>
     <div>
@@ -42,9 +40,39 @@ const props = defineProps<{
   index: number;
 }>();
 
+const emit = defineEmits<{
+  select: [];
+}>();
+
 const completion = api.core.useCompletion();
 
 let lastCoords = [0, 0];
+const applyCandidateToInput = (index: number) => {
+  const activeCompletion = completion.activeCompletion;
+  if (!activeCompletion) {
+    return;
+  }
+
+  const candidate = activeCompletion.candidates?.[index];
+  if (!candidate) {
+    return;
+  }
+
+  activeCompletion.selectedCandidateIndex = index;
+
+  if (activeCompletion.type === 'choice') {
+    candidate.commandHandler?.(candidate.data);
+    emit('select');
+    return;
+  }
+
+  const resolvedTitle = extractDynamicValue(candidate.title);
+  if (typeof resolvedTitle === 'string') {
+    activeCompletion.searchQuery = resolvedTitle;
+    emit('select');
+  }
+};
+
 const focusCompletionCandidate = (e: MouseEvent, index: number) => {
   const coordsChanged = lastCoords[0] !== e.clientX || lastCoords[1] !== e.clientY;
 
@@ -52,8 +80,11 @@ const focusCompletionCandidate = (e: MouseEvent, index: number) => {
     return;
   }
   lastCoords = [e.clientX, e.clientY];
-  if (!completion.activeCompletion) return;
-  completion.activeCompletion.selectedCandidateIndex = index;
+  const activeCompletion = completion.activeCompletion;
+  if (!activeCompletion) {
+    return;
+  }
+  activeCompletion.selectedCandidateIndex = index;
 };
 
 const executeCompletionItem = async (e: MouseEvent) => {
@@ -61,10 +92,8 @@ const executeCompletionItem = async (e: MouseEvent) => {
   e.preventDefault();
   e.stopPropagation();
   if (!completion.activeCompletion) return;
-  if (completion.activeCompletion.type !== 'input-choice') {
-    completion.close(props.item.data);
-  }
-  props.item.commandHandler(props.item.data);
+
+  applyCandidateToInput(props.index);
 };
 </script>
 
