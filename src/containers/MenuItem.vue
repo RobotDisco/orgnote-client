@@ -10,6 +10,7 @@
         <app-icon
           v-if="icon"
           :name="icon"
+          size="sm"
           :background="inverseIconColors ? background : color"
           :color="inverseIconColors ? color : background"
           :rounded="true"

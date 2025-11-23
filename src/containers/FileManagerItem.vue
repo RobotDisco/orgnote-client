@@ -29,7 +29,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ContextMenuGroup, StyleSize } from 'orgnote-api';
+import type { MenuGroup, StyleSize } from 'orgnote-api';
 import type { DiskFile } from 'orgnote-api';
 import AppIcon from 'src/components/AppIcon.vue';
 import MenuItem from './MenuItem.vue';
@@ -49,13 +49,11 @@ const props = defineProps<{
 
 const fm = api.core.useFileManager();
 
-const contextMenuGroup = computed<ContextMenuGroup>(() =>
+const contextMenuGroup = computed<MenuGroup>(() =>
   props.file?.type === 'directory' ? 'dir' : 'file',
 );
 
-const isSystemPath = computed(() =>
-  props.file?.path?.startsWith(`/${rootSystemFilePath}`),
-);
+const isSystemPath = computed(() => props.file?.path?.startsWith(`/${rootSystemFilePath}`));
 
 const handleContextMenuOpen = () => {
   if (!props.file) {

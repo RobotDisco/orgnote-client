@@ -23,3 +23,7 @@ body,
 dialog:not(.mini) {
   padding-bottom: var(--device-padding-bottom);
 }
+
+.q-menu {
+  border-radius: var(--card-border-radius);
+}
