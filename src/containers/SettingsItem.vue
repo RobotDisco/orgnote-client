@@ -189,8 +189,6 @@ const inputSchemeType = computed(() => inputTypes.includes(actualType.value));
 .action-btn {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
-  z-index: 1;
   background-color: var(--menu-item-hover-bg);
 }
 
