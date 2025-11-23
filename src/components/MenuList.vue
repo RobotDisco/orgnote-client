@@ -6,6 +6,7 @@
       @click="handleAction(item)"
       :icon="getIcon(item)"
       class="context-menu-item"
+      flat
     >
       {{ getLabel(item) }}
     </menu-item>
@@ -75,3 +76,9 @@ const handleAction = async (item: MenuAction) => {
   });
 };
 </script>
+
+<style lang="scss" scoped>
+.context-menu-list {
+  min-width: 160px;
+}
+</style>

@@ -6,16 +6,16 @@
     :style="{ '--menu-item-lines': lines, '--current-menu-item-height': itemHeight }"
   >
     <div class="header">
-      <div class="left">
+      <div class="left" :class="{ flat }">
         <app-icon
           v-if="icon"
           :name="icon"
           size="sm"
-          :background="inverseIconColors ? background : color"
-          :color="inverseIconColors ? color : background"
+          :background="flat ? 'transparent' : inverseIconColors ? background : color"
+          :color="flat ? color : inverseIconColors ? color : background"
           :rounded="true"
         ></app-icon>
-        <div class="content text-bold capitalize" :style="{ color: getCssVariableName(color) }">
+        <div class="content capitalize" :style="{ color: getCssVariableName(color) }">
           <slot />
         </div>
       </div>
@@ -56,12 +56,14 @@ const props = withDefaults(
     lines?: number;
     inverseIconColors?: boolean;
     prefer?: 'left' | 'right';
+    flat?: boolean;
   }>(),
   {
     type: 'plain',
     lines: 1,
     prefer: 'left',
     size: 'auto',
+    flat: false,
   },
 );
 
@@ -125,6 +127,10 @@ const itemHeight = computed(() => itemHeightMap[props.size]);
 
 .left {
   @include flexify(row, flex-start, center, var(--gap-sm));
+
+  &.flat {
+    gap: var(--gap-sm);
+  }
 
   & {
     white-space: nowrap;
