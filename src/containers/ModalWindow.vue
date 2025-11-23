@@ -116,6 +116,10 @@ dialog {
 
 .modal-wide {
   width: var(--modal-max-width);
+
+  @include tablet-above {
+    height: var(--modal-max-height);
+  }
 }
 
 :deep(.safe-area) {

@@ -105,7 +105,9 @@ body {
   --card-border-radius: var(--border-radius-md);
 
   // Menu item
-  --menu-item-padding: 8px;
+  --menu-item-padding-x: 10px;
+  --menu-item-padding-y: 8px;
+  --menu-item-padding: var(--menu-item-padding-y) var(--menu-item-padding-x);
   --menu-item-height: 42px;
   --menu-item-max-height: 200px;
   --menu-item-hover-bg: var(--bg-active);

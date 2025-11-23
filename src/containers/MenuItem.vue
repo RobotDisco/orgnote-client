@@ -150,7 +150,6 @@ const itemHeight = computed(() => itemHeightMap[props.size]);
 }
 
 .content {
-  padding-left: var(--menu-item-padding);
   width: 100%;
 }
 

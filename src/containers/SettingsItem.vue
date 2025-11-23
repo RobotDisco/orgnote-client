@@ -21,15 +21,14 @@
         ref="editInputRef"
       />
       <template #right>
-        <div class="action-btn">
-          <action-button
-            @click="removeFromArray(i)"
-            icon="delete"
-            size="sm"
-            outline
-            hover-color="red"
-          ></action-button>
-        </div>
+        <action-button
+          class="action-btn"
+          @click="removeFromArray(i)"
+          icon="delete"
+          size="sm"
+          outline
+          hover-color="red"
+        ></action-button>
       </template>
     </menu-item>
     <menu-item type="info" @click="addValueToArray">
@@ -188,12 +187,15 @@ const inputSchemeType = computed(() => inputTypes.includes(actualType.value));
 
 <style lang="scss" scoped>
 .action-btn {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+  background-color: var(--menu-item-hover-bg);
 }
 
 .menu-item:hover {
   .action-btn {
-    display: block;
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 
