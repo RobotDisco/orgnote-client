@@ -98,6 +98,7 @@
     "@vue/eslint-config-typescript": "14.5.0",
     "@vue/language-server": "2.2.12",
     "@vue/test-utils": "2.4.6",
+    "@vue/typescript-plugin": "3.1.5",
     "autoprefixer": "10.4.21",
     "electron": "35.2.0",
     "env-cmd": "10.1.0",
