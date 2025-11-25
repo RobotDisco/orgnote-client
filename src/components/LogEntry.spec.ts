@@ -126,3 +126,12 @@ test('LogEntry copies context as JSON', async () => {
   expect(copiedText).toContain('"action"');
   expect(copiedText).toContain('"delete"');
 });
+
+test('LogEntry hides header when minimal prop is true', () => {
+  const log = createMockLog();
+  const wrapper = mount(LogEntry, {
+    props: { log, minimal: true },
+  });
+
+  expect(wrapper.find('.header').exists()).toBe(false);
+});

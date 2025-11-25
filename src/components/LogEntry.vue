@@ -1,6 +1,6 @@
 <template>
   <div class="log-entry" :class="log.level" @click="handleClick">
-    <div class="header">
+    <div v-if="!minimal" class="header">
       <span class="number">[{{ position }}]</span>
       <span class="timestamp">{{ formattedTimestamp }}</span>
       <span class="level">{{ (log.level ?? '').toUpperCase() }}</span>
@@ -35,10 +35,14 @@ import { useI18n } from 'vue-i18n';
 
 interface Props {
   log: LogRecord;
-  position: number;
+  position?: number;
+  minimal?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  position: 0,
+  minimal: false,
+});
 
 const formattedTimestamp = computed(() => {
   const timestamp = props.log.ts instanceof Date ? props.log.ts : new Date(props.log.ts);
