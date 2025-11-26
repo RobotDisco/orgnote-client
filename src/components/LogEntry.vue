@@ -10,8 +10,7 @@
     </div>
 
     <div class="message">
-      <pre v-if="isObjectMessage">{{ formattedMessage }}</pre>
-      <template v-else>{{ formattedMessage }}</template>
+      <pre>{{ formattedMessage }}</pre>
     </div>
 
     <div v-if="hasStack" class="stack">
@@ -48,31 +47,15 @@ const props = withDefaults(defineProps<Props>(), {
   minimal: false,
 });
 
-const isObjectMessage = computed(() => {
-  const msg = props.log.message;
-  if (typeof msg !== 'string') return false;
-
-  try {
-    JSON.parse(msg);
-    return msg.startsWith('{') || msg.startsWith('[');
-  } catch {
-    return false;
-  }
-});
-
 const formattedMessage = computed(() => {
   const msg = props.log.message;
 
-  if (isObjectMessage.value) {
-    try {
-      const parsed = JSON.parse(msg);
-      return JSON.stringify(parsed, null, 2);
-    } catch {
-      return msg;
-    }
+  try {
+    const parsed = JSON.parse(msg);
+    return JSON.stringify(parsed, null, 2);
+  } catch {
+    return msg;
   }
-
-  return msg;
 });
 
 const extractContext = (context?: Record<string, unknown>): Record<string, unknown> => {
@@ -161,6 +144,7 @@ $level-colors: (
 );
 
 .log-entry {
+  width: 100%;
   padding: var(--padding-lg);
   border-radius: var(--border-radius-md);
   margin-bottom: var(--margin-sm);
@@ -202,46 +186,7 @@ $level-colors: (
   }
 }
 
-.message {
-  @include fontify(var(--font-size-base), var(--font-weight-normal), var(--fg));
-
-  & {
-    margin-bottom: var(--margin-xs);
-    word-break: break-word;
-  }
-
-  pre {
-    @include fontify(var(--font-size-sm), var(--font-weight-normal), var(--fg));
-
-    & {
-      margin: 0;
-      padding: var(--padding-xs);
-      background: transparent;
-      border-radius: var(--border-radius-sm);
-      overflow-x: auto;
-      font-family: ui-monospace, monospace;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-  }
-}
-
-.stack,
-.context {
-  margin-top: var(--margin-xs);
-}
-
-.label {
-  @include fontify(var(--font-size-sm), var(--font-weight-bold), var(--fg));
-
-  & {
-    display: block;
-    padding: var(--padding-md);
-  }
-}
-
-.stack pre,
-.context pre {
+pre {
   @include fontify(var(--font-size-sm), var(--font-weight-normal), var(--fg));
 
   & {
@@ -253,6 +198,29 @@ $level-colors: (
     font-family: ui-monospace, monospace;
     white-space: pre-wrap;
     word-break: break-word;
+  }
+}
+
+.message {
+  @include fontify(var(--font-size-base), var(--font-weight-normal), var(--fg));
+
+  & {
+    margin-bottom: var(--margin-sm);
+    word-break: break-word;
+  }
+}
+
+.stack,
+.context {
+  margin-top: var(--margin-sm);
+}
+
+.label {
+  @include fontify(var(--font-size-sm), var(--font-weight-bold), var(--fg));
+
+  & {
+    display: block;
+    padding: var(--padding-md);
   }
 }
 </style>
