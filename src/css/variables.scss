@@ -203,6 +203,9 @@ body {
 
   // layout
   --layout-gap: 0;
+
+  // badge
+  --badge-radius: 6px;
 }
 
 @include desktop-below {
