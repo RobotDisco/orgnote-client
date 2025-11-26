@@ -3,7 +3,9 @@
     <div v-if="!minimal" class="header">
       <span class="number">[{{ position }}]</span>
       <span class="timestamp">{{ formattedTimestamp }}</span>
-      <span class="level">{{ (log.level ?? '').toUpperCase() }}</span>
+      <app-badge :color="getLevelColor(log.level)" size="xs">
+        {{ (log.level ?? '').toUpperCase() }}
+      </app-badge>
       <span v-if="hasRepeats" class="repeat">×{{ log.repeatCount }}</span>
     </div>
 
@@ -28,7 +30,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { I18N, type LogRecord } from 'orgnote-api';
+import { I18N, type LogRecord, type ThemeVariable } from 'orgnote-api';
+import AppBadge from './AppBadge.vue';
 import { copyToClipboard } from 'src/utils/clipboard';
 import { api } from 'src/boot/api';
 import { useI18n } from 'vue-i18n';
@@ -138,6 +141,18 @@ const handleClick = async (): Promise<void> => {
     timeout: 2000,
   });
 };
+
+const levelColors: Record<string, ThemeVariable> = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'blue',
+  debug: 'fg',
+  trace: 'fg',
+};
+
+const getLevelColor = (level?: string): ThemeVariable => {
+  return (level ? levelColors[level.toLowerCase()] : undefined) ?? 'fg';
+};
 </script>
 
 <style scoped lang="scss">
@@ -185,22 +200,6 @@ $level-colors: (
 
   & {
     font-family: ui-monospace, monospace;
-  }
-}
-
-.level {
-  @include fontify(var(--font-size-xs), var(--font-weight-bold));
-
-  & {
-    padding: 2px 6px;
-    border-radius: var(--border-radius-sm);
-  }
-
-  @each $level, $color in $level-colors {
-    .#{$level} & {
-      color: $color;
-      background: color-mix(in srgb, $color, transparent 85%);
-    }
   }
 }
 
