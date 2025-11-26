@@ -54,9 +54,8 @@ export const Responsive: Story = {
   args: {
     cols: 1,
     responsive: {
-      sm: 2,
-      md: 3,
-      lg: 4,
+      tablet: 2,
+      desktop: 3,
     },
   },
   render: (args) => ({

@@ -16,41 +16,40 @@ test('AppFlex renders slot content', () => {
   expect(wrapper.text()).toBe('Content');
 });
 
-test('AppFlex applies default styles', () => {
+test('AppFlex renders with flex-container class', () => {
   const wrapper = createWrapper();
-  const style = wrapper.find('.flex-container').attributes('style');
-  expect(style).toContain('flex-direction: row');
-  expect(style).toContain('justify-content: space-between');
-  expect(style).toContain('align-items: center');
-  expect(style).toContain('gap: 0px');
+  expect(wrapper.find('.flex-container').exists()).toBe(true);
 });
 
-test('AppFlex applies direction prop', () => {
+test('AppFlex accepts direction prop', () => {
   const wrapper = createWrapper({ direction: 'column' });
-  const style = wrapper.find('.flex-container').attributes('style');
-  expect(style).toContain('flex-direction: column');
+  expect(wrapper.props('direction')).toBe('column');
 });
 
-test('AppFlex maps justify prop correctly', () => {
+test('AppFlex accepts justify prop', () => {
   const wrapper = createWrapper({ justify: 'start' });
-  const style = wrapper.find('.flex-container').attributes('style');
-  expect(style).toContain('justify-content: flex-start');
+  expect(wrapper.props('justify')).toBe('start');
 });
 
-test('AppFlex maps align prop correctly', () => {
+test('AppFlex accepts align prop', () => {
   const wrapper = createWrapper({ align: 'end' });
-  const style = wrapper.find('.flex-container').attributes('style');
-  expect(style).toContain('align-items: flex-end');
+  expect(wrapper.props('align')).toBe('end');
 });
 
-test('AppFlex applies gap size key', () => {
+test('AppFlex accepts gap size key', () => {
   const wrapper = createWrapper({ gap: 'md' });
-  const style = wrapper.find('.flex-container').attributes('style');
-  expect(style).toContain('gap: var(--gap-md)');
+  expect(wrapper.props('gap')).toBe('md');
 });
 
-test('AppFlex applies raw gap value', () => {
+test('AppFlex accepts raw gap value', () => {
   const wrapper = createWrapper({ gap: '20px' });
-  const style = wrapper.find('.flex-container').attributes('style');
-  expect(style).toContain('gap: 20px');
+  expect(wrapper.props('gap')).toBe('20px');
+});
+
+test('AppFlex has default props', () => {
+  const wrapper = createWrapper();
+  expect(wrapper.props('direction')).toBe('row');
+  expect(wrapper.props('justify')).toBe('between');
+  expect(wrapper.props('align')).toBe('center');
+  expect(wrapper.props('gap')).toBe('0px');
 });

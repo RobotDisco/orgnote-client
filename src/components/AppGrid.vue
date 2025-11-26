@@ -8,6 +8,11 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import type { StyleSize } from 'orgnote-api';
+import {
+  BREAKPOINTS,
+  RESPONSIVE_BREAKPOINTS,
+  type ResponsiveBreakpoint,
+} from 'src/constants/breakpoints';
 
 type GridSpan = number | string;
 
@@ -19,22 +24,18 @@ interface ItemLayout {
 }
 
 interface ResponsiveItemLayout extends ItemLayout {
-  xs?: ItemLayout;
-  sm?: ItemLayout;
-  md?: ItemLayout;
-  lg?: ItemLayout;
-  xl?: ItemLayout;
+  mobile?: ItemLayout;
+  tablet?: ItemLayout;
+  desktop?: ItemLayout;
 }
 
 export interface AppGridProps {
   cols?: number | string;
   gap?: StyleSize;
   responsive?: {
-    xs?: number | string;
-    sm?: number | string;
-    md?: number | string;
-    lg?: number | string;
-    xl?: number | string;
+    mobile?: number | string;
+    tablet?: number | string;
+    desktop?: number | string;
   };
   layout?: ResponsiveItemLayout[];
 }
@@ -45,7 +46,7 @@ const props = withDefaults(defineProps<AppGridProps>(), {
   layout: () => [],
 });
 
-const uid = `app-grid-${Math.random().toString(36).substr(2, 9)}`;
+const uid = `app-grid-${Math.random().toString(36).slice(2, 11)}`;
 const gridClass = computed(() => ['app-grid', uid]);
 
 const formatCols = (val?: number | string): string | undefined => {
@@ -68,24 +69,35 @@ const formatRowSpan = (val?: GridSpan): string | undefined => {
   return val;
 };
 
+const getMinWidth = (breakpoint?: ResponsiveBreakpoint): string | undefined => {
+  if (!breakpoint) return undefined;
+  const minWidth = BREAKPOINTS[breakpoint];
+  if (!minWidth) return undefined;
+  return `${minWidth}px`;
+};
+
 const gridStyles = computed(() => {
   const styles: Record<string, string | undefined> = {
     '--grid-gap': `var(--gap-${props.gap})`,
     '--grid-cols-base': formatCols(props.cols),
   };
 
-  if (props.responsive) {
-    if (props.responsive.xs) styles['--grid-cols-xs'] = formatCols(props.responsive.xs);
-    if (props.responsive.sm) styles['--grid-cols-sm'] = formatCols(props.responsive.sm);
-    if (props.responsive.md) styles['--grid-cols-md'] = formatCols(props.responsive.md);
-    if (props.responsive.lg) styles['--grid-cols-lg'] = formatCols(props.responsive.lg);
-    if (props.responsive.xl) styles['--grid-cols-xl'] = formatCols(props.responsive.xl);
-  }
+  if (!props.responsive) return styles;
+
+  (['mobile', ...RESPONSIVE_BREAKPOINTS] as const).forEach((breakpoint) => {
+    const value = props.responsive?.[breakpoint];
+    if (value === undefined) return;
+    styles[`--grid-cols-${breakpoint}`] = formatCols(value);
+  });
 
   return styles;
 });
 
-const generateItemCss = (selector: string, config: ItemLayout, breakpoint?: string): string => {
+const generateItemCss = (
+  selector: string,
+  config: ItemLayout,
+  breakpoint?: ResponsiveBreakpoint,
+): string => {
   const rules: string[] = [];
   if (config.span) rules.push(`grid-column: ${formatSpan(config.span)};`);
   if (config.rowSpan) rules.push(`grid-row: ${formatRowSpan(config.rowSpan)};`);
@@ -96,19 +108,10 @@ const generateItemCss = (selector: string, config: ItemLayout, breakpoint?: stri
 
   const ruleBlock = `${selector} { ${rules.join(' ')} }`;
 
-  if (breakpoint) {
-    const bpMap: Record<string, string> = {
-      sm: '600px',
-      md: '768px',
-      lg: '1024px',
-      xl: '1440px',
-    };
-    const minWidth = bpMap[breakpoint];
-    if (minWidth) {
-      return `@media (min-width: ${minWidth}) { ${ruleBlock} }`;
-    }
-  }
-  return ruleBlock;
+  const minWidth = getMinWidth(breakpoint);
+  if (!minWidth) return ruleBlock;
+
+  return `@media (min-width: ${minWidth}) { ${ruleBlock} }`;
 };
 
 const layoutCss = computed(() => {
@@ -120,10 +123,10 @@ const layoutCss = computed(() => {
 
     css += generateItemCss(selector, itemConfig);
 
-    if (itemConfig.sm) css += generateItemCss(selector, itemConfig.sm, 'sm');
-    if (itemConfig.md) css += generateItemCss(selector, itemConfig.md, 'md');
-    if (itemConfig.lg) css += generateItemCss(selector, itemConfig.lg, 'lg');
-    if (itemConfig.xl) css += generateItemCss(selector, itemConfig.xl, 'xl');
+    RESPONSIVE_BREAKPOINTS.forEach((breakpoint) => {
+      const responsiveConfig = itemConfig[breakpoint];
+      if (responsiveConfig) css += generateItemCss(selector, responsiveConfig, breakpoint);
+    });
   });
 
   return css;
@@ -137,26 +140,12 @@ const layoutCss = computed(() => {
   grid-template-columns: var(--grid-cols-base);
   width: 100%;
 
-  @media (min-width: 600px) {
-    grid-template-columns: var(--grid-cols-sm, var(--grid-cols-base));
+  @include tablet-above {
+    grid-template-columns: var(--grid-cols-tablet, var(--grid-cols-base));
   }
 
-  @media (min-width: 768px) {
-    grid-template-columns: var(--grid-cols-md, var(--grid-cols-sm, var(--grid-cols-base)));
-  }
-
-  @media (min-width: 1024px) {
-    grid-template-columns: var(
-      --grid-cols-lg,
-      var(--grid-cols-md, var(--grid-cols-sm, var(--grid-cols-base)))
-    );
-  }
-
-  @media (min-width: 1440px) {
-    grid-template-columns: var(
-      --grid-cols-xl,
-      var(--grid-cols-lg, var(--grid-cols-md, var(--grid-cols-sm, var(--grid-cols-base))))
-    );
+  @include desktop {
+    grid-template-columns: var(--grid-cols-desktop, var(--grid-cols-tablet, var(--grid-cols-base)));
   }
 }
 </style>

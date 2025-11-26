@@ -46,6 +46,7 @@ const ICON_SIZE_MAP: Record<StyleSize, StyleSize> = {
   sm: 'xs',
   md: 'sm',
   lg: 'md',
+  xl: 'lg',
   auto: 'sm',
 };
 

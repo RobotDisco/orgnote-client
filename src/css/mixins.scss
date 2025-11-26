@@ -83,7 +83,7 @@
 }
 
 @mixin tablet-above {
-  @media (min-width: $desktop) {
+  @media (min-width: $tablet) {
     @content;
   }
 }

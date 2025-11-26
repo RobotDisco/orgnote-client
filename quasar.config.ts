@@ -14,6 +14,7 @@ export default defineConfig((ctx) => {
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
+      'polyfills',
       'logger',
       'repositories',
       'preload-store-data',
@@ -30,6 +31,10 @@ export default defineConfig((ctx) => {
       'default-commands',
       'viewport-patch',
       'default-file-readers',
+      // {
+      //   server: false,
+      //   path: 'default-queues',
+      // }
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css

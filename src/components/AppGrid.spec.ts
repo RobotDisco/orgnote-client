@@ -33,13 +33,13 @@ test('AppGrid applies cols prop', () => {
 test('AppGrid applies responsive cols', () => {
   const wrapper = createWrapper({
     responsive: {
-      md: 2,
-      lg: 4,
+      tablet: 2,
+      desktop: 4,
     },
   });
   const style = wrapper.find('.app-grid').attributes('style');
-  expect(style).toContain('--grid-cols-md: repeat(2, minmax(0, 1fr))');
-  expect(style).toContain('--grid-cols-lg: repeat(4, minmax(0, 1fr))');
+  expect(style).toContain('--grid-cols-tablet: repeat(2, minmax(0, 1fr))');
+  expect(style).toContain('--grid-cols-desktop: repeat(4, minmax(0, 1fr))');
 });
 
 test('AppGrid generates layout CSS', () => {
@@ -56,7 +56,7 @@ test('AppGrid generates layout CSS', () => {
 
 test('AppGrid generates responsive layout CSS', () => {
   const wrapper = createWrapper({
-    layout: [{ span: 1, md: { span: 2 } }],
+    layout: [{ span: 1, tablet: { span: 2 } }],
   });
   const css = wrapper.find('style').text();
   expect(css).toContain('grid-column: span 1');

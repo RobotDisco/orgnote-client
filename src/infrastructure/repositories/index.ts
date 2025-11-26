@@ -15,6 +15,7 @@ import {
   PANE_SNAPSHOT_REPOSITORY_NAME,
 } from './layout-snapshot-repository';
 import type Dexie from 'dexie';
+import { createQueueRepository, QUEUE_MIGRATIONS, QUEUE_REPOSITORY_NAME } from './queue-repository';
 
 let database: Dexie | undefined;
 
@@ -26,6 +27,7 @@ export async function initRepositories(): Promise<OrgNoteApi['infrastructure']> 
     { storeName: FILE_REPOSITORY_NAME, migrations: FILE_MIGRATIONS },
     { storeName: LOGGER_REPOSITORY_NAME, migrations: LOGGER_MIGRATIONS },
     { storeName: PANE_SNAPSHOT_REPOSITORY_NAME, migrations: PANE_SNAPSHOT_MIGRATIONS },
+    { storeName: QUEUE_REPOSITORY_NAME, migrations: QUEUE_MIGRATIONS },
   ]);
   database = db;
   return {
@@ -33,5 +35,6 @@ export async function initRepositories(): Promise<OrgNoteApi['infrastructure']> 
     noteInfoRepository: createNoteInfoRepository(db),
     logRepository: createLoggerRepository(db),
     layoutSnapshotRepository: createLayoutSnapshotRepository(db),
+    queueRepository: createQueueRepository(db),
   };
 }
