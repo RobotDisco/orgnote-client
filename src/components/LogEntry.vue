@@ -2,7 +2,7 @@
   <div class="log-entry" :class="log.level" @click="handleClick">
     <div v-if="!minimal" class="header">
       <span class="number">[{{ position }}]</span>
-      <span class="timestamp">{{ formattedTimestamp }}</span>
+      <app-date :date="log.ts" format="iso" monospace />
       <app-badge :color="getLevelColor(log.level)" size="xs">
         {{ (log.level ?? '').toUpperCase() }}
       </app-badge>
@@ -32,6 +32,7 @@
 import { computed } from 'vue';
 import { I18N, type LogRecord, type ThemeVariable } from 'orgnote-api';
 import AppBadge from './AppBadge.vue';
+import AppDate from './AppDate.vue';
 import { copyToClipboard } from 'src/utils/clipboard';
 import { api } from 'src/boot/api';
 import { useI18n } from 'vue-i18n';
@@ -45,11 +46,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   position: 0,
   minimal: false,
-});
-
-const formattedTimestamp = computed(() => {
-  const timestamp = props.log.ts instanceof Date ? props.log.ts : new Date(props.log.ts);
-  return timestamp.toISOString();
 });
 
 const isObjectMessage = computed(() => {
@@ -193,14 +189,6 @@ $level-colors: (
 
 .number {
   @include fontify(var(--font-size-xs), var(--font-weight-bold), var(--fg));
-}
-
-.timestamp {
-  @include fontify(var(--font-size-xs), var(--font-weight-normal), var(--fg));
-
-  & {
-    font-family: ui-monospace, monospace;
-  }
 }
 
 .repeat {
