@@ -28,7 +28,7 @@ import ActionButton from 'src/components/ActionButton.vue';
 import AppIcon from 'src/components/AppIcon.vue';
 import AppInput from 'src/components/AppInput.vue';
 import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
-import { ref, defineExpose } from 'vue';
+import { ref } from 'vue';
 
 defineProps<{
   placeholder?: string;

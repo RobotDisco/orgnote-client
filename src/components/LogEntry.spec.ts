@@ -49,35 +49,38 @@ test('LogEntry displays formatted timestamp', () => {
   const log = createMockLog({ ts: new Date('2024-01-15T10:30:00.000Z') });
   const wrapper = mountLogEntry(log);
 
-  expect(wrapper.find('.timestamp').text()).toBe('2024-01-15T10:30:00.000Z');
+  const appDate = wrapper.findComponent({ name: 'AppDate' });
+  expect(appDate.exists()).toBe(true);
+  expect(appDate.props('date')).toEqual(log.ts);
 });
 
 test('LogEntry displays log level in uppercase', () => {
   const log = createMockLog({ level: 'warn' });
   const wrapper = mountLogEntry(log);
 
-  expect(wrapper.find('.level').text()).toBe('WARN');
+  const badge = wrapper.findComponent({ name: 'AppBadge' });
+  expect(badge.text()).toBe('WARN');
 });
 
 test('LogEntry displays message', () => {
   const log = createMockLog({ message: 'Custom error message' });
   const wrapper = mountLogEntry(log);
 
-  expect(wrapper.find('.message').text()).toBe('Custom error message');
+  expect(wrapper.find('.message').text()).toContain('Custom error message');
 });
 
 test('LogEntry applies error class for error level', () => {
   const log = createMockLog({ level: 'error' });
   const wrapper = mountLogEntry(log);
 
-  expect(wrapper.find('.error').exists()).toBe(true);
+  expect(wrapper.classes()).toContain('error');
 });
 
 test('LogEntry applies warn class for warn level', () => {
   const log = createMockLog({ level: 'warn' });
   const wrapper = mountLogEntry(log);
 
-  expect(wrapper.find('.warn').exists()).toBe(true);
+  expect(wrapper.classes()).toContain('warn');
 });
 
 test('LogEntry copies message to clipboard when no stack', async () => {
@@ -125,4 +128,13 @@ test('LogEntry copies context as JSON', async () => {
   expect(copiedText).toContain('"123"');
   expect(copiedText).toContain('"action"');
   expect(copiedText).toContain('"delete"');
+});
+
+test('LogEntry hides header when minimal prop is true', () => {
+  const log = createMockLog();
+  const wrapper = mount(LogEntry, {
+    props: { log, minimal: true },
+  });
+
+  expect(wrapper.find('.header').exists()).toBe(false);
 });

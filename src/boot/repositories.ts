@@ -1,10 +1,10 @@
 import { defineBoot } from '@quasar/app-vite/wrappers';
-import type { OrgNoteApi } from 'orgnote-api';
 import { initRepositories as _initRepositories } from 'src/infrastructure/repositories';
 import {
   LOGS_REPOSITORY_PROVIDER_TOKEN,
   REPOSITORIES_PROVIDER_TOKEN,
 } from 'src/constants/app-providers';
+import type { OrgNoteApi } from 'orgnote-api';
 
 let repositories: OrgNoteApi['infrastructure'];
 

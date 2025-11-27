@@ -1,15 +1,16 @@
 <template>
   <div class="log-entry" :class="log.level" @click="handleClick">
-    <div class="header">
+    <div v-if="!minimal" class="header">
       <span class="number">[{{ position }}]</span>
-      <span class="timestamp">{{ formattedTimestamp }}</span>
-      <span class="level">{{ (log.level ?? '').toUpperCase() }}</span>
+      <app-date :date="log.ts" format="iso" monospace />
+      <app-badge :color="getLevelColor(log.level)" size="xs">
+        {{ (log.level ?? '').toUpperCase() }}
+      </app-badge>
       <span v-if="hasRepeats" class="repeat">×{{ log.repeatCount }}</span>
     </div>
 
     <div class="message">
-      <pre v-if="isObjectMessage">{{ formattedMessage }}</pre>
-      <template v-else>{{ formattedMessage }}</template>
+      <pre>{{ formattedMessage }}</pre>
     </div>
 
     <div v-if="hasStack" class="stack">
@@ -28,48 +29,33 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { I18N, type LogRecord } from 'orgnote-api';
+import { I18N, type LogRecord, type ThemeVariable } from 'orgnote-api';
+import AppBadge from './AppBadge.vue';
+import AppDate from './AppDate.vue';
 import { copyToClipboard } from 'src/utils/clipboard';
 import { api } from 'src/boot/api';
 import { useI18n } from 'vue-i18n';
 
 interface Props {
   log: LogRecord;
-  position: number;
+  position?: number;
+  minimal?: boolean;
 }
 
-const props = defineProps<Props>();
-
-const formattedTimestamp = computed(() => {
-  const timestamp = props.log.ts instanceof Date ? props.log.ts : new Date(props.log.ts);
-  return timestamp.toISOString();
-});
-
-const isObjectMessage = computed(() => {
-  const msg = props.log.message;
-  if (typeof msg !== 'string') return false;
-
-  try {
-    JSON.parse(msg);
-    return msg.startsWith('{') || msg.startsWith('[');
-  } catch {
-    return false;
-  }
+const props = withDefaults(defineProps<Props>(), {
+  position: 0,
+  minimal: false,
 });
 
 const formattedMessage = computed(() => {
   const msg = props.log.message;
 
-  if (isObjectMessage.value) {
-    try {
-      const parsed = JSON.parse(msg);
-      return JSON.stringify(parsed, null, 2);
-    } catch {
-      return msg;
-    }
+  try {
+    const parsed = JSON.parse(msg);
+    return JSON.stringify(parsed, null, 2);
+  } catch {
+    return msg;
   }
-
-  return msg;
 });
 
 const extractContext = (context?: Record<string, unknown>): Record<string, unknown> => {
@@ -134,6 +120,18 @@ const handleClick = async (): Promise<void> => {
     timeout: 2000,
   });
 };
+
+const levelColors: Record<string, ThemeVariable> = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'blue',
+  debug: 'fg',
+  trace: 'fg',
+};
+
+const getLevelColor = (level?: string): ThemeVariable => {
+  return (level ? levelColors[level.toLowerCase()] : undefined) ?? 'fg';
+};
 </script>
 
 <style scoped lang="scss">
@@ -146,6 +144,7 @@ $level-colors: (
 );
 
 .log-entry {
+  width: 100%;
   padding: var(--padding-lg);
   border-radius: var(--border-radius-md);
   margin-bottom: var(--margin-sm);
@@ -176,30 +175,6 @@ $level-colors: (
   @include fontify(var(--font-size-xs), var(--font-weight-bold), var(--fg));
 }
 
-.timestamp {
-  @include fontify(var(--font-size-xs), var(--font-weight-normal), var(--fg));
-
-  & {
-    font-family: ui-monospace, monospace;
-  }
-}
-
-.level {
-  @include fontify(var(--font-size-xs), var(--font-weight-bold));
-
-  & {
-    padding: 2px 6px;
-    border-radius: var(--border-radius-sm);
-  }
-
-  @each $level, $color in $level-colors {
-    .#{$level} & {
-      color: $color;
-      background: color-mix(in srgb, $color, transparent 85%);
-    }
-  }
-}
-
 .repeat {
   @include fontify(var(--font-size-xs), var(--font-weight-bold), var(--fg));
 
@@ -211,46 +186,7 @@ $level-colors: (
   }
 }
 
-.message {
-  @include fontify(var(--font-size-base), var(--font-weight-normal), var(--fg));
-
-  & {
-    margin-bottom: var(--margin-xs);
-    word-break: break-word;
-  }
-
-  pre {
-    @include fontify(var(--font-size-sm), var(--font-weight-normal), var(--fg));
-
-    & {
-      margin: 0;
-      padding: var(--padding-xs);
-      background: transparent;
-      border-radius: var(--border-radius-sm);
-      overflow-x: auto;
-      font-family: ui-monospace, monospace;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-  }
-}
-
-.stack,
-.context {
-  margin-top: var(--margin-xs);
-}
-
-.label {
-  @include fontify(var(--font-size-sm), var(--font-weight-bold), var(--fg));
-
-  & {
-    display: block;
-    padding: var(--padding-md);
-  }
-}
-
-.stack pre,
-.context pre {
+pre {
   @include fontify(var(--font-size-sm), var(--font-weight-normal), var(--fg));
 
   & {
@@ -262,6 +198,29 @@ $level-colors: (
     font-family: ui-monospace, monospace;
     white-space: pre-wrap;
     word-break: break-word;
+  }
+}
+
+.message {
+  @include fontify(var(--font-size-base), var(--font-weight-normal), var(--fg));
+
+  & {
+    margin-bottom: var(--margin-sm);
+    word-break: break-word;
+  }
+}
+
+.stack,
+.context {
+  margin-top: var(--margin-sm);
+}
+
+.label {
+  @include fontify(var(--font-size-sm), var(--font-weight-bold), var(--fg));
+
+  & {
+    display: block;
+    padding: var(--padding-md);
   }
 }
 </style>

@@ -30,11 +30,27 @@ setup((app) => {
   });
   app.use(i18n);
   app.use(createPinia());
+
+  // Mock API for Storybook
+  const mockApi = {
+    core: {
+      app,
+      useNotifications: () => ({
+        notify: (notification: unknown) => {
+          console.log('Notification:', notification);
+        },
+      }),
+    },
+  };
+
+  // @ts-expect-error - Mocking API for Storybook
+  import('../src/boot/api').then(({ api }) => {
+    Object.assign(api, mockApi);
+  });
 });
 
 const preview: Preview = {
   parameters: {
-    actions: { argTypesRegex: '^on[A-Z].*' },
     controls: {
       matchers: {
         color: /(background|color)$/i,

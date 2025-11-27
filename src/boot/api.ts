@@ -50,6 +50,7 @@ import type { Router } from 'vue-router';
 import { logger } from './logger';
 import { useSystemInfo } from 'src/composables/use-system-info';
 import { useContextMenuStore } from 'src/stores/context-menu';
+import { useQueueStore } from 'src/stores/queue';
 
 let api: OrgNoteApi;
 async function initApi(app: App, router: Router): Promise<void> {
@@ -76,6 +77,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useBuffers: useBufferStore,
       useLog: useLogStore,
       useSystemInfo,
+      useQueue: useQueueStore,
       app,
     },
     utils: {
@@ -132,6 +134,7 @@ export default defineBoot(async ({ app, store, router }) => {
   app.provide(ORGNOTE_API_PROVIDER_TOKEN, api);
   logger.info('Start synchronizing configurations');
   await syncConfigurations(api);
+  window.orgnote = api;
   logger.info('Configurations synchronized');
 
   splashScreen.hide();

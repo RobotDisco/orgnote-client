@@ -78,11 +78,12 @@ const color = computed<ThemeVariable>(() =>
 );
 const background = computed<ThemeVariable>(() => 'bg');
 
-const itemHeightMap = {
+const itemHeightMap: Record<StyleSize, string> = {
   xs: 'var(--menu-item-height-xs)',
   sm: 'var(--menu-item-height-sm)',
   md: 'var(--menu-item-height-md)',
   lg: 'var(--menu-item-height-lg)',
+  xl: 'var(--menu-item-height-lg)',
   auto: 'auto',
 };
 const itemHeight = computed(() => itemHeightMap[props.size]);

@@ -35,7 +35,9 @@ const props = withDefaults(
 
 const slots = useSlots();
 
-const layoutStyles = computed(() => (props.gap ? { '--layout-gap': `var(--gap-${props.gap})` } : {}));
+const layoutStyles = computed(() =>
+  props.gap ? { '--layout-gap': `var(--gap-${props.gap})` } : {},
+);
 </script>
 
 <style scoped lang="scss">
