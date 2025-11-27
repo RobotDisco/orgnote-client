@@ -1,18 +1,24 @@
 <template>
-  <span
+  <app-flex
+    tag="span"
+    inline
     class="app-badge"
     :class="[{ outline, rounded }, variant, sizeClass]"
     :style="badgeStyle"
     role="status"
+    row
+    center
+    align-center
   >
     <app-icon v-if="icon" :name="icon" :size="iconSize" class="q-mr-xs" />
     <slot>{{ label }}</slot>
-  </span>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
 import type { StyleSize, StyleVariant, ThemeVariable } from 'orgnote-api';
 import AppIcon from './AppIcon.vue';
+import AppFlex from 'src/components/AppFlex.vue';
 import { getCssVariableName } from 'src/utils/css-utils';
 import { computed } from 'vue';
 
@@ -55,7 +61,6 @@ const iconSize = computed(() => ICON_SIZE_MAP[props.size ?? 'md']);
 
 <style lang="scss" scoped>
 .app-badge {
-  @include flexify-inline(row, center, center);
   gap: var(--badge-gap, 4px);
   @include fontify(var(--font-size-base, 16px), var(--font-weight-bold, 700), var(--fg, #000));
   border: 1px solid transparent;

@@ -1,6 +1,6 @@
 <template>
-  <card-wrapper type="plain" style="{ '--spoiler-max-height': maxHeight }">
-    <div class="spoiler-header" @click="toggle">
+  <card-wrapper type="plain" :style="{ '--spoiler-max-height': maxHeight }">
+    <app-flex class="spoiler-header" @click="toggle" row between align-center gap="md">
       <div class="spoiler-title">
         <slot name="title" />
       </div>
@@ -11,7 +11,7 @@
         :class="{ rotated: expanded }"
         class="spoiler-icon"
       />
-    </div>
+    </app-flex>
     <animation-wrapper animation-name="expand">
       <div v-if="expanded" class="spoiler-body">
         <slot name="body" />
@@ -25,6 +25,7 @@ import { computed, ref, watch } from 'vue';
 import CardWrapper from './CardWrapper.vue';
 import AppIcon from './AppIcon.vue';
 import AnimationWrapper from './AnimationWrapper.vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -64,8 +65,6 @@ const toggle = (): void => {
 
 <style scoped lang="scss">
 .spoiler-header {
-  @include flexify(row, space-between, center, var(--gap-md));
-
   & {
     cursor: pointer;
     min-height: var(--menu-item-height);

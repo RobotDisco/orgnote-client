@@ -6,7 +6,7 @@
     @open="handleContextMenuOpen"
   >
     <menu-item :size="size" :active="active">
-      <div class="file-info">
+      <app-flex class="file-info" row start align-center gap="sm">
         <app-icon
           :name="file?.type === 'directory' || root ? 'sym_o_folder' : 'sym_o_draft'"
           size="sm"
@@ -23,7 +23,7 @@
             />
           </template>
         </div>
-      </div>
+      </app-flex>
     </menu-item>
   </context-menu>
 </template>
@@ -38,6 +38,7 @@ import ContextMenu from 'src/components/ContextMenu.vue';
 import { computed } from 'vue';
 import { rootSystemFilePath } from 'src/constants/root-system-file-path';
 import { api } from 'src/boot/api';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = defineProps<{
   highlight?: string[];
@@ -63,8 +64,4 @@ const handleContextMenuOpen = () => {
 };
 </script>
 
-<style lang="scss" scoped>
-.file-info {
-  @include flexify(row, flex-start, center, var(--gap-sm));
-}
-</style>
+<style lang="scss" scoped></style>

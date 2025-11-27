@@ -1,12 +1,18 @@
 <template>
-  <div class="flex-container">
+  <component :is="tag" ref="rootRef" class="flex-container" v-bind="$attrs">
     <slot />
-  </div>
+  </component>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { type StyleSize, STYLE_SIZES } from 'orgnote-api';
+
+defineOptions({
+  inheritAttrs: false,
+});
+
+const rootRef = ref<HTMLElement | null>(null);
 
 const props = withDefaults(
   defineProps<{
@@ -14,12 +20,48 @@ const props = withDefaults(
     justify?: 'start' | 'center' | 'end' | 'between' | 'around' | 'evenly';
     align?: 'start' | 'center' | 'end' | 'stretch' | 'baseline';
     gap?: StyleSize | ({} & string);
+    inline?: boolean;
+    tag?: string | object;
+
+    // Direction shortcuts
+    row?: boolean;
+    column?: boolean;
+
+    // Justify shortcuts
+    start?: boolean;
+    center?: boolean;
+    end?: boolean;
+    between?: boolean;
+    around?: boolean;
+    evenly?: boolean;
+
+    // Align shortcuts (with align- prefix)
+    alignStart?: boolean;
+    alignCenter?: boolean;
+    alignEnd?: boolean;
+    alignStretch?: boolean;
+    alignBaseline?: boolean;
   }>(),
   {
     direction: 'row',
     justify: 'between',
     align: 'center',
     gap: '0px',
+    inline: false,
+    tag: 'div',
+    row: false,
+    column: false,
+    start: false,
+    center: false,
+    end: false,
+    between: false,
+    around: false,
+    evenly: false,
+    alignStart: false,
+    alignCenter: false,
+    alignEnd: false,
+    alignStretch: false,
+    alignBaseline: false,
   },
 );
 
@@ -40,12 +82,40 @@ const alignMap: Record<string, string> = {
   baseline: 'baseline',
 };
 
+// Compute direction from shortcuts or prop
+const computedDirection = computed(() => {
+  if (props.column) return 'column';
+  if (props.row) return 'row';
+  return props.direction;
+});
+
+// Compute justify from shortcuts or prop
+const computedJustify = computed(() => {
+  if (props.start) return 'start';
+  if (props.center) return 'center';
+  if (props.end) return 'end';
+  if (props.between) return 'between';
+  if (props.around) return 'around';
+  if (props.evenly) return 'evenly';
+  return props.justify;
+});
+
+// Compute align from shortcuts or prop
+const computedAlign = computed(() => {
+  if (props.alignStart) return 'start';
+  if (props.alignCenter) return 'center';
+  if (props.alignEnd) return 'end';
+  if (props.alignStretch) return 'stretch';
+  if (props.alignBaseline) return 'baseline';
+  return props.align;
+});
+
 const cssJustify = computed(() => {
-  return justifyMap[props.justify] ?? props.justify;
+  return justifyMap[computedJustify.value] ?? computedJustify.value;
 });
 
 const cssAlign = computed(() => {
-  return alignMap[props.align] ?? props.align;
+  return alignMap[computedAlign.value] ?? computedAlign.value;
 });
 
 const cssGap = computed(() => {
@@ -54,10 +124,31 @@ const cssGap = computed(() => {
   }
   return props.gap;
 });
+
+const display = computed(() => (props.inline ? 'inline-flex' : 'flex'));
+
+// Expose computed values for testing
+defineExpose({
+  get $el() {
+    return rootRef.value;
+  },
+  // Exposed for testing
+  computedDirection,
+  computedJustify,
+  computedAlign,
+  cssJustify,
+  cssAlign,
+  cssGap,
+  display,
+});
 </script>
 
 <style lang="scss" scoped>
 .flex-container {
-  @include flexify(v-bind(direction), v-bind(cssJustify), v-bind(cssAlign), v-bind(cssGap));
+  display: v-bind(display);
+  flex-direction: v-bind(computedDirection);
+  justify-content: v-bind(cssJustify);
+  align-items: v-bind(cssAlign);
+  gap: v-bind(cssGap);
 }
 </style>

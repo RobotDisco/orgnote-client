@@ -1,15 +1,15 @@
 <template>
-  <div class="footer">
+  <app-flex class="footer" row center align-center>
     <slot />
-  </div>
+  </app-flex>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import AppFlex from 'src/components/AppFlex.vue';
+</script>
 
 <style lang="scss" scoped>
 .footer {
-  @include flexify(row, center, center);
-
   & {
     width: 100%;
     height: var(--footer-height);

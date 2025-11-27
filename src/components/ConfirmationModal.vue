@@ -1,5 +1,5 @@
 <template>
-  <div class="confirmation-modal">
+  <app-flex class="confirmation-modal" column start align-start gap="lg">
     <h5 v-if="title" class="title capitalize">{{ t(title) }}</h5>
 
     <card-wrapper v-if="message">
@@ -8,7 +8,7 @@
       </menu-item>
     </card-wrapper>
 
-    <div class="actions">
+    <app-flex class="actions" :column="tabletBelow" end align-center :gap="actionsGap">
       <card-wrapper>
         <menu-item type="danger" @click="resolver(true)">
           {{ t(confirmText ?? I18N.CONFIRM) }}
@@ -17,8 +17,8 @@
           {{ t(cancelText ?? I18N.CANCEL) }}
         </menu-item>
       </card-wrapper>
-    </div>
-  </div>
+    </app-flex>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -27,6 +27,10 @@ import { I18N } from 'orgnote-api';
 import { useI18n } from 'vue-i18n';
 import CardWrapper from './CardWrapper.vue';
 import MenuItem from 'src/containers/MenuItem.vue';
+import AppFlex from 'src/components/AppFlex.vue';
+import { useScreenDetection } from 'src/composables/use-screen-detection';
+import { computed } from 'vue';
+
 defineProps<
   {
     resolver: (data?: boolean) => void;
@@ -37,19 +41,15 @@ const { t } = useI18n({
   useScope: 'global',
   inheritLocale: true,
 });
+
+const { tabletBelow } = useScreenDetection();
+
+const actionsGap = computed((): 'sm' | 'md' => (tabletBelow.value ? 'sm' : 'md'));
 </script>
 
 <style lang="scss" scoped>
-.confirmation-modal {
-  @include flexify(column, flex-start, flex-start, var(--gap-lg));
-}
-
 .actions {
-  @include flexify(row, flex-end, center, var(--gap-md));
-
   @include tablet-below {
-    @include flexify(column, flex-end, center, var(--gap-sm));
-
     button {
       width: 100%;
     }

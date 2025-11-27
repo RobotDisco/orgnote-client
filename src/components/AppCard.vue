@@ -1,14 +1,23 @@
 <template>
   <card-wrapper :type="type">
-    <div v-if="slots.cardTitle || shouldShowIcon" class="card-header">
-      <app-icon v-if="shouldShowIcon" size="sm" :name="computedIcon" :color="background" />
-      <h5 v-if="slots.cardTitle" class="card-title text-bold" :style="{ color: bg }">
-        <slot name="cardTitle" />
-      </h5>
-    </div>
-    <div class="card-content">
-      <slot />
-    </div>
+    <app-flex column start align-start gap="md" class="card-inner">
+      <app-flex
+        v-if="slots.cardTitle || shouldShowIcon"
+        class="card-header"
+        row
+        start
+        align-center
+        gap="sm"
+      >
+        <app-icon v-if="shouldShowIcon" size="sm" :name="computedIcon" :color="background" />
+        <h5 v-if="slots.cardTitle" class="card-title text-bold" :style="{ color: bg }">
+          <slot name="cardTitle" />
+        </h5>
+      </app-flex>
+      <div class="card-content">
+        <slot />
+      </div>
+    </app-flex>
   </card-wrapper>
 </template>
 
@@ -20,6 +29,7 @@ import { computed } from 'vue';
 import AppIcon from './AppIcon.vue';
 import { CARD_TYPE_TO_BACKGROUND } from 'src/constants/card-type-to-background';
 import type { StyleVariant } from 'orgnote-api';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -60,8 +70,6 @@ const bg = computed(() => background.value && getCssVariableName(background.valu
 
 <style lang="scss" scoped>
 .card-wrapper {
-  @include flexify(column, flex-start, flex-start, var(--gap-md));
-
   & {
     box-sizing: border-box;
     padding: var(--padding-lg);
@@ -69,8 +77,8 @@ const bg = computed(() => background.value && getCssVariableName(background.valu
   }
 }
 
-.card-header {
-  @include flexify(row, flex-start, center, var(--gap-sm));
+.card-inner {
+  width: 100%;
 }
 
 h5 {

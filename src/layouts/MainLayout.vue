@@ -1,8 +1,11 @@
 <template>
-  <div
+  <app-flex
     class="main-layout"
     v-touch-swipe.mouse.left="mobileOnly(sidebar.close)"
     v-touch-swipe.mouse.right="mobileOnly(sidebar.open)"
+    direction="row"
+    start
+    align-start
   >
     <main-sidebar ref="sidebarRef" />
     <div class="content">
@@ -17,7 +20,7 @@
       </visibility-wrapper>
     </div>
     <modal-window />
-  </div>
+  </app-flex>
 </template>
 
 <script setup lang="ts">
@@ -29,6 +32,7 @@ import { ref } from 'vue';
 import { mobileOnly } from 'src/utils/platform-specific';
 import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
 import SafeArea from 'src/components/SafeArea.vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const sidebar = api.ui.useSidebar();
 const sidebarRef = ref(null);
@@ -45,7 +49,6 @@ const closeMainSidebar = () => {
 <style lang="scss" scoped>
 .main-layout {
   @include fit();
-  @include flexify(row, flex-start, flex-start);
 }
 
 .content {

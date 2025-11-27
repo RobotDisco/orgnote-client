@@ -1,5 +1,11 @@
 <template>
-  <div class="error-display" :class="{ centered }">
+  <app-flex
+    class="error-display"
+    :class="{ centered }"
+    direction="column"
+    justify="center"
+    align="center"
+  >
     <div class="error-container">
       <action-button
         :copy-text="errorText"
@@ -9,23 +15,38 @@
         class="copy-button"
         border
       />
-      <div v-if="Array.isArray(errors)" class="error-content">
+      <app-flex
+        v-if="Array.isArray(errors)"
+        class="error-content"
+        direction="column"
+        justify="start"
+        align="start"
+        gap="sm"
+      >
         <div v-for="(error, index) in errors" :key="index" class="error-message">
           {{ error }}
         </div>
-      </div>
-      <div v-else class="error-content">
+      </app-flex>
+      <app-flex
+        v-else
+        class="error-content"
+        direction="column"
+        justify="start"
+        align="start"
+        gap="sm"
+      >
         <div class="error-message">
           {{ errors }}
         </div>
-      </div>
+      </app-flex>
     </div>
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
 import ActionButton from './ActionButton.vue';
 import { computed } from 'vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -45,7 +66,6 @@ const errorText = computed(() => {
 <style lang="scss" scoped>
 .error-display {
   @include fit;
-  @include flexify(column, center, center);
 
   & {
     padding: var(--padding-lg);
@@ -77,10 +97,6 @@ const errorText = computed(() => {
   opacity: 0;
   transition: opacity 0.2s ease;
   background: var(--bg);
-}
-
-.error-content {
-  @include flexify(column, flex-start, flex-start, var(--gap-sm));
 }
 
 .error-message {

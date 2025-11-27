@@ -1,17 +1,21 @@
 <template>
-  <div
+  <app-flex
     class="tab"
     :class="{ active, dragging: isDragging }"
     :draggable="canDrag"
     @dragstart="handleDragStart"
     @dragend="handleDragEnd"
+    row
+    between
+    align-center
+    gap="sm"
   >
-    <div class="label">
+    <app-flex class="label" row start align-center gap="sm">
       <app-icon v-if="icon" :name="icon" size="xs" color="fg-alt" />
       <slot />
-    </div>
+    </app-flex>
     <action-button @click.prevent.stop="emits('close')" icon="close" size="xs" color="fg-alt" />
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -20,6 +24,7 @@ import AppIcon from './AppIcon.vue';
 import { computed, ref } from 'vue';
 import { Platform } from 'quasar';
 import { ORGNOTE_TAB_FORMAT } from 'src/constants/orgnote-tab';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -67,8 +72,6 @@ const handleDragEnd = () => {
 
 <style lang="scss" scoped>
 .tab {
-  @include flexify(row, space-between, center, var(--gap-sm));
-
   & {
     padding: var(--tab-padding);
     background: var(--tab-background);
@@ -96,9 +99,5 @@ const handleDragEnd = () => {
   border: var(--tab-active-border);
   color: var(--tab-active-color);
   background: var(--tab-active-background);
-}
-
-.label {
-  @include flexify(row, flex-start, center, var(--gap-sm));
 }
 </style>

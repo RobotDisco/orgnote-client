@@ -2,7 +2,7 @@
   <div class="task-wrapper">
     <app-spoiler>
       <template #title>
-        <app-flex direction="row">
+        <app-flex row>
           <app-flex gap="md">
             <app-icon
               :name="getStatusIcon(task.status)"

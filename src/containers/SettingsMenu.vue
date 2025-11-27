@@ -1,9 +1,9 @@
 <template>
-  <div class="settings-menu">
+  <app-flex class="settings-menu" column start align-center gap="lg">
     <card-wrapper v-for="(menuItems, key) of settingsMenu" :key="key">
       <command-menu-item v-for="(menuItem, i) of menuItems" :key="i" :command="menuItem" />
     </card-wrapper>
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -11,6 +11,7 @@ import CardWrapper from 'src/components/CardWrapper.vue';
 import { api } from 'src/boot/api';
 import { storeToRefs } from 'pinia';
 import CommandMenuItem from './CommandMenuItem.vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const { settingsMenu } = storeToRefs(api.ui.useSettingsUi());
 </script>
@@ -26,7 +27,5 @@ const { settingsMenu } = storeToRefs(api.ui.useSettingsUi());
   @include desktop-below {
     width: 100%;
   }
-
-  @include flexify(column, flex-start, center, var(--gap-lg));
 }
 </style>

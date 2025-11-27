@@ -1,5 +1,5 @@
 <template>
-  <div class="api-settings">
+  <app-flex class="api-settings" column start align-start gap="md">
     <app-description padded>
       <div class="capitalize">{{ t(I18N.AVAILABLE_FOR_SUBSCRIPTION) }}</div>
     </app-description>
@@ -8,7 +8,7 @@
       <menu-item v-for="(token, i) of tokens" type="plain" :key="i">
         {{ token.token }}
         <template #right>
-          <div class="actions">
+          <app-flex class="actions" row start align-center gap="sm">
             <action-button
               @click="api.utils.copyToClipboard(token.token ?? '')"
               icon="content_copy"
@@ -20,7 +20,7 @@
               border
             ></action-button>
             <action-button color="fg-alt" icon="delete" size="sm" outline border></action-button>
-          </div>
+          </app-flex>
         </template>
       </menu-item>
     </card-wrapper>
@@ -29,7 +29,7 @@
         <div class="capitalize">{{ t(I18N.CREATE_NEW_TOKEN) }}</div>
       </menu-item>
     </card-wrapper>
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -41,6 +41,7 @@ import CardWrapper from 'src/components/CardWrapper.vue';
 import { storeToRefs } from 'pinia';
 import { api } from 'src/boot/api';
 import ActionButton from 'src/components/ActionButton.vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const { tokens } = storeToRefs(api.core.useSettings());
 
@@ -54,15 +55,11 @@ const addToken = () => {};
 
 <style lang="scss" scoped>
 .api-settings {
-  @include flexify(column, flex-start, flex-start, var(--gap-md));
-
   & {
     width: 100%;
   }
 }
 .actions {
-  @include flexify(row, flex-start, center, var(--gap-sm));
-
   & {
     opacity: 0;
   }

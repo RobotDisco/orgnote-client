@@ -1,6 +1,6 @@
 <template>
-  <div class="splash-screen">
-    <div class="content">
+  <app-flex class="splash-screen" row center align-center>
+    <app-flex class="content" column center align-center gap="md">
       <div class="image-container">
         <img alt="orgnote icon" src="/icons/modern-unicorn-round.png" />
         <div class="gloss"></div>
@@ -9,13 +9,14 @@
         {{ loadingMessages.currentMessage }}
       </h5>
       <linear-progress />
-    </div>
-  </div>
+    </app-flex>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
 import LinearProgress from 'src/components/LinearProgress.vue';
 import { useLoadingMessages } from 'src/composables/use-loading-messages';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const loadingMessages = useLoadingMessages();
 </script>
@@ -27,7 +28,6 @@ h5 {
 .splash-screen {
   @include fit();
   @include overscreen;
-  @include flexify(row, center, center);
 
   & {
     color: white;
@@ -36,8 +36,6 @@ h5 {
   }
 
   .content {
-    @include flexify(column, center, center, var(--gap-md));
-
     & {
       margin-top: 98px;
     }

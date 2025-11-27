@@ -1,19 +1,19 @@
 <template>
-  <div class="nav-tabs">
+  <app-flex class="nav-tabs" row start align-center gap="xs">
     <slot name="navigation" />
-    <div class="content">
+    <app-flex class="content" row start align-center gap="xs">
       <slot />
-    </div>
+    </app-flex>
     <slot name="actions" />
-  </div>
+  </app-flex>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import AppFlex from 'src/components/AppFlex.vue';
+</script>
 
 <style lang="scss" scoped>
 .nav-tabs {
-  @include flexify(row, flex-start, center, var(--gap-xs));
-
   & {
     padding: var(--padding-md);
     width: 100%;
@@ -21,8 +21,6 @@
   }
 
   .content {
-    @include flexify(row, flex-start, center, var(--gap-xs));
-
     & {
       overflow-x: auto;
     }

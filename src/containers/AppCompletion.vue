@@ -13,14 +13,21 @@
     </template>
     <template #body>
       <completion-result v-if="activeCompletion!.candidates?.length" @select="handleResultSelect" />
-      <div v-else class="not-found" :style="{ height: completionItemHeight + 'px' }">
+      <app-flex
+        v-else
+        class="not-found"
+        row
+        center
+        align-center
+        :style="{ height: completionItemHeight + 'px' }"
+      >
         {{ t(I18N.NOT_FOUND).toUpperCase() }}
-      </div>
+      </app-flex>
     </template>
     <template #footer>
-      <div class="footer">
+      <app-flex class="footer" row center align-center>
         {{ (activeCompletion!.selectedCandidateIndex ?? 0) + 1 }}/{{ activeCompletion!.total }}
-      </div>
+      </app-flex>
     </template>
   </container-layout>
 </template>
@@ -36,6 +43,8 @@ import { computed } from 'vue';
 import { DEFAULT_COMPLETIO_ITEM_HEIGHT } from 'src/constants/completion-item';
 import { useI18n } from 'vue-i18n';
 import ContainerLayout from 'src/components/ContainerLayout.vue';
+import AppFlex from 'src/components/AppFlex.vue';
+
 defineProps<
   {
     placeholder?: string;
@@ -82,8 +91,6 @@ const { t } = useI18n({
 }
 
 .footer {
-  @include flexify(row, center, center);
-
   & {
     padding: var(--padding-lg);
     height: var(--completion-footer-height);
@@ -116,8 +123,6 @@ const { t } = useI18n({
 }
 
 .not-found {
-  @include flexify(row, center, center);
-
   & {
     color: var(--fg-alt);
   }

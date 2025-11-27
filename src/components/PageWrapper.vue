@@ -1,10 +1,12 @@
 <template>
-  <div class="page" :class="{ padding, constrained }">
+  <app-flex class="page" :class="{ padding, constrained }" column start align-start>
     <slot />
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
+import AppFlex from 'src/components/AppFlex.vue';
+
 defineProps<{
   padding?: boolean;
   constrained?: boolean;
@@ -14,7 +16,6 @@ defineProps<{
 <style lang="scss" scoped>
 .page {
   @include fit();
-  @include flexify(column, flex-start, flex-start);
 
   & {
     background: var(--bg);

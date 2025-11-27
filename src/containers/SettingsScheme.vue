@@ -1,11 +1,15 @@
 <template>
   <div class="settings-scheme">
     <h5 v-if="name" class="capitalize description">{{ name.toUpperCase() }}</h5>
-    <div
+    <app-flex
       v-if="
         scheme.type === 'union' && conditionalKey && Object.keys(conditionalOption ?? {}).length
       "
       class="union-settings"
+      column
+      start
+      align-center
+      gap="lg"
     >
       <card-wrapper>
         <menu-item
@@ -19,7 +23,7 @@
         </menu-item>
       </card-wrapper>
       <settings-scheme :scheme="conditionalOption!" :path="path" />
-    </div>
+    </app-flex>
     <card-wrapper v-else>
       <settings-item
         v-for="(scheme, name) of props.scheme.entries as Record<string, any>"
@@ -43,6 +47,7 @@ import { type OrgNoteConfig } from 'orgnote-api';
 import { storeToRefs } from 'pinia';
 import { camelCaseToWords } from 'src/utils/camel-case-to-words';
 import { isPresent } from 'src/utils/nullable-guards';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = defineProps<{
   path: keyof OrgNoteConfig;
@@ -97,17 +102,5 @@ const changeConditionalType = (t?: string): void => {
 <style lang="scss" scoped>
 .settings-scheme {
   width: 100%;
-}
-
-.menu-item-content {
-  @include flexify(row, space-between, center);
-
-  & {
-    width: 100%;
-  }
-}
-
-.union-settings {
-  @include flexify(column, flex-start, center, var(--gap-lg));
 }
 </style>
