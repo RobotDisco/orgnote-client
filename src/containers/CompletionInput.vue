@@ -1,6 +1,6 @@
 <template>
-  <div class="completion-input">
-    <div class="input">
+  <app-flex class="completion-input" row between align-center gap="sm">
+    <app-flex class="input" row start align-center gap="sm">
       <app-icon name="keyboard_arrow_right" size="md"></app-icon>
       <app-input
         ref="appInputRef"
@@ -8,7 +8,7 @@
         v-model="completion.activeCompletion!.searchQuery"
         :placeholder="placeholder"
       ></app-input>
-    </div>
+    </app-flex>
 
     <visibility-wrapper desktop-above>
       <action-button
@@ -18,7 +18,7 @@
       ></action-button>
     </visibility-wrapper>
     <action-button @click="completion.close()" icon="close" size="sm"></action-button>
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -29,6 +29,7 @@ import AppIcon from 'src/components/AppIcon.vue';
 import AppInput from 'src/components/AppInput.vue';
 import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
 import { ref } from 'vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 defineProps<{
   placeholder?: string;
@@ -74,12 +75,9 @@ defineExpose({
 
 <style lang="scss" scoped>
 .completion-input {
-  @include flexify(row, space-between, center, var(--gap-sm));
 }
 
 .input {
-  @include flexify(row, flex-start, center, var(--gap-sm));
-
   & {
     width: 100%;
   }

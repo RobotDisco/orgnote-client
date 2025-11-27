@@ -1,12 +1,20 @@
 <template>
-  <div class="header-wrapper" :style="paddingStyle">
+  <app-flex
+    class="header-wrapper"
+    :style="paddingStyle"
+    direction="row"
+    justify="start"
+    align="center"
+    gap="md"
+  >
     <slot />
-  </div>
+  </app-flex>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { StyleSize } from 'orgnote-api';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -24,8 +32,6 @@ const paddingStyle = computed(() => ({
 
 <style scoped lang="scss">
 .header-wrapper {
-  @include flexify(row, left, center, var(--gap-md));
-
   @include desktop-below {
     padding-top: var(--padding-sm);
     padding-bottom: var(--padding-sm);

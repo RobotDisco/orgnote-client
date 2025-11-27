@@ -1,11 +1,14 @@
 <template>
-  <div class="action-buttons" :class="[{ vertical, horizontal }, `${position}`]">
+  <app-flex class="action-buttons" :column="vertical" :justify="justifyValue" align-center gap="sm">
     <slot />
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
-withDefaults(
+import { computed } from 'vue';
+import AppFlex from 'src/components/AppFlex.vue';
+
+const props = withDefaults(
   defineProps<{
     vertical?: boolean;
     horizontal?: boolean;
@@ -15,30 +18,12 @@ withDefaults(
     position: 'left',
   },
 );
+
+const justifyMap: Record<string, 'start' | 'end' | 'center'> = {
+  left: 'start',
+  right: 'end',
+  center: 'center',
+};
+
+const justifyValue = computed(() => justifyMap[props.position]);
 </script>
-
-<style lang="scss" scoped>
-.action-buttons {
-  @include flexify(row, flex-start, center, var(--gap-sm));
-}
-
-.left {
-  justify-content: flex-start;
-}
-
-.right {
-  justify-content: flex-end;
-}
-
-.center {
-  justify-content: center;
-}
-
-.vertical {
-  flex-direction: column;
-}
-
-.horizontal {
-  flex-direction: row;
-}
-</style>

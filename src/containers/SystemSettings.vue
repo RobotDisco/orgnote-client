@@ -1,5 +1,5 @@
 <template>
-  <div class="system-settings">
+  <app-flex class="system-settings" column start align-start gap="sm">
     <card-wrapper>
       <menu-item @click="execute(DefaultCommands.DELETE_ALL_DATA)" type="danger">
         <div class="capitalize text-bold">{{ t(I18N.CLEAR_ALL_LOCAL_DATA) }}</div>
@@ -15,7 +15,7 @@
       </menu-item>
     </card-wrapper>
     <app-description :text="I18N.REMOVE_ACCOUNT_WARNING" padded />
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -26,6 +26,7 @@ import AppDescription from 'src/components/AppDescription.vue';
 import { useI18n } from 'vue-i18n';
 import { I18N, DefaultCommands } from 'orgnote-api';
 import { api } from 'src/boot/api';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const { t } = useI18n({
   useScope: 'global',
@@ -37,8 +38,6 @@ const { execute } = api.core.useCommands();
 
 <style lang="scss" scoped>
 .system-settings {
-  @include flexify(column, flex-start, flex-start, var(--gap-sm));
-
   & {
     width: 100%;
   }

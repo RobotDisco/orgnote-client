@@ -1,13 +1,20 @@
 <template>
   <div class="log-entry" :class="log.level" @click="handleClick">
-    <div v-if="!minimal" class="header">
+    <app-flex
+      v-if="!minimal"
+      class="header"
+      direction="row"
+      justify="start"
+      align="center"
+      gap="sm"
+    >
       <span class="number">[{{ position }}]</span>
       <app-date :date="log.ts" format="iso" monospace />
       <app-badge :color="getLevelColor(log.level)" size="xs">
         {{ (log.level ?? '').toUpperCase() }}
       </app-badge>
       <span v-if="hasRepeats" class="repeat">×{{ log.repeatCount }}</span>
-    </div>
+    </app-flex>
 
     <div class="message">
       <pre>{{ formattedMessage }}</pre>
@@ -35,6 +42,7 @@ import AppDate from './AppDate.vue';
 import { copyToClipboard } from 'src/utils/clipboard';
 import { api } from 'src/boot/api';
 import { useI18n } from 'vue-i18n';
+import AppFlex from 'src/components/AppFlex.vue';
 
 interface Props {
   log: LogRecord;
@@ -164,8 +172,6 @@ $level-colors: (
 }
 
 .header {
-  @include flexify(row, flex-start, center, var(--gap-sm));
-
   & {
     margin-bottom: var(--margin-md);
   }

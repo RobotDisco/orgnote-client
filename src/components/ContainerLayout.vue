@@ -1,5 +1,13 @@
 <template>
-  <div class="layout" :class="{ reverse }" :style="layoutStyles">
+  <app-flex
+    class="layout"
+    :class="{ reverse }"
+    :style="layoutStyles"
+    direction="column"
+    justify="start"
+    align="stretch"
+    gap="var(--layout-gap)"
+  >
     <div v-if="slots.header" class="layout-header" :class="{ border: headerBorder }">
       <slot name="header" />
     </div>
@@ -10,12 +18,13 @@
     <div v-if="slots.footer" class="layout-footer" :class="{ border: footerBorder }">
       <slot name="footer" />
     </div>
-  </div>
+  </app-flex>
 </template>
 
 <script setup lang="ts">
 import { computed, useSlots } from 'vue';
 import type { StyleSize } from 'orgnote-api';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -42,8 +51,6 @@ const layoutStyles = computed(() =>
 
 <style scoped lang="scss">
 .layout {
-  @include flexify(column, flex-start, stretch, var(--layout-gap));
-
   & {
     @include fit;
   }

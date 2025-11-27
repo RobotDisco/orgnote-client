@@ -1,6 +1,14 @@
 <template>
-  <div class="group-title" v-if="'groupTitle' in item">{{ item.groupTitle }}</div>
-  <div
+  <app-flex
+    class="group-title"
+    v-if="'groupTitle' in item"
+    direction="row"
+    justify="center"
+    align="center"
+  >
+    {{ item.groupTitle }}
+  </app-flex>
+  <app-flex
     v-else
     :key="extractDynamicValue(item.title)"
     class="completion-item"
@@ -10,6 +18,10 @@
       (e: MouseEvent) =>
         focusCompletionCandidate(e, (item as IndexedCompletionCandidate).index || index)
     "
+    direction="row"
+    justify="start"
+    align="center"
+    gap="md"
   >
     <app-icon v-if="item.icon" :name="extractDynamicValue(item.icon)" size="md" bordered></app-icon>
     <div class="text-bold color-main">
@@ -22,7 +34,7 @@
         {{ extractDynamicValue(item.description) }}
       </span>
     </div>
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -33,6 +45,7 @@ import type {
   IndexedCompletionCandidate,
 } from 'src/models/grouped-completion-candidate';
 import { extractDynamicValue } from 'src/utils/extract-dynamic-value';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = defineProps<{
   item: GroupedCompletionCandidate;
@@ -99,8 +112,6 @@ const executeCompletionItem = async (e: MouseEvent) => {
 
 <style lang="scss" scoped>
 .completion-item {
-  @include flexify(row, flex-start, center, var(--gap-md));
-
   & {
     height: 100%;
     cursor: pointer;
@@ -116,8 +127,6 @@ const executeCompletionItem = async (e: MouseEvent) => {
 }
 
 .group-title {
-  @include flexify(row, center, center);
-
   & {
     height: 100%;
     font-weight: bold;

@@ -1,14 +1,14 @@
 <template>
   <app-sidebar :mini="miniMode" :opened="opened">
     <template #mini-top>
-      <div class="command-list">
+      <app-flex class="command-list" column start align-start gap="sm">
         <command-action-button v-for="cmd of commands" :command="cmd" :key="cmd" />
-      </div>
+      </app-flex>
     </template>
     <template #mini-footer>
-      <div class="command-list">
+      <app-flex class="command-list" column start align-start gap="sm">
         <command-action-button v-for="cmd of footerCommands" :command="cmd" :key="cmd" />
-      </div>
+      </app-flex>
     </template>
     <visibility-wrapper tablet-below>
       <app-footer v-if="opened">
@@ -27,6 +27,7 @@ import AppSidebar from 'src/components/AppSidebar.vue';
 import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
 import { useScreenDetection } from 'src/composables/use-screen-detection';
 import CommandActionButton from 'src/containers/CommandActionButton.vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const { commands, footerCommands, opened, component, componentConfig } = storeToRefs(
   api.ui.useSidebar(),
@@ -36,10 +37,6 @@ const miniMode = screenDetector.tabletAbove;
 </script>
 
 <style lang="scss" scoped>
-.command-list {
-  @include flexify(column, flex-start, flex-start, var(--gap-sm));
-}
-
 .sidebar {
   position: relative;
 }

@@ -1,7 +1,13 @@
 <template>
-  <div class="icon" :style="iconStyle" :class="[{ rounded, bordered }, size, $attrs.class]">
+  <app-flex
+    class="icon"
+    :style="iconStyle"
+    :class="[{ rounded, bordered }, size, $attrs.class]"
+    center
+    align-center
+  >
     <q-icon v-bind="$props" color="inherit" :size="iconSize" />
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -12,6 +18,7 @@ import type { StyleSize, ThemeVariable } from 'orgnote-api';
 import type { QIconProps } from 'quasar';
 import { getCssVariableName } from 'src/utils/css-utils';
 import { computed } from 'vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 interface Props {
   color?: ThemeVariable;
@@ -47,8 +54,6 @@ const iconSize = computed(() => iconSizeMap[props.size]);
 
 <style lang="scss">
 .icon {
-  @include flexify(flex-start, center, center);
-
   $btn-sizes: (
     xs: var(--btn-action-xs-size),
     sm: var(--btn-action-sm-size),

@@ -23,6 +23,9 @@ test('renders single pane node', () => {
   const layout = createPaneNode('pane-1');
   const wrapper = shallowMount(LayoutRenderer, {
     props: { layout },
+    global: {
+      stubs: { AppFlex: false },
+    },
   });
 
   expect(wrapper.find('[data-testid="pane-pane-1"]').exists()).toBe(true);
@@ -38,6 +41,9 @@ test('passes paneId to slot', () => {
     slots: {
       default: slotContent,
     },
+    global: {
+      stubs: { AppFlex: false },
+    },
   });
 
   expect(slotContent).toHaveBeenCalledWith({ paneId: 'pane-123' });
@@ -48,6 +54,9 @@ test('renders horizontal split with two panes', () => {
 
   const wrapper = shallowMount(LayoutRenderer, {
     props: { layout },
+    global: {
+      stubs: { AppFlex: false },
+    },
   });
 
   expect(wrapper.find('.layout-split').exists()).toBe(true);
@@ -60,6 +69,9 @@ test('renders vertical split with two panes', () => {
 
   const wrapper = shallowMount(LayoutRenderer, {
     props: { layout },
+    global: {
+      stubs: { AppFlex: false },
+    },
   });
 
   expect(wrapper.find('.layout-split--vertical').exists()).toBe(true);
@@ -71,6 +83,9 @@ test('split node renders child LayoutRenderer components', () => {
 
   const wrapper = shallowMount(LayoutRenderer, {
     props: { layout },
+    global: {
+      stubs: { AppFlex: false },
+    },
   });
 
   const childRenderers = wrapper.findAllComponents({ name: 'LayoutRenderer' });
@@ -89,6 +104,9 @@ test('applies correct CSS classes to split nodes', () => {
 
   const wrapper = shallowMount(LayoutRenderer, {
     props: { layout },
+    global: {
+      stubs: { AppFlex: false },
+    },
   });
 
   const splitDiv = wrapper.find('.layout-split');
@@ -104,6 +122,9 @@ test('renders three panes in horizontal split', () => {
 
   const wrapper = shallowMount(LayoutRenderer, {
     props: { layout },
+    global: {
+      stubs: { AppFlex: false },
+    },
   });
 
   expect(wrapper.findAll('.layout-split-child')).toHaveLength(3);
@@ -116,6 +137,9 @@ test('vertical split has correct orientation', () => {
 
   const wrapper = shallowMount(LayoutRenderer, {
     props: { layout },
+    global: {
+      stubs: { AppFlex: false },
+    },
   });
 
   const splitDiv = wrapper.find('.layout-split');

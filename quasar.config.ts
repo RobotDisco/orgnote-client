@@ -31,10 +31,6 @@ export default defineConfig((ctx) => {
       'default-commands',
       'viewport-patch',
       'default-file-readers',
-      // {
-      //   server: false,
-      //   path: 'default-queues',
-      // }
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css

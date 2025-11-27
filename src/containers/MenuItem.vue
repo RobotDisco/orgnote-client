@@ -1,12 +1,16 @@
 <template>
-  <div
+  <app-flex
     class="menu-item"
     role="button"
     :class="[{ disabled }, type, `prefer-${prefer}`, `size-${size}`, { active }]"
     :style="{ '--menu-item-lines': lines, '--current-menu-item-height': itemHeight }"
+    column
+    start
+    align-center
+    gap="md"
   >
-    <div class="header">
-      <div class="left" :class="{ flat }">
+    <app-flex class="header" row between align-center gap="md">
+      <app-flex class="left" :class="{ flat }" row start align-center gap="sm">
         <app-icon
           v-if="icon"
           :name="icon"
@@ -18,7 +22,7 @@
         <div class="content capitalize" :style="{ color: getCssVariableName(color) }">
           <slot />
         </div>
-      </div>
+      </app-flex>
       <div v-if="slots.right || narrow || selected" class="right">
         <slot name="right" />
         <app-icon
@@ -29,11 +33,11 @@
         />
         <app-icon v-else-if="selected" name="sym_o_check" color="accent" size="sm" />
       </div>
-    </div>
+    </app-flex>
     <div v-if="slots.content" class="content">
       <slot name="content" />
     </div>
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -43,6 +47,7 @@ import { CARD_TYPE_TO_BACKGROUND } from 'src/constants/card-type-to-background';
 import { getCssVariableName } from 'src/utils/css-utils';
 import { useSlots } from 'vue';
 import { computed } from 'vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -91,8 +96,6 @@ const itemHeight = computed(() => itemHeightMap[props.size]);
 
 <style lang="scss" scoped>
 .menu-item {
-  @include flexify(column, flex-start, center, var(--gap-md));
-
   & {
     cursor: pointer;
     min-height: calc(var(--current-menu-item-height) * var(--menu-item-lines, 1));
@@ -118,8 +121,6 @@ const itemHeight = computed(() => itemHeightMap[props.size]);
 }
 
 .header {
-  @include flexify(row, space-between, center, var(--gap-md));
-
   & {
     width: 100%;
     flex: 1;
@@ -127,8 +128,6 @@ const itemHeight = computed(() => itemHeightMap[props.size]);
 }
 
 .left {
-  @include flexify(row, flex-start, center, var(--gap-sm));
-
   &.flat {
     gap: var(--gap-sm);
   }

@@ -1,19 +1,15 @@
 <template>
-  <div class="search-input">
-    <input
-      :name="name"
-      :type="type"
-      v-model="model"
-      :placeholder="placeholder && t(placeholder)"
-    />
+  <app-flex class="search-input" row between align-center gap="sm">
+    <input :name="name" :type="type" v-model="model" :placeholder="placeholder && t(placeholder)" />
     <action-button @click="model = ''" icon="sym_o_backspace" :size="size" />
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import ActionButton from './ActionButton.vue';
 import type { StyleSize } from 'orgnote-api';
+import AppFlex from 'src/components/AppFlex.vue';
 
 withDefaults(
   defineProps<{
@@ -40,8 +36,6 @@ const { t } = useI18n({
 
 <style lang="scss" scoped>
 .search-input {
-  @include flexify(row, space-between, center, var(--gap-sm));
-
   & {
     width: 100%;
   }

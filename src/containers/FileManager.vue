@@ -1,5 +1,5 @@
 <template>
-  <div class="file-manager" :class="{ compact }">
+  <app-flex class="file-manager" :class="{ compact }" column start align-start gap="md">
     <div class="files">
       <div class="actions">
         <action-buttons horizontal :position="compact ? 'left' : 'right'">
@@ -36,9 +36,9 @@
           />
         </menu-item>
         <menu-item :size="menuItemSize">
-          <div class="file-path">
+          <app-flex class="file-path" row start align-center>
             {{ targetPath ?? '/' }}
-          </div>
+          </app-flex>
         </menu-item>
 
         <file-manager-item
@@ -58,7 +58,7 @@
         />
       </card-wrapper>
     </div>
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -77,6 +77,7 @@ import ActionButton from 'src/components/ActionButton.vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { extractPathFromRoute } from 'src/utils/extract-path-from-route';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = defineProps<{
   path?: string;
@@ -192,8 +193,6 @@ const { t } = useI18n({
 
 <style lang="scss" scoped>
 .file-manager {
-  @include flexify(column, flex-start, flex-start, var(--gap-md));
-
   & {
     height: 100%;
   }
@@ -207,13 +206,7 @@ const { t } = useI18n({
   }
 }
 
-.footer {
-  @include flexify(row, flex-end, center, var(--gap-md));
-}
-
 .file-path {
-  @include flexify(row, flex-start, center);
-
   & {
     color: var(--fg-alt);
     flex: 1;

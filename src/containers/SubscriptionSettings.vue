@@ -1,5 +1,11 @@
 <template>
-  <div class="subscription-settings">
+  <app-flex
+    class="subscription-settings"
+    direction="column"
+    justify="start"
+    align="center"
+    gap="lg"
+  >
     <card-wrapper>
       <menu-item @click="inputRef?.focus()">
         <app-input ref="inputRef" :placeholder="t(I18N.SUBSCRIPTION_KEY)" />
@@ -36,7 +42,7 @@
         </ul>
       </app-description>
     </app-card>
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -48,6 +54,7 @@ import CardWrapper from 'src/components/CardWrapper.vue';
 import { ref } from 'vue';
 import { PATREON_LINK } from 'src/constants/external-link';
 import AppCard from 'src/components/AppCard.vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const { t } = useI18n({
   useScope: 'global',
@@ -59,8 +66,6 @@ const inputRef = ref<typeof AppInput | undefined>();
 
 <style lang="scss" scoped>
 .subscription-settings {
-  @include flexify(column, flex-start, center, var(--gap-lg));
-
   & {
     width: 100%;
   }

@@ -1,6 +1,10 @@
 <template>
   <animation-wrapper v-for="(m, i) of modals" :key="i">
-    <dialog
+    <app-flex
+      tag="dialog"
+      column
+      start
+      align-stretch
       @mousedown="handleDialogClick"
       @close="modal.close()"
       :class="{
@@ -12,20 +16,41 @@
       :ref="
         (el) => {
           if (el) {
-            modalDialogRefs[i] = el as HTMLDialogElement;
+            const component = el as InstanceType<typeof AppFlex>;
+            modalDialogRefs[i] = component.$el as HTMLDialogElement;
           }
         }
       "
     >
-      <safe-area :enabled="!m.config?.mini">
-        <div class="modal-content" :class="{ 'no-padding': m.config?.noPadding }">
-          <div v-if="m.config?.headerTitleComponent || m.config?.title" class="modal-header">
+      <app-flex
+        :tag="SafeArea"
+        :enabled="!m.config?.mini"
+        column
+        start
+        align-stretch
+        class="safe-area-wrapper"
+      >
+        <app-flex
+          class="modal-content"
+          column
+          start
+          align-start
+          :gap="m.config?.noPadding ? '0px' : 'var(--modal-padding)'"
+          :class="{ 'no-padding': m.config?.noPadding }"
+        >
+          <app-flex
+            v-if="m.config?.headerTitleComponent || m.config?.title"
+            class="modal-header"
+            row
+            between
+            align-center
+          >
             <component v-if="m.config?.headerTitleComponent" :is="m.config.headerTitleComponent" />
             <h1 v-else-if="m.config?.title" class="title capitalize">
               {{ t(m.config.title) }}
             </h1>
             <action-button @click="modal.close" icon="close" size="sm" />
-          </div>
+          </app-flex>
           <div class="content">
             <component
               :is="m.component"
@@ -33,9 +58,9 @@
               v-on="m.config?.modalEmits ?? {}"
             />
           </div>
-        </div>
-      </safe-area>
-    </dialog>
+        </app-flex>
+      </app-flex>
+    </app-flex>
   </animation-wrapper>
 </template>
 
@@ -48,6 +73,7 @@ import SafeArea from 'src/components/SafeArea.vue';
 import { nextTick, watch } from 'vue';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const modal = api.ui.useModal();
 const { modals } = storeToRefs(modal);
@@ -91,8 +117,6 @@ const { t } = useI18n({
 
 <style lang="scss" scoped>
 dialog {
-  @include flexify(column, flex-start, stretch);
-
   & {
     min-width: var(--modal-min-width);
     max-width: var(--modal-max-width);
@@ -123,8 +147,6 @@ dialog {
 }
 
 :deep(.safe-area) {
-  @include flexify(column, flex-start, stretch);
-
   & {
     flex: 1 1 auto;
     min-height: 0;
@@ -168,13 +190,7 @@ dialog.full-screen {
   border-radius: 0;
 }
 
-.modal-header {
-  @include flexify(row, space-between, center);
-}
-
 .modal-content {
-  @include flexify(column, flex-start, flex-start, var(--modal-padding));
-
   & {
     width: 100%;
     flex: 1 1 auto;

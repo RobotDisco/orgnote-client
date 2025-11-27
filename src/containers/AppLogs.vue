@@ -1,5 +1,5 @@
 <template>
-  <div class="logs">
+  <app-flex class="logs" column start align-stretch gap="md">
     <app-dropdown
       v-model="selectedLogLevelOption"
       :options="logLevelOptions"
@@ -33,7 +33,7 @@
         {{ $t(I18N.NO_ERRORS) }}
       </p>
     </app-card>
-  </div>
+  </app-flex>
 </template>
 
 <script setup lang="ts">
@@ -43,6 +43,7 @@ import AppDropdown from 'src/components/AppDropdown.vue';
 import LogEntry from 'src/components/LogEntry.vue';
 import { useAppLogs } from 'src/composables/useAppLogs';
 import { I18N, type LogLevel } from 'orgnote-api';
+import AppFlex from 'src/components/AppFlex.vue';
 
 interface LogLevelOption {
   label: string;
@@ -91,8 +92,6 @@ defineExpose({
 
 <style scoped lang="scss">
 .logs {
-  @include flexify(column, flex-start, stretch, var(--gap-md));
-
   & {
     height: 100%;
   }
@@ -116,8 +115,6 @@ defineExpose({
 }
 
 .store-errors-header {
-  @include flexify(row, space-between, center, var(--gap-md));
-
   & {
     margin-bottom: var(--margin-md);
   }

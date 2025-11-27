@@ -1,6 +1,6 @@
 <template>
   <div class="tab-preview" :class="{ active }" @click="$emit('select')">
-    <div class="preview-overlay">
+    <app-flex class="preview-overlay" row between align-center>
       <div class="tab-title">{{ title }}</div>
       <action-button
         icon="sym_o_close"
@@ -10,7 +10,7 @@
         outline
         hover-color="violet"
       />
-    </div>
+    </app-flex>
     <div class="preview-content">
       <ScopedRouterView v-if="tab.router" :router="tab.router" class="scaled-router-view" />
     </div>
@@ -24,6 +24,7 @@ import { provide, shallowRef, computed } from 'vue';
 import { TAB_ROUTER_KEY } from 'src/constants/context-providers';
 import { generateTabTitle } from 'src/utils/generate-tab-title';
 import ActionButton from './ActionButton.vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = defineProps<{
   tab: Tab;
@@ -70,13 +71,16 @@ defineEmits<{
 }
 
 .preview-overlay {
-  @include flexify(row, space-between, center);
-
   & {
     width: 100%;
     position: absolute;
     height: var(--tab-preview-header-height);
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.6),
+      rgba(0, 0, 0, 0.3),
+      rgba(0, 0, 0, 0)
+    );
     z-index: 10;
     padding: var(--tab-preview-overlay-padding);
   }

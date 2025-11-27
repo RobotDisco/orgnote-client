@@ -142,9 +142,10 @@ test('PageWrapper should render with no classes when no props provided', () => {
 
   const pageClasses = wrapper.find('.page').classes();
   expect(pageClasses).toContain('page');
+  expect(pageClasses).toContain('flex-container');
   expect(pageClasses).not.toContain('padding');
   expect(pageClasses).not.toContain('constrained');
-  expect(pageClasses).toHaveLength(1);
+  expect(pageClasses).toHaveLength(2);
 });
 
 test('PageWrapper should handle empty slot content', () => {

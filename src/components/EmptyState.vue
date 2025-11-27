@@ -1,5 +1,5 @@
 <template>
-  <app-flex direction="column" align="center" justify="center" gap="sm" class="empty-state">
+  <app-flex column align-center center gap="sm" class="empty-state">
     <app-icon v-if="icon" :name="icon" size="lg" class="icon" />
     <div v-if="title" class="title">{{ title }}</div>
     <div v-if="description" class="description">{{ description }}</div>

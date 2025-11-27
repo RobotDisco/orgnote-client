@@ -1,5 +1,5 @@
 <template>
-  <div class="storage-settings">
+  <app-flex class="storage-settings" column start align-start gap="md">
     <app-description>
       {{ t(I18N.CHOOSE_FILE_SYSTEM) }}
     </app-description>
@@ -38,7 +38,7 @@
         I18N.PICK_FOLDER
       }}</menu-item>
     </app-description>
-  </div>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -52,6 +52,7 @@ import { useI18n } from 'vue-i18n';
 import { api } from 'src/boot/api';
 import { storeToRefs } from 'pinia';
 import { I18N } from 'orgnote-api';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const { t } = useI18n({
   useScope: 'global',
@@ -65,8 +66,6 @@ const { fileSystems, currentFsName } = storeToRefs(fsManager);
 
 <style lang="scss" scoped>
 .storage-settings {
-  @include flexify(column, flex-start, flex-start, var(--gap-md));
-
   & {
     width: 100%;
   }

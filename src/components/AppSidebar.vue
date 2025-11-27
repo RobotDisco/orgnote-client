@@ -1,23 +1,24 @@
 <template>
   <safe-area>
-    <div class="sidebar" :class="{ opened }">
-      <div v-if="mini" class="mini">
+    <app-flex class="sidebar" :class="{ opened }" row between align-center>
+      <app-flex v-if="mini" class="mini" column between align-center>
         <div class="top">
           <slot name="mini-top" />
         </div>
         <div class="footer">
           <slot name="mini-footer" />
         </div>
-      </div>
+      </app-flex>
       <div class="content">
         <slot />
       </div>
-    </div>
+    </app-flex>
   </safe-area>
 </template>
 
 <script lang="ts" setup>
 import SafeArea from './SafeArea.vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 withDefaults(
   defineProps<{
@@ -35,8 +36,6 @@ withDefaults(
 
 <style lang="scss" scoped>
 .sidebar {
-  @include flexify();
-
   & {
     border-right: var(--sidebar-border-right);
     background: var(--sidebar-background);
@@ -46,8 +45,6 @@ withDefaults(
   }
 
   .mini {
-    @include flexify(column, space-between, center);
-
     & {
       width: var(--sidebar-mini-width);
       height: 100vh;

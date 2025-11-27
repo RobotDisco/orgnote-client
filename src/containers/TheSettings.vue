@@ -1,14 +1,14 @@
 <template>
-  <div class="settings">
+  <app-flex class="settings" row start align-start gap="lg">
     <visibility-wrapper desktop-above>
       <div class="menu">
         <settings-menu />
       </div>
     </visibility-wrapper>
-    <div class="content">
+    <app-flex class="content" column start align-start gap="lg">
       <component :is="currentView" />
-    </div>
-  </div>
+    </app-flex>
+  </app-flex>
 </template>
 
 <script lang="ts" setup>
@@ -17,6 +17,7 @@ import SettingsMenu from './SettingsMenu.vue';
 import { SETTINGS_ROUTER_PROVIDER_TOKEN } from 'src/constants/app-providers';
 import { RouteNames } from 'orgnote-api';
 import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -54,8 +55,6 @@ navigate(props.initialRoute);
 
 <style lang="scss" scoped>
 .settings {
-  @include flexify(row, flex-start, flex-start, var(--gap-lg));
-
   & {
     flex: 1;
     width: 100%;
@@ -69,8 +68,6 @@ navigate(props.initialRoute);
 }
 
 .content {
-  @include flexify(column, flex-start, flex-start, var(--gap-lg));
-
   & {
     flex: 1;
     width: 100%;

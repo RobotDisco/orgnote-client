@@ -9,7 +9,7 @@
           <StatCard :value="stats.average.toFixed(0) + 'ms'" label="Avg Time" />
         </app-grid>
 
-        <app-flex justify="end" gap="sm">
+        <app-flex end gap="sm">
           <action-button
             @click="refresh"
             color="fg"
