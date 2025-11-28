@@ -1,5 +1,5 @@
 import AppIcon from '../components/AppIcon.vue';
-import type { StoryObj } from '@storybook/vue3';
+import type { StoryObj } from '@storybook/vue3-vite';
 import StoryList from './StoryList.vue';
 import { computed } from 'vue';
 

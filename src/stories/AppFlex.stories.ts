@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import AppFlex from 'src/components/AppFlex.vue';
 import StoryList from './StoryList.vue';
 import { computed } from 'vue';

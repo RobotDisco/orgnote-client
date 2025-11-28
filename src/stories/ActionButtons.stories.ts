@@ -1,4 +1,4 @@
-import type { StoryObj } from '@storybook/vue3';
+import type { StoryObj } from '@storybook/vue3-vite';
 import ActionButton from 'src/components/ActionButton.vue';
 import ActionButtons from 'src/components/ActionButtons.vue';
 import AppIcon from 'src/components/AppIcon.vue';

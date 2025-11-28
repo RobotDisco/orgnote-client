@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import MonochromeFace from 'src/components/MonochromeFace.vue';
 
 const meta: Meta<typeof MonochromeFace> = {
