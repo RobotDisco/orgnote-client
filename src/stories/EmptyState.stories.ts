@@ -1,5 +1,5 @@
 import type { DefineComponent } from 'vue';
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import EmptyState, { type EmptyStateProps } from 'src/components/EmptyState.vue';
 import AppButton from 'src/components/AppButton.vue';
 

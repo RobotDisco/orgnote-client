@@ -1,4 +1,4 @@
-import type { StoryObj } from '@storybook/vue3';
+import type { StoryObj } from '@storybook/vue3-vite';
 import StoryList from './StoryList.vue';
 import ConfirmationModal from 'src/components/ConfirmationModal.vue';
 import NavTabs from 'src/components/NavTabs.vue';

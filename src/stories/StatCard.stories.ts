@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import StatCard from 'src/components/StatCard.vue';
 
 const meta: Meta<typeof StatCard> = {

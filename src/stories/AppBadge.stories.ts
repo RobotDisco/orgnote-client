@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import type { StyleSize, StyleVariant, ThemeVariable } from 'orgnote-api';
 import AppBadge from 'src/components/AppBadge.vue';
 import StoryList from './StoryList.vue';

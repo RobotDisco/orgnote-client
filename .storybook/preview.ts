@@ -1,4 +1,4 @@
-import type { Preview } from '@storybook/vue3';
+import type { Preview } from '@storybook/vue3-vite';
 import '@quasar/extras/roboto-font/roboto-font.css';
 import '@quasar/extras/animate/fadeInUp.css';
 import '@quasar/extras/animate/fadeOutDown.css';
@@ -12,7 +12,7 @@ import '@quasar/extras/material-symbols-outlined/material-symbols-outlined.css';
 import '@quasar/extras/fontawesome-v6/fontawesome-v6.css';
 
 import 'quasar/dist/quasar.css';
-import { setup } from '@storybook/vue3';
+import { setup } from '@storybook/vue3-vite';
 import { i18n } from '../src/boot/i18n';
 
 import { QBtn, QIcon, QLinearProgress, Quasar } from 'quasar';
