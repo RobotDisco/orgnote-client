@@ -16,6 +16,18 @@ export function getDeveloperCommands(): Command[] {
     );
   };
 
+  const openCronManager = () => {
+    const modal = api.ui.useModal();
+    modal.open(
+      defineAsyncComponent(() => import('src/containers/CronManager.vue')),
+      {
+        title: 'Cron Manager',
+        closable: true,
+        wide: true,
+      },
+    );
+  };
+
   const commands: Command[] = [
     {
       command: DefaultCommands.OPEN_QUEUE_MANAGER,
@@ -75,6 +87,41 @@ export function getDeveloperCommands(): Command[] {
         await api.core.useQueue().clear(queueId ?? 'default');
         api.ui.useModal().close();
       },
+    },
+    {
+      command: DefaultCommands.OPEN_CRON,
+      handler: openCronManager,
+      hide: (api: OrgNoteApi) => {
+        const config = api.core.useConfig();
+        return !config.config.developer.developerMode;
+      },
+      icon: 'sym_o_schedule',
+      group: 'developer',
+    },
+    {
+      command: DefaultCommands.CLEAR_OLD_QUEUE_TASKS,
+      handler: async (api: OrgNoteApi) => {
+        const queueRepository = api.infrastructure.queueRepository;
+        const tasks = await queueRepository.getAll();
+        const m = api.core.useConfig().config.developer.storeQueueTasksMinutes;
+
+        const cutoffTime = Date.now() - m * 60 * 1000;
+        const oldQueueTasks = tasks.filter((t) => (t.added ?? 0) < cutoffTime);
+
+        if (!oldQueueTasks.length) {
+          return;
+        }
+
+        await Promise.all(oldQueueTasks.map((t) => queueRepository.delete(t.id, true)));
+
+        api.utils.logger.info(`Cleared ${oldQueueTasks.length} old queue tasks.`);
+      },
+      hide: (api: OrgNoteApi) => {
+        const config = api.core.useConfig();
+        return !config.config.developer.developerMode;
+      },
+      icon: 'sym_o_schedule',
+      group: 'developer',
     },
   ];
 
