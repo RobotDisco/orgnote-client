@@ -65,6 +65,7 @@
     "setimmediate": "^1.0.5",
     "spectrallogs": "0.2.2",
     "splitpanes": "4.0.3",
+    "toad-scheduler": "3.1.0",
     "uuid": "11.1.0",
     "valibot": "1.0.0",
     "vue": "3.5.13",

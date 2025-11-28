@@ -12,7 +12,7 @@ export const DEFAULT_CONFIG: OrgNoteConfig = {
   developer: {
     developerMode: false,
     maximumLogsCount: 1000,
-    storeQeueTasksMinutes: 60,
+    storeQueueTasksMinutes: 60,
   },
   system: {
     language: 'en-US',

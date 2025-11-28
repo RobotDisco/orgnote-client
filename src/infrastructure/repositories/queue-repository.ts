@@ -37,14 +37,25 @@ export const createQueueRepository = (db: Dexie): QueueRepository => {
     return await store.get(id);
   };
 
-  const getAll = async (queueId: string): Promise<QueueTask[]> => {
+  const getAll = async (queueId?: string): Promise<QueueTask[]> => {
+    if (!queueId) {
+      return await store
+        .orderBy('added')
+        .filter((task) => !task.deletedAt)
+        .toArray();
+    }
     return await store
       .orderBy('added')
-      .filter((task) => task.queueId === queueId)
+      .filter((task) => task.queueId === queueId && !task.deletedAt)
       .toArray();
   };
 
-  const del = async (id: string): Promise<void> => {
+  const del = async (id: string, force = false): Promise<void> => {
+    if (force) {
+      await store.delete(id);
+      return;
+    }
+
     const task = await store.get(id);
     if (!task) return;
 

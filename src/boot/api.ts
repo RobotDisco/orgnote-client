@@ -51,6 +51,7 @@ import { logger } from './logger';
 import { useSystemInfo } from 'src/composables/use-system-info';
 import { useContextMenuStore } from 'src/stores/context-menu';
 import { useQueueStore } from 'src/stores/queue';
+import { useCronStore } from 'src/stores/cron';
 
 let api: OrgNoteApi;
 async function initApi(app: App, router: Router): Promise<void> {
@@ -78,6 +79,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useLog: useLogStore,
       useSystemInfo,
       useQueue: useQueueStore,
+      useCron: useCronStore,
       app,
     },
     utils: {
