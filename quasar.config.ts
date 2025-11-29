@@ -84,7 +84,7 @@ export default defineConfig((ctx) => {
       // distDir
 
       extendViteConf(viteConf) {
-        // Polyfill Node.js util module for browser (required by better-queue)
+        // Polyfill Node.js util module for browser (required by @es-git packages)
         viteConf.resolve = viteConf.resolve || {};
         viteConf.resolve.alias = {
           ...viteConf.resolve.alias,
