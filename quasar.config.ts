@@ -83,7 +83,14 @@ export default defineConfig((ctx) => {
       // polyfillModulePreload: true,
       // distDir
 
-      // extendViteConf (viteConf) {},
+      extendViteConf(viteConf) {
+        // Polyfill Node.js util module for browser (required by better-queue)
+        viteConf.resolve = viteConf.resolve || {};
+        viteConf.resolve.alias = {
+          ...viteConf.resolve.alias,
+          util: 'util/',
+        };
+      },
       // viteVuePluginOptions: {},
 
       vitePlugins: [

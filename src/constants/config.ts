@@ -13,6 +13,7 @@ export const DEFAULT_CONFIG: OrgNoteConfig = {
     developerMode: false,
     maximumLogsCount: 1000,
     storeQueueTasksMinutes: 60,
+    corsProxy: 'https://org-note.com/cors/',
   },
   system: {
     language: 'en-US',
