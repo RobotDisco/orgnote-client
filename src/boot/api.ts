@@ -52,6 +52,7 @@ import { useSystemInfo } from 'src/composables/use-system-info';
 import { useContextMenuStore } from 'src/stores/context-menu';
 import { useQueueStore } from 'src/stores/queue';
 import { useCronStore } from 'src/stores/cron';
+import { useGitStore } from 'src/stores/git';
 
 let api: OrgNoteApi;
 async function initApi(app: App, router: Router): Promise<void> {
@@ -80,6 +81,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useSystemInfo,
       useQueue: useQueueStore,
       useCron: useCronStore,
+      useGit: useGitStore,
       app,
     },
     utils: {
