@@ -5,6 +5,7 @@
     :reverse="shouldReverse"
     header-border
     footer-border
+    body-scroll
   >
     <template #header>
       <div class="header">
@@ -12,17 +13,22 @@
       </div>
     </template>
     <template #body>
-      <completion-result v-if="activeCompletion!.candidates?.length" @select="handleResultSelect" />
-      <app-flex
-        v-else
-        class="not-found"
-        row
-        center
-        align-center
-        :style="{ height: completionItemHeight + 'px' }"
-      >
-        {{ t(I18N.NOT_FOUND).toUpperCase() }}
-      </app-flex>
+      <div class="body">
+        <completion-result
+          v-if="activeCompletion!.candidates?.length"
+          @select="handleResultSelect"
+        />
+        <app-flex
+          v-else
+          class="not-found"
+          row
+          center
+          align-center
+          :style="{ height: completionItemHeight + 'px' }"
+        >
+          {{ t(I18N.NOT_FOUND).toUpperCase() }}
+        </app-flex>
+      </div>
     </template>
     <template #footer>
       <app-flex class="footer" row center align-center>
@@ -79,15 +85,15 @@ const { t } = useI18n({
   &.full-screen {
     max-width: unset;
   }
-
-  .layout-body {
-    padding: var(--completion-padding);
-    padding-right: calc(var(--completion-padding) - var(--scroll-bar-width));
-  }
 }
 
-.header {
+.header,
+.body {
   padding: var(--completion-padding);
+}
+
+.body {
+  padding-right: calc(var(--completion-padding) - var(--scroll-bar-width));
 }
 
 .footer {
@@ -110,7 +116,7 @@ const { t } = useI18n({
   }
 }
 
-@include tablet-above {
+@include desktop {
   .completion-wrapper {
     &:not(.full-screen) {
       max-height: var(--completion-max-height, 68vh);

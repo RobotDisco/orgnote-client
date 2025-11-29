@@ -171,7 +171,7 @@ dialog {
   }
 }
 
-@include tablet-above {
+@include desktop {
   dialog.position-top {
     margin: 0;
     position: fixed;
@@ -213,6 +213,5 @@ dialog.full-screen {
   display: flex;
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
 }
 </style>
