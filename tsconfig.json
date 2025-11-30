@@ -3,10 +3,7 @@
   "compilerOptions": {
     "exactOptionalPropertyTypes": false,
     "strictNullChecks": true,
-    "lib": ["es2022", "es2021", "DOM", "DOM.iterable"],
-    "paths": {
-      "test/*": ["./test/*"]
-    }
+    "lib": ["es2022", "es2021", "DOM", "DOM.iterable"]
   },
   "exclude": [
     "./../dist",

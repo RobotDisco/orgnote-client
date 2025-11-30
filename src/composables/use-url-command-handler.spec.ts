@@ -60,7 +60,7 @@ vi.mock('src/boot/report', () => ({
 }));
 
 import { useUrlCommandHandler } from './use-url-command-handler';
-import { withSetup } from 'test/with-setup';
+import { withSetup } from '../../test/with-setup';
 
 const flushPromises = async () => {
   await nextTick();
