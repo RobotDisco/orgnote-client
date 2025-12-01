@@ -1,5 +1,4 @@
 import {
-  type StoredExtension,
   type ExtensionManifest,
   type Extension,
   EXTENSION_MANIFEST_SCHEMA,
@@ -8,35 +7,39 @@ import { parse } from 'valibot';
 import { formatValidationErrors } from './format-validation-errors';
 import { to } from './to-error';
 
-export async function readExtension(file: File): Promise<StoredExtension> {
-  return await readExtensionFromString(await file.text());
+export interface CompiledExtension {
+  module: Extension;
+  manifest: ExtensionManifest;
+  rawContent: string;
 }
 
-export async function readExtensionFromString(rawExt: string): Promise<StoredExtension> {
+export async function parseExtensionFromFile(file: File): Promise<CompiledExtension> {
+  const rawExt = await file.text();
+  return await parseExtension(rawExt);
+}
+
+export async function parseExtension(rawExt: string): Promise<CompiledExtension> {
   const rawContent = encodeURIComponent(rawExt);
+  const moduleUrl = `data:text/javascript,${rawContent}`;
 
-  const module = `data:text/javascript,${rawContent}`;
-
-  const m = (await import(/* @vite-ignore */ module)) as {
+  const m = (await import(/* @vite-ignore */ moduleUrl)) as {
     default: Extension;
     manifest: ExtensionManifest;
   };
 
   validateManifest(m.manifest);
+
   return {
-    manifest: {
-      ...m.manifest,
-      development: true,
-    },
-    active: false,
-    module: rawContent,
+    module: m.default,
+    manifest: m.manifest,
+    rawContent,
   };
 }
 
-export async function compileExtension(content: string): Promise<Extension> {
-  const module = `data:text/javascript,${content}`;
+export async function compileExtension(encodedContent: string): Promise<Extension> {
+  const moduleUrl = `data:text/javascript,${encodedContent}`;
 
-  const m = (await import(/* @vite-ignore */ module)) as {
+  const m = (await import(/* @vite-ignore */ moduleUrl)) as {
     default: Extension;
     manifest: ExtensionManifest;
   };

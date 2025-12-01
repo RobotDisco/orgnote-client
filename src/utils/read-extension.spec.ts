@@ -1,12 +1,16 @@
 import { test, expect, vi } from 'vitest';
-import { readExtension, readExtensionFromString, compileExtension } from './read-extension';
+import {
+  parseExtensionFromFile,
+  parseExtension,
+  compileExtension,
+} from './read-extension';
 
 const manifestExample = {
   name: 'Test Extension',
   version: '1.0.0',
-  permissions: ['read', 'write'],
+  permissions: ['files', '*'],
   category: 'other',
-  sourceType: 'builtin',
+  source: { type: 'local' },
 };
 
 const validExtensionScript = `
@@ -38,40 +42,38 @@ Object.defineProperty(global, 'import', {
   writable: true,
 });
 
-test('loads extension from file', async () => {
+test('parses extension from file', async () => {
   const file = new File([validExtensionScript], 'extension.js', { type: 'text/javascript' });
-  const result = await readExtension(file);
+  const result = await parseExtensionFromFile(file);
 
-  expect(result.manifest).toMatchObject({
-    ...manifestExample,
-    development: true,
-  });
-  expect(result.active).toBe(false);
-  expect(result.module).toBe(encodeURIComponent(validExtensionScript));
+  expect(result.manifest).toMatchObject(manifestExample);
+  expect(result.module).toBeDefined();
+  expect(typeof result.module.execute).toBe('function');
+  expect(result.rawContent).toBe(encodeURIComponent(validExtensionScript));
 });
 
-test('loads extension from string', async () => {
-  const result = await readExtensionFromString(validExtensionScript);
+test('parses extension from string', async () => {
+  const result = await parseExtension(validExtensionScript);
 
-  expect(result.manifest).toMatchObject({
-    ...manifestExample,
-    development: true,
-  });
-  expect(result.active).toBe(false);
-  expect(result.module).toBe(encodeURIComponent(validExtensionScript));
+  expect(result.manifest).toMatchObject(manifestExample);
+  expect(result.module).toBeDefined();
+  expect(typeof result.module.execute).toBe('function');
+  expect(result.rawContent).toBe(encodeURIComponent(validExtensionScript));
 });
 
-test('compiles and returns extension', async () => {
-  const result = await compileExtension(validExtensionScript);
+test('compiles encoded extension content', async () => {
+  const encoded = encodeURIComponent(validExtensionScript);
+  const result = await compileExtension(encoded);
 
   expect(result).toBeDefined();
   expect(typeof result.execute).toBe('function');
 });
 
-test('throws error for invalid script in readExtensionFromString', async () => {
-  await expect(readExtensionFromString(invalidExtensionScript)).rejects.toThrow();
+test('throws error for invalid script in parseExtension', async () => {
+  await expect(parseExtension(invalidExtensionScript)).rejects.toThrow();
 });
 
 test('throws error for invalid script in compileExtension', async () => {
-  await expect(compileExtension(invalidExtensionScript)).rejects.toThrow();
+  const encoded = encodeURIComponent(invalidExtensionScript);
+  await expect(compileExtension(encoded)).rejects.toThrow();
 });

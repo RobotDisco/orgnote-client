@@ -24,17 +24,20 @@ vi.mock('spectrallogs/web', () => {
 
 let logger: ReturnType<typeof createSpectralLogger>;
 const originalClient = process.env.CLIENT;
+const originalDev = process.env.DEV;
 const originalWindow = globalThis.window;
 
 beforeEach(() => {
   vi.clearAllMocks();
   delete (globalThis as { window?: unknown }).window;
   process.env.CLIENT = '';
+  process.env.DEV = false;
   logger = createSpectralLogger();
 });
 
 afterEach(() => {
   process.env.CLIENT = originalClient;
+  process.env.DEV = originalDev;
   if (originalWindow) {
     globalThis.window = originalWindow;
   } else {
@@ -111,4 +114,16 @@ test('logger handles empty arguments correctly', () => {
     logger.debug('Test debug');
     logger.trace('Test trace');
   }).not.toThrow();
+});
+
+test('logs stack trace to console in dev mode when provided', () => {
+  process.env.DEV = true;
+  const stackTrace = 'Error: boom\n    at fn (file:1:1)';
+  const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+  const devLogger = createSpectralLogger();
+  devLogger.error('message', { stack: stackTrace });
+
+  expect(consoleSpy).toHaveBeenCalledWith(stackTrace);
+  consoleSpy.mockRestore();
 });

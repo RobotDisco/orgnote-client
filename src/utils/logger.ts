@@ -197,6 +197,23 @@ const buildRecord = (level: LogLevel, primary: unknown, extras: unknown[], bindi
   return record;
 };
 
+const findStackTrace = (primary: unknown, extras: unknown[]): string | undefined => {
+  const candidates = [primary, ...extras];
+  for (const candidate of candidates) {
+    if (candidate instanceof Error && candidate.stack) return candidate.stack;
+    if (candidate && typeof candidate === 'object') {
+      const stack = (candidate as { stack?: unknown }).stack;
+      if (typeof stack === 'string') return stack;
+    }
+  }
+  return undefined;
+};
+
+const logStackTraceInDev = (stack?: string): void => {
+  if (!process.env.DEV || !stack) return;
+  console.error(stack);
+};
+
 const shouldRecordLogs = (): boolean => !!process.env.CLIENT;
 
 const createLoggerAdapter = (base: SpectralLoggerWeb, bindings: Bindings = {}): Logger => {
@@ -204,7 +221,9 @@ const createLoggerAdapter = (base: SpectralLoggerWeb, bindings: Bindings = {}): 
     const method = spectralMethodMap[level];
     const spectralMessage = toMessage(primary);
     const target = base[method] as (message: string) => void;
+    const stackTrace = process.env.DEV ? findStackTrace(primary, extras) : undefined;
     target.call(base, spectralMessage);
+    logStackTraceInDev(stackTrace);
     if (!shouldRecordLogs()) return;
     const record = buildRecord(level, primary, extras, bindings);
     submitLogRecord(record);
