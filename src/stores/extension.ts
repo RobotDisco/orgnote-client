@@ -8,10 +8,12 @@ import type {
   ExtensionStore,
   GitRepoHandle,
   GitSource,
+  LocalSource,
 } from 'orgnote-api';
 import { ref, computed } from 'vue';
 import { api } from 'src/boot/api';
-import { compileExtension } from 'src/utils/read-extension';
+import { compileExtension, parseExtensionFromFile } from 'src/utils/read-extension';
+import { validateManifest } from 'src/utils/validate-manifest';
 import { reporter } from 'src/boot/report';
 import { to } from 'src/utils/to-error';
 import { useFileSystemStore } from './file-system';
@@ -36,8 +38,6 @@ interface FetchedExtension {
 type SourceFetcher = (source: ExtensionSourceInfo) => Promise<FetchedExtension>;
 
 const extensionsFilePath = getSystemFilesPath('extensions.toml');
-const extensionEntryFile = 'index.js';
-const extensionManifestFile = 'manifest.json';
 const distFolder = 'dist';
 
 export const useExtensionsStore = defineStore<'extension', ExtensionStore>('extension', () => {
@@ -139,7 +139,10 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
     }
 
     const module = compileResult.value;
-    const safeMounted = to(module.onMounted, 'Failed to mount extension');
+    const safeMounted = to(
+      module.onMounted.bind(module),
+      `Failed to mount extension ${meta.manifest.name}`,
+    );
     const mountResult = await safeMounted(api);
 
     if (mountResult.isErr()) {
@@ -165,7 +168,10 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
     }
 
     if (ext.module?.onUnmounted) {
-      const safeUnmount = to(ext.module.onUnmounted, 'Failed to unmount extension');
+      const safeUnmount = to(
+        ext.module.onUnmounted.bind(ext.module),
+        'Failed to unmount extension',
+      );
       const result = await safeUnmount(api);
 
       if (result.isErr()) {
@@ -236,29 +242,12 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
 
   const resolveExtensionPaths = async (
     repoHandle: GitRepoHandle,
-  ): Promise<{ entryPath: string; manifestPath: string | null }> => {
-    const distEntryPath = `${distFolder}/${extensionEntryFile}`;
-    const distManifestPath = `${distFolder}/${extensionManifestFile}`;
-
-    const hasDistEntry = await repoHandle.fileExists(distEntryPath);
-
-    if (hasDistEntry) {
-      const hasDistManifest = await repoHandle.fileExists(distManifestPath);
-      return {
-        entryPath: distEntryPath,
-        manifestPath: hasDistManifest ? distManifestPath : null,
-      };
-    }
-
-    const hasRootEntry = await repoHandle.fileExists(extensionEntryFile);
-    if (!hasRootEntry) {
-      throw new Error(`Extension entry file not found: ${extensionEntryFile} or ${distEntryPath}`);
-    }
-
-    const hasRootManifest = await repoHandle.fileExists(extensionManifestFile);
+  ): Promise<{ entryPath: string; manifestPath: string }> => {
+    const hasDist = await repoHandle.fileExists(distFolder);
+    const baseDir = hasDist ? `${distFolder}/` : '';
     return {
-      entryPath: extensionEntryFile,
-      manifestPath: hasRootManifest ? extensionManifestFile : null,
+      entryPath: `${baseDir}index.js`,
+      manifestPath: `${baseDir}manifest.json`,
     };
   };
 
@@ -276,9 +265,21 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
     return m.manifest;
   };
 
+  const resolveManifest = async (
+    repoHandle: GitRepoHandle,
+    manifestPath: string,
+    moduleContent: string,
+  ): Promise<ExtensionManifest> => {
+    const hasManifest = await repoHandle.fileExists(manifestPath);
+    const manifest = hasManifest
+      ? (JSON.parse(await repoHandle.readFile(manifestPath, 'utf8')) as ExtensionManifest)
+      : await extractManifestFromModule(moduleContent);
+    validateManifest(manifest);
+    return manifest;
+  };
+
   const fetchFromGit = async (source: GitSource): Promise<FetchedExtension> => {
     const gitStore = useGitStore();
-
     const repoHandle = await gitStore.openRepo({
       url: source.repo,
       branch: source.branch ?? source.tag,
@@ -286,22 +287,12 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
 
     const paths = await resolveExtensionPaths(repoHandle);
     const moduleContent = await repoHandle.readFile(paths.entryPath, 'utf8');
-
-    let manifest: ExtensionManifest;
-
-    if (paths.manifestPath) {
-      const manifestContent = await repoHandle.readFile(paths.manifestPath, 'utf8');
-      manifest = JSON.parse(manifestContent) as ExtensionManifest;
-    } else {
-      manifest = await extractManifestFromModule(moduleContent);
-    }
-
+    const manifest = await resolveManifest(repoHandle, paths.manifestPath, moduleContent);
     manifest.source = source;
-    const encodedModule = encodeURIComponent(moduleContent);
 
     return {
       manifest,
-      module: encodedModule,
+      module: encodeURIComponent(moduleContent),
       rawContent: moduleContent,
     };
   };
@@ -359,6 +350,38 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
     await sync();
   };
 
+  const importExtension = async (file: File): Promise<void> => {
+    const safeParse = to(parseExtensionFromFile, 'Failed to parse extension file');
+    const parseResult = await safeParse(file);
+
+    if (parseResult.isErr()) {
+      reporter.reportError(parseResult.error);
+      return;
+    }
+
+    const { manifest, rawContent } = parseResult.value;
+
+    const localSource: LocalSource = { type: 'local' };
+    manifest.source = localSource;
+    manifest.development = true;
+
+    const meta: ExtensionMeta = {
+      manifest,
+      active: true,
+      uploaded: true,
+    };
+
+    const extensionSource: ExtensionSource = {
+      name: manifest.name,
+      version: manifest.version,
+      source: 'local',
+      module: rawContent,
+      docFiles: [],
+    };
+
+    await addExtension(meta, extensionSource);
+  };
+
   const enableSafeMode = async (): Promise<void> => {
     for (const ext of activeExtensions.value) {
       if (ext.manifest.source.type === 'local') {
@@ -391,6 +414,7 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
     isExtensionExist,
     addExtension,
     installExtension,
+    importExtension,
     deleteExtension,
     enableSafeMode,
     disableSafeMode,

@@ -2,6 +2,7 @@ import type { Command, CommandHandlerParams, OrgNoteApi } from 'orgnote-api';
 import { DefaultCommands } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import { defineAsyncComponent } from 'vue';
+import { uploadFile } from 'src/utils/file-upload';
 
 export function getDeveloperCommands(): Command[] {
   const openQueueManager = () => {
@@ -121,6 +122,22 @@ export function getDeveloperCommands(): Command[] {
         return !config.config.developer.developerMode;
       },
       icon: 'sym_o_schedule',
+      group: 'developer',
+    },
+    {
+      command: DefaultCommands.IMPORT_EXTENSION,
+      handler: async (api: OrgNoteApi) => {
+        const file = await uploadFile({ accept: '.js' });
+        if (!file) {
+          return;
+        }
+        await api.core.useExtensions().importExtension(file);
+      },
+      hide: (api: OrgNoteApi) => {
+        const config = api.core.useConfig();
+        return !config.config.developer.developerMode;
+      },
+      icon: 'sym_o_upload',
       group: 'developer',
     },
   ];

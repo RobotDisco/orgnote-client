@@ -73,7 +73,8 @@ test('throws error for invalid script in parseExtension', async () => {
   await expect(parseExtension(invalidExtensionScript)).rejects.toThrow();
 });
 
-test('throws error for invalid script in compileExtension', async () => {
-  const encoded = encodeURIComponent(invalidExtensionScript);
+test('throws error for syntactically invalid script in compileExtension', async () => {
+  const invalidSyntaxScript = 'export default { invalid syntax here';
+  const encoded = encodeURIComponent(invalidSyntaxScript);
   await expect(compileExtension(encoded)).rejects.toThrow();
 });

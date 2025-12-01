@@ -51,6 +51,9 @@
 
     <template #footer>
       <card-wrapper>
+        <menu-item type="info" @click="handleImportExtension" icon="sym_o_upload">
+          {{ $t(i18n.IMPORT_EXTENSION) }}
+        </menu-item>
         <menu-item type="info" @click="openInstallFromUrl" icon="sym_o_link">
           {{ $t(i18n.INSTALL_FROM_URL) }}
         </menu-item>
@@ -64,7 +67,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { api } from 'src/boot/api';
 import type { ExtensionMeta } from 'orgnote-api';
-import { i18n } from 'orgnote-api';
+import { DefaultCommands, i18n } from 'orgnote-api';
 import CardWrapper from 'src/components/CardWrapper.vue';
 import ActionButton from 'src/components/ActionButton.vue';
 import AppDropdown from 'src/components/AppDropdown.vue';
@@ -151,6 +154,10 @@ const openInstallDialog = async () => {
   // TODO: implement install dialog
   console.log('openInstallDialog: not implemented yet');
   notifications.notify({ message: 'Install dialog not implemented yet', level: 'warning' });
+};
+
+const handleImportExtension = () => {
+  api.core.useCommands().execute(DefaultCommands.IMPORT_EXTENSION);
 };
 
 const openInstallFromUrl = async () => {

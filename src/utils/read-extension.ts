@@ -1,11 +1,5 @@
-import {
-  type ExtensionManifest,
-  type Extension,
-  EXTENSION_MANIFEST_SCHEMA,
-} from 'orgnote-api';
-import { parse } from 'valibot';
-import { formatValidationErrors } from './format-validation-errors';
-import { to } from './to-error';
+import { type ExtensionManifest, type Extension } from 'orgnote-api';
+import { validateManifest } from './validate-manifest';
 
 export interface CompiledExtension {
   module: Extension;
@@ -41,18 +35,9 @@ export async function compileExtension(encodedContent: string): Promise<Extensio
 
   const m = (await import(/* @vite-ignore */ moduleUrl)) as {
     default: Extension;
-    manifest: ExtensionManifest;
   };
-
-  validateManifest(m.manifest);
 
   return m.default;
 }
 
-function validateManifest(manifest: ExtensionManifest): void {
-  const res = to(parse)(EXTENSION_MANIFEST_SCHEMA, manifest);
-  if (res.isErr()) {
-    const errorMsg = formatValidationErrors(res.error);
-    throw new Error(errorMsg.join('\n'), { cause: res.error });
-  }
-}
+
