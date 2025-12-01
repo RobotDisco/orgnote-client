@@ -1,5 +1,5 @@
 <template>
-  <card-wrapper type="plain" :style="{ '--spoiler-max-height': maxHeight }">
+  <card-wrapper class="spoiler" type="plain" :style="{ '--spoiler-max-height': maxHeight }">
     <app-flex class="spoiler-header" @click="toggle" row between align-center gap="md">
       <div class="spoiler-title">
         <slot name="title" />
@@ -64,12 +64,19 @@ const toggle = (): void => {
 </script>
 
 <style scoped lang="scss">
+.spoiler {
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: var(--menu-item-hover-bg);
+  }
+}
+
 .spoiler-header {
   & {
     cursor: pointer;
     min-height: var(--menu-item-height);
     padding: var(--menu-item-padding);
-    transition: background-color 0.2s ease;
   }
 }
 
