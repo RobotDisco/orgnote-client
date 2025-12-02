@@ -11,6 +11,9 @@ interface MockQueue {
   getStats: Mock;
   on: Mock;
   removeAllListeners: Mock;
+  removeListener: Mock;
+  length: number;
+  _running: number;
 }
 
 const { createMockQueue, mockQueueConstructor, mockQueueRepository } = vi.hoisted(() => {
@@ -28,6 +31,9 @@ const { createMockQueue, mockQueueConstructor, mockQueueRepository } = vi.hoiste
     })),
     on: vi.fn(),
     removeAllListeners: vi.fn(),
+    removeListener: vi.fn(),
+    length: 0,
+    _running: 0,
   });
 
   const mockQueueConstructor = vi.fn(() => createMockQueue());
@@ -323,4 +329,149 @@ test('useQueueStore destroy removes event listeners to prevent memory leak', () 
   store.destroy('test-queue');
 
   expect(queue?.removeAllListeners).toHaveBeenCalled();
+});
+
+test('useQueueStore waitQeueueEmpty resolves with results when queue drains', async () => {
+  const store = useQueueStore();
+
+  let taskFinishCallback: ((taskId: string, result: unknown) => void) | undefined;
+  let drainCallback: (() => void) | undefined;
+
+  const mockQueue = createMockQueue();
+  mockQueue.length = 2;
+  mockQueue._running = 1;
+  mockQueue.on.mockImplementation((event: string, cb: (...args: unknown[]) => void) => {
+    if (event === 'task_finish') {
+      taskFinishCallback = cb as (taskId: string, result: unknown) => void;
+    }
+    if (event === 'drain') {
+      drainCallback = cb as () => void;
+    }
+    return mockQueue;
+  });
+
+  mockQueueConstructor.mockImplementation(() => mockQueue);
+
+  store.register('test-queue');
+
+  const resultPromise = store.waitQeueueEmpty<string[]>('test-queue');
+
+  taskFinishCallback?.('task-1', 'result-1');
+  taskFinishCallback?.('task-2', 'result-2');
+  drainCallback?.();
+
+  const results = await resultPromise;
+
+  expect(results).toEqual(['result-1', 'result-2']);
+});
+
+test('useQueueStore waitQeueueEmpty resolves immediately when queue already empty', async () => {
+  const store = useQueueStore();
+
+  const mockQueue = createMockQueue();
+  mockQueue.length = 0;
+  mockQueue._running = 0;
+
+  mockQueueConstructor.mockImplementation(() => mockQueue);
+
+  store.register('test-queue');
+
+  const results = await store.waitQeueueEmpty<string[]>('test-queue');
+
+  expect(results).toEqual([]);
+  expect(mockQueue.on).not.toHaveBeenCalledWith('drain', expect.any(Function));
+});
+
+test('useQueueStore waitQeueueEmpty waits when tasks are running', async () => {
+  const store = useQueueStore();
+
+  let drainCallback: (() => void) | undefined;
+
+  const mockQueue = createMockQueue();
+  mockQueue.length = 0;
+  mockQueue._running = 1;
+  mockQueue.on.mockImplementation((event: string, cb: (...args: unknown[]) => void) => {
+    if (event === 'drain') {
+      drainCallback = cb as () => void;
+    }
+    return mockQueue;
+  });
+
+  mockQueueConstructor.mockImplementation(() => mockQueue);
+
+  store.register('test-queue');
+
+  const resultPromise = store.waitQeueueEmpty<string[]>('test-queue');
+
+  drainCallback?.();
+
+  const results = await resultPromise;
+
+  expect(results).toEqual([]);
+});
+
+test('useQueueStore waitQeueueEmpty removes listeners after drain', async () => {
+  const store = useQueueStore();
+
+  let taskFinishCallback: ((taskId: string, result: unknown) => void) | undefined;
+  let drainCallback: (() => void) | undefined;
+
+  const mockQueue = createMockQueue();
+  mockQueue.length = 1;
+  mockQueue._running = 0;
+  mockQueue.on.mockImplementation((event: string, cb: (...args: unknown[]) => void) => {
+    if (event === 'task_finish') {
+      taskFinishCallback = cb as (taskId: string, result: unknown) => void;
+    }
+    if (event === 'drain') {
+      drainCallback = cb as () => void;
+    }
+    return mockQueue;
+  });
+
+  const removeListenerMock = vi.fn();
+  mockQueue.removeListener = removeListenerMock;
+
+  mockQueueConstructor.mockImplementation(() => mockQueue);
+
+  store.register('test-queue');
+
+  const resultPromise = store.waitQeueueEmpty('test-queue');
+
+  drainCallback?.();
+
+  await resultPromise;
+
+  expect(removeListenerMock).toHaveBeenCalledWith('task_finish', taskFinishCallback);
+  expect(removeListenerMock).toHaveBeenCalledWith('drain', drainCallback);
+});
+
+test('useQueueStore waitQeueueEmpty creates queue if not exists', async () => {
+  const store = useQueueStore();
+
+  const mockQueue = createMockQueue();
+  mockQueue.length = 0;
+  mockQueue._running = 0;
+
+  mockQueueConstructor.mockImplementation(() => mockQueue);
+
+  expect(store.queueIds).not.toContain('new-queue');
+
+  await store.waitQeueueEmpty('new-queue');
+
+  expect(store.queueIds).toContain('new-queue');
+});
+
+test('useQueueStore waitQeueueEmpty uses default queueId', async () => {
+  const store = useQueueStore();
+
+  const mockQueue = createMockQueue();
+  mockQueue.length = 0;
+  mockQueue._running = 0;
+
+  mockQueueConstructor.mockImplementation(() => mockQueue);
+
+  await store.waitQeueueEmpty();
+
+  expect(store.queueIds).toContain('default');
 });

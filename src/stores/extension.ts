@@ -107,17 +107,18 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
   };
 
   const mountActiveExtensions = async (): Promise<void> => {
-    for (const meta of extensions.value) {
-      if (!meta.active) {
-        continue;
-      }
+    const activeExtensionsMeta = extensions.value.filter((meta) => meta.active);
+
+    const mountPromises = activeExtensionsMeta.map(async (meta) => {
       const source = await api.infrastructure.extensionSourceRepository.get(meta.manifest.name);
       if (!source) {
-        continue;
+        return;
       }
       await mountExtension(meta, source);
-    }
-  };
+    });
+
+    await Promise.allSettled(mountPromises);
+  };;
 
   const mountExtension = async (
     meta: ExtensionMeta,
@@ -383,26 +384,27 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
   };
 
   const enableSafeMode = async (): Promise<void> => {
-    for (const ext of activeExtensions.value) {
-      if (ext.manifest.source.type === 'local') {
-        continue;
-      }
-      await unmountExtension(ext.manifest.name);
-    }
-  };
+    const nonLocalExtensions = activeExtensions.value.filter(
+      (ext) => ext.manifest.source.type !== 'local',
+    );
+
+    const unmountPromises = nonLocalExtensions.map((ext) => unmountExtension(ext.manifest.name));
+    await Promise.allSettled(unmountPromises);
+  };;
 
   const disableSafeMode = async (): Promise<void> => {
-    for (const meta of extensions.value) {
-      if (!meta.active) {
-        continue;
-      }
+    const activeExtensionsMeta = extensions.value.filter((meta) => meta.active);
+
+    const mountPromises = activeExtensionsMeta.map(async (meta) => {
       const source = await api.infrastructure.extensionSourceRepository.get(meta.manifest.name);
       if (!source) {
-        continue;
+        return;
       }
       await mountExtension(meta, source);
-    }
-  };
+    });
+
+    await Promise.allSettled(mountPromises);
+  };;
 
   const store: ExtensionStore = {
     extensions,

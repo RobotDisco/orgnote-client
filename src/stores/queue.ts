@@ -155,6 +155,39 @@ export const useQueueStore = defineStore<'queue', QueueStore>('queue', () => {
     return Promise.resolve({ ...stats });
   };
 
+
+  const isQueueEmpty = (queue: Queue): boolean => {
+    const queueWithInternals = queue as Queue & { length: number; _running: number };
+    return queueWithInternals.length === 0 && queueWithInternals._running === 0;
+  };
+
+  const waitQeueueEmpty = <T = unknown[]>(queueId: string = 'default'): Promise<T> => {
+    const queue = ensureQueue(queueId);
+    const { promise, resolve } = Promise.withResolvers<T>();
+
+    if (isQueueEmpty(queue)) {
+      resolve([] as T);
+      return promise;
+    }
+
+    const results: unknown[] = [];
+
+    const onTaskFinish = (_taskId: string, result: unknown) => {
+      results.push(result);
+    };
+
+    const onDrain = () => {
+      queue.removeListener('task_finish', onTaskFinish);
+      queue.removeListener('drain', onDrain);
+      resolve(results as T);
+    };
+
+    queue.on('task_finish', onTaskFinish);
+    queue.on('drain', onDrain);
+
+    return promise;
+  };
+
   const queueStore: QueueStore = {
     register,
     unregister,
@@ -168,6 +201,7 @@ export const useQueueStore = defineStore<'queue', QueueStore>('queue', () => {
     destroy,
     clear,
     getStats,
+    waitQeueueEmpty,
     queueIds,
   };
 

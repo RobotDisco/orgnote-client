@@ -2,17 +2,22 @@ import { type OrgNoteApi, type Command, type CompletionCandidate, I18N } from 'o
 import Fuse from 'fuse.js';
 import { extractDynamicValue } from 'src/utils/extract-dynamic-value';
 
-const getValueByPath = (
-  obj: CompletionCandidate<Command>,
-  path: string | string[],
-): string => {
+const getValueByPath = (obj: CompletionCandidate<Command>, path: string | string[]): string => {
   const key = Array.isArray(path) ? path[0] : path;
-  if (key === 'title') {
-    return extractDynamicValue(obj.title) ?? '';
+
+  type DynamicField = Pick<
+    CompletionCandidate<Command>,
+    'title' | 'description' | 'icon' | 'group'
+  >;
+  type DynamicKey = keyof DynamicField;
+
+  const isDynamicKey = (k: string): k is DynamicKey =>
+    ['title', 'description', 'icon', 'group'].includes(k);
+
+  if (key && isDynamicKey(key)) {
+    return extractDynamicValue(obj[key]) ?? '';
   }
-  if (key === 'description') {
-    return extractDynamicValue(obj.description) ?? '';
-  }
+
   return Fuse.config.getFn(obj, path) as string;
 };
 
