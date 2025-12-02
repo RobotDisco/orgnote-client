@@ -23,9 +23,11 @@ export const useCompletionStore = defineStore<'completion-store', CompletionStor
     const open = async <TItem, TReturn = void>(
       config: CompletionConfig<TItem>,
     ): Promise<TReturn> => {
+      const isInputOnly = config.type === 'input';
       const closed = modal.open<TReturn>(AppCompletion, {
         noPadding: true,
         position: 'top',
+        mini: isInputOnly,
         modalProps: {
           placeholder: config.placeholder,
           searchText: config.searchText,

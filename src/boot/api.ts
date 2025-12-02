@@ -53,6 +53,7 @@ import { useContextMenuStore } from 'src/stores/context-menu';
 import { useQueueStore } from 'src/stores/queue';
 import { useCronStore } from 'src/stores/cron';
 import { useGitStore } from 'src/stores/git';
+import { useExtensionRegistryStore } from 'src/stores/extension-registry';
 
 let api: OrgNoteApi;
 async function initApi(app: App, router: Router): Promise<void> {
@@ -82,6 +83,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useQueue: useQueueStore,
       useCron: useCronStore,
       useGit: useGitStore,
+      useExtensionRegistry: useExtensionRegistryStore,
       app,
     },
     utils: {

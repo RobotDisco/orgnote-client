@@ -1,7 +1,7 @@
 <template>
   <container-layout
     class="completion-wrapper"
-    :class="{ 'full-screen': config!.fullScreen }"
+    :class="{ 'full-screen': config!.fullScreen, 'input-only': isInputOnly }"
     :reverse="shouldReverse"
     header-border
     footer-border
@@ -12,7 +12,7 @@
         <completion-input ref="completionInputRef" :placeholder="placeholder" />
       </div>
     </template>
-    <template #body>
+    <template v-if="!isInputOnly" #body>
       <div class="body">
         <completion-result
           v-if="activeCompletion!.candidates?.length"
@@ -30,7 +30,7 @@
         </app-flex>
       </div>
     </template>
-    <template #footer>
+    <template v-if="!isInputOnly" #footer>
       <app-flex class="footer" row center align-center>
         {{ (activeCompletion!.selectedCandidateIndex ?? 0) + 1 }}/{{ activeCompletion!.total }}
       </app-flex>
@@ -70,6 +70,8 @@ const completionItemHeight = computed(
 
 const { desktopBelow } = api.ui.useScreenDetection();
 const shouldReverse = computed(() => desktopBelow.value);
+
+const isInputOnly = computed(() => activeCompletion.value?.type === 'input');
 
 const { t } = useI18n({
   useScope: 'global',
@@ -113,6 +115,14 @@ const { t } = useI18n({
 @include desktop-below {
   .completion-wrapper {
     @include completion-fullframe();
+
+    &.input-only {
+      height: auto;
+
+      :deep(.layout-body) {
+        display: none;
+      }
+    }
   }
 }
 

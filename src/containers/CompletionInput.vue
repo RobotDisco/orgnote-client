@@ -56,7 +56,7 @@ const handleCompletionInput = () => {
     return;
   }
 
-  if (activeCompletion.type === 'input-choice') {
+  if (activeCompletion.type === 'input-choice' || activeCompletion.type === 'input') {
     completion.close(activeCompletion.searchQuery);
     return;
   }

@@ -36,15 +36,20 @@
 
     <template #body>
       <card-wrapper class="extensions-list">
-        <empty-state v-if="displayedExtensions.length === 0" :title="$t(emptyMessageKey)" />
+        <app-flex v-if="isLoading" class="loading-container" center align-center>
+          <loading-dots :text="$t(i18n.LOADING)" />
+        </app-flex>
+        <empty-state v-else-if="displayedExtensions.length === 0" :title="$t(emptyMessageKey)" />
         <ExtensionItem
           v-else
           v-for="ext in displayedExtensions"
-          :key="ext.manifest.name"
+          :key="'manifest' in ext ? ext.manifest.name : ext.name"
           :extension="ext"
+          :mode="currentMode"
           @enable="enableExtension"
           @disable="disableExtension"
           @delete="confirmDeleteExtension"
+          @install="installExtension"
         />
       </card-wrapper>
     </template>
@@ -63,10 +68,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { api } from 'src/boot/api';
-import type { ExtensionMeta } from 'orgnote-api';
+import type { ExtensionMeta, ExtensionManifest, GitSource } from 'orgnote-api';
 import { DefaultCommands, i18n } from 'orgnote-api';
 import CardWrapper from 'src/components/CardWrapper.vue';
 import ActionButton from 'src/components/ActionButton.vue';
@@ -77,6 +82,7 @@ import ContainerLayout from 'src/components/ContainerLayout.vue';
 import AppGrid from 'src/components/AppGrid.vue';
 import AppFlex from 'src/components/AppFlex.vue';
 import EmptyState from 'src/components/EmptyState.vue';
+import LoadingDots from 'src/components/LoadingDots.vue';
 
 interface TabOption {
   label: string;
@@ -91,20 +97,31 @@ const tabOptions = computed<TabOption[]>(() => [
 ]);
 
 const extensionStore = api.core.useExtensions();
+const extensionRegistry = api.core.useExtensionRegistry();
 const notifications = api.core.useNotifications();
 const confirmationModal = api.ui.useConfirmationModal();
 
 const selectedTab = ref<TabOption>(tabOptions.value[0]!);
 
 const installedExtensions = computed(() => extensionStore.extensions ?? []);
+const availableExtensions = computed(() => extensionRegistry.availableExtensions ?? []);
 
-const availableExtensions = ref<ExtensionMeta[]>([]);
-
-const displayedExtensions = computed(() => {
+const displayedExtensions = computed<(ExtensionMeta | ExtensionManifest)[]>(() => {
   if (selectedTab.value.value === 'installed') {
     return installedExtensions.value;
   }
   return availableExtensions.value;
+});
+
+const currentMode = computed(() =>
+  selectedTab.value.value === 'installed' ? 'installed' : 'available',
+);
+
+const isLoading = computed(() => {
+  if (selectedTab.value.value !== 'all') {
+    return false;
+  }
+  return extensionRegistry.loading;
 });
 
 const emptyMessageKey = computed(() => {
@@ -116,16 +133,19 @@ const emptyMessageKey = computed(() => {
 
 const refresh = async () => {
   await extensionStore.sync();
-  if (selectedTab.value.value === 'all') {
-    await fetchAvailableExtensions();
+  if (!availableExtensions.value.length) {
+    await extensionRegistry.refresh();
   }
 };
 
-const fetchAvailableExtensions = async () => {
-  // TODO: implement fetching from extension registry
-  console.log('fetchAvailableExtensions: not implemented yet');
-  availableExtensions.value = [];
-};
+watch(
+  () => selectedTab.value,
+  async (tab) => {
+    if (tab.value === 'all' && availableExtensions.value.length === 0) {
+      await extensionRegistry.refresh();
+    }
+  },
+);
 
 const enableExtension = async (name: string) => {
   await extensionStore.enableExtension(name);
@@ -150,10 +170,17 @@ const confirmDeleteExtension = async (name: string) => {
   await extensionStore.deleteExtension(name);
 };
 
-const openInstallDialog = async () => {
-  // TODO: implement install dialog
-  console.log('openInstallDialog: not implemented yet');
-  notifications.notify({ message: 'Install dialog not implemented yet', level: 'warning' });
+const installExtension = async (manifest: ExtensionManifest) => {
+  if (manifest.source.type !== 'git') {
+    notifications.notify({ message: t(i18n.ONLY_GIT_EXTENSIONS_SUPPORTED), level: 'warning' });
+    return;
+  }
+  await extensionStore.installExtension(manifest.source as GitSource);
+  notifications.notify({ message: t(i18n.EXTENSION_INSTALLED), level: 'info' });
+};
+
+const openInstallDialog = () => {
+  openInstallFromUrl();
 };
 
 const handleImportExtension = () => {
@@ -161,9 +188,21 @@ const handleImportExtension = () => {
 };
 
 const openInstallFromUrl = async () => {
-  // TODO: implement install from URL using completion input
-  console.log('openInstallFromUrl: not implemented yet');
-  notifications.notify({ message: 'Install from URL not implemented yet', level: 'warning' });
+  const completion = api.core.useCompletion();
+
+  const url = await completion.open<void, string>({
+    type: 'input',
+    placeholder: t(i18n.ENTER_GIT_REPO_URL),
+    itemsGetter: () => ({ result: [], total: 0 }),
+  });
+
+  if (!url) {
+    return;
+  }
+
+  const gitSource = { type: 'git' as const, repo: url };
+  await extensionStore.installExtension(gitSource);
+  notifications.notify({ message: t(i18n.EXTENSION_INSTALLED_FROM_URL), level: 'info' });
 };
 
 onMounted(() => {
@@ -175,5 +214,10 @@ onMounted(() => {
 .extensions-list {
   height: 100%;
   overflow-y: auto;
+}
+
+.loading-container {
+  height: 100%;
+  min-height: 200px;
 }
 </style>
