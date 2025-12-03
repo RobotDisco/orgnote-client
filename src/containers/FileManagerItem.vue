@@ -36,7 +36,7 @@ import MenuItem from './MenuItem.vue';
 import Highlighter from 'vue-highlight-words';
 import ContextMenu from 'src/components/ContextMenu.vue';
 import { computed } from 'vue';
-import { rootSystemFilePath } from 'src/constants/root-system-file-path';
+import { ROOT_SYSTEM_FILE_PATH } from 'src/constants/root-system-file-path';
 import { api } from 'src/boot/api';
 import AppFlex from 'src/components/AppFlex.vue';
 
@@ -54,7 +54,7 @@ const contextMenuGroup = computed<MenuGroup>(() =>
   props.file?.type === 'directory' ? 'dir' : 'file',
 );
 
-const isSystemPath = computed(() => props.file?.path?.startsWith(`/${rootSystemFilePath}`));
+const isSystemPath = computed(() => props.file?.path?.startsWith(`/${ROOT_SYSTEM_FILE_PATH}`));
 
 const handleContextMenuOpen = () => {
   if (!props.file) {

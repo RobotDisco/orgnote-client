@@ -138,6 +138,22 @@ export function getSettingsCommands(): Command[] {
       },
     },
     {
+      command: DefaultCommands.OPEN_EXTENSIONS_MANAGER,
+      group: 'global',
+      icon: 'sym_o_extension',
+      handler: () => {
+        const modal = api.ui.useModal();
+        modal.open(
+          defineAsyncComponent(() => import('src/containers/ExtensionManager.vue')),
+          {
+            title: I18N.EXTENSIONS,
+            closable: true,
+            wide: true,
+          },
+        );
+      },
+    },
+    {
       command: DefaultCommands.ENCRYPTION_SETTINGS,
       group: 'settings',
       icon: 'sym_o_extension',

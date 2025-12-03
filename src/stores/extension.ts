@@ -1,157 +1,440 @@
 import { defineStore } from 'pinia';
 import type {
-  ActiveExtension,
   Extension,
+  ExtensionManifest,
   ExtensionMeta,
+  ExtensionSource,
+  ExtensionSourceInfo,
   ExtensionStore,
-  StoredExtension,
+  GitRepoHandle,
+  GitSource,
+  LocalSource,
 } from 'orgnote-api';
-import { ref } from 'vue';
-import { computed } from 'vue';
-import { BUILTIN_EXTENSIONS } from 'src/extensions';
+import { ref, computed } from 'vue';
 import { api } from 'src/boot/api';
-import { compileExtension } from 'src/utils/read-extension';
+import { compileExtension, parseExtensionFromFile } from 'src/utils/read-extension';
+import { validateManifest } from 'src/utils/validate-manifest';
 import { reporter } from 'src/boot/report';
 import { to } from 'src/utils/to-error';
+import { useFileSystemStore } from './file-system';
+import { getSystemFilesPath } from 'src/utils/get-system-files-path';
+import { parse as parseToml, stringify as stringifyToml } from 'smol-toml';
+import { useGitStore } from './git';
+
+interface ActiveExtension extends ExtensionMeta {
+  module: Extension;
+}
+
+interface ExtensionsFile {
+  extensions: ExtensionMeta[];
+}
+
+interface FetchedExtension {
+  manifest: ExtensionManifest;
+  module: string;
+  rawContent: string;
+}
+
+type SourceFetcher = (source: ExtensionSourceInfo) => Promise<FetchedExtension>;
+
+const extensionsFilePath = getSystemFilesPath('extensions.toml');
+const distFolder = 'dist';
 
 export const useExtensionsStore = defineStore<'extension', ExtensionStore>('extension', () => {
   const extensions = ref<ExtensionMeta[]>([]);
-  const activeExtensions = ref<ActiveExtension[]>([...Object.values(BUILTIN_EXTENSIONS)]);
+  const activeExtensions = ref<ActiveExtension[]>([]);
+  const fileSystem = useFileSystemStore();
 
   const loading = ref<number>(0);
   const ready = computed(() => loading.value <= 0);
 
-  const sync = async () => {
-    console.error('Implement sync with file system');
-  };
+  const safeParseToml = to(parseToml, (e) => new SyntaxError('Invalid TOML format', { cause: e }));
+  const safeStringifyToml = to(
+    stringifyToml,
+    (e) => new Error('Failed to stringify TOML', { cause: e }),
+  );
 
-  const init = async () => {
-    await sync();
-  };
+  const sync = async (): Promise<void> => {
+    loading.value++;
 
-  // TODO: feat/stable-beta implement after repositories
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const enableExtension = async (extensionName: string) => {
-    // const ext = await repositories.extensions.getExtension(extensionName);
-    // if (!ext) {
-    //   console.warn(`Extension ${extensionName} not found`);
-    //   return;
-    // }
-    // await mountExtension(ext);
-    // return ext;
-  };
-
-  // TODO: feat/stable-beta save mount extension
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const mountExtension = async (ext: StoredExtension): Promise<ActiveExtension | undefined> => {
-    const safeGetExtensions = to(getExtension, 'Failed to load extension');
-    const safeSetExtensionActiveStatus = to(
-      setExtensionActiveStatus,
-      'Failed to set extension status',
-    );
-
-    const res = await safeGetExtensions(ext)
-      .andThen((module) => to(module.onMounted, 'Failed to mount extension')(api).map(() => module))
-      .andThen((module) => safeSetExtensionActiveStatus(ext.manifest.name, true).map(() => module))
-      .map((module) => ({
-        // как получить тут module?
-        active: true,
-        manifest: ext.manifest,
-        module,
-      }))
-      .mapErr((e) => {
-        reporter.reportError(e);
-      });
-
-    if (res.isOk()) {
-      return res.value;
-    }
-  };
-
-  const getExtension = async (ext: StoredExtension): Promise<Extension> => {
-    if (ext.manifest.sourceType === 'builtin') {
-      return BUILTIN_EXTENSIONS[ext.manifest.name]!.module;
-    }
-    return await compileExtension(ext.module!);
-  };
-
-  // TODO: feat/stable-beta implement after repositories imple
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const setExtensionActiveStatus = async (extensionName: string, status: boolean) => {
-    // await repositories.extensions.setActiveStatus(extensionName, status);
-    // extensions.value = extensions.value.map((ext) => {
-    //   if (ext.manifest.name === extensionName) {
-    //     ext.active = status;
-    //     ext.uploaded = true;
-    //   }
-    //   return ext;
-    // });
-  };
-
-  const disableExtension = async (extensionName: string) => {
-    const ext = await deactivateExtension(extensionName);
-    if (!ext) {
-      reporter.reportWarning(`Extension ${extensionName} not found`);
+    if (extensions.value.length > 0) {
+      await writeToDisk();
+      loading.value--;
       return;
     }
-    // TODO: feat/stable-beta UI hook for disable theme.
+
+    await readFromDisk();
+    await mountActiveExtensions();
+    loading.value--;
   };
 
-  const deactivateExtension = async (extensionName: string): Promise<ExtensionMeta | undefined> => {
+  const writeToDisk = async (): Promise<void> => {
+    const data: ExtensionsFile = { extensions: extensions.value };
+    const safeWrite = to(fileSystem.writeFile, 'Failed to write extensions.toml');
+
+    const res = safeStringifyToml(data).asyncAndThen((content) =>
+      safeWrite(extensionsFilePath, content),
+    );
+
+    const result = await res;
+    if (result.isErr()) {
+      reporter.reportError(result.error);
+    }
+  };
+
+  const readFromDisk = async (): Promise<void> => {
+    const safeRead = to(fileSystem.readFile, 'Failed to read extensions.toml');
+
+    const res = await safeRead(extensionsFilePath, 'utf8');
+
+    if (res.isErr()) {
+      return;
+    }
+
+    const content = res.value;
+    if (!content) {
+      return;
+    }
+
+    const parseResult = safeParseToml(content as string);
+    if (parseResult.isErr()) {
+      reporter.reportError(parseResult.error);
+      return;
+    }
+
+    const data = parseResult.value as unknown as ExtensionsFile;
+    extensions.value = data.extensions ?? [];
+  };
+
+  const mountActiveExtensions = async (): Promise<void> => {
+    const activeExtensionsMeta = extensions.value.filter((meta) => meta.active);
+
+    const mountPromises = activeExtensionsMeta.map(async (meta) => {
+      const source = await api.infrastructure.extensionSourceRepository.get(meta.manifest.name);
+      if (!source) {
+        return;
+      }
+      await mountExtension(meta, source);
+    });
+
+    await Promise.allSettled(mountPromises);
+  };
+
+  const mountExtension = async (
+    meta: ExtensionMeta,
+    source: ExtensionSource,
+  ): Promise<ActiveExtension | undefined> => {
+    const existingActive = activeExtensions.value.find(
+      (e) => e.manifest.name === meta.manifest.name,
+    );
+    if (existingActive) {
+      return existingActive;
+    }
+
+    const safeCompile = to(compileExtension, 'Failed to load extension');
+    const compileResult = await safeCompile(source.module);
+
+    if (compileResult.isErr()) {
+      reporter.reportError(compileResult.error);
+      return;
+    }
+
+    const module = compileResult.value;
+    const safeMounted = to(
+      module.onMounted.bind(module),
+      `Failed to mount extension ${meta.manifest.name}`,
+    );
+    const mountResult = await safeMounted(api);
+
+    if (mountResult.isErr()) {
+      reporter.reportError(mountResult.error);
+      return;
+    }
+
+    const activeExt: ActiveExtension = {
+      manifest: meta.manifest,
+      active: true,
+      config: meta.config,
+      module,
+    };
+
+    activeExtensions.value.push(activeExt);
+    return activeExt;
+  };
+
+  const unmountExtension = async (extensionName: string): Promise<void> => {
     const ext = activeExtensions.value.find((e) => e.manifest.name === extensionName);
     if (!ext) {
       return;
     }
-    ext.module?.onUnmounted?.(api);
+
+    if (ext.module?.onUnmounted) {
+      const safeUnmount = to(
+        ext.module.onUnmounted.bind(ext.module),
+        'Failed to unmount extension',
+      );
+      const result = await safeUnmount(api);
+
+      if (result.isErr()) {
+        reporter.reportError(result.error);
+      }
+    }
+
     activeExtensions.value = activeExtensions.value.filter(
-      (ext) => ext.manifest.name !== extensionName,
+      (e) => e.manifest.name !== extensionName,
     );
-    await setExtensionActiveStatus(extensionName, false);
-    return ext;
+  };
+
+  const enableExtension = async (extensionName: string): Promise<void> => {
+    const meta = extensions.value.find((e) => e.manifest.name === extensionName);
+    if (!meta) {
+      reporter.reportWarning(`Extension ${extensionName} not found`);
+      return;
+    }
+
+    const source = await api.infrastructure.extensionSourceRepository.get(extensionName);
+    if (!source) {
+      reporter.reportWarning(`Extension source ${extensionName} not found in cache`);
+      return;
+    }
+
+    await mountExtension(meta, source);
+    meta.active = true;
+    await sync();
+  };
+
+  const disableExtension = async (extensionName: string): Promise<void> => {
+    const meta = extensions.value.find((e) => e.manifest.name === extensionName);
+    if (!meta) {
+      reporter.reportWarning(`Extension ${extensionName} not found`);
+      return;
+    }
+
+    await unmountExtension(extensionName);
+    meta.active = false;
+    await sync();
   };
 
   const isExtensionExist = (extensionName: string): boolean => {
     return !!extensions.value.find((e) => e.manifest.name === extensionName);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const addExtension = async (ext: StoredExtension) => {
-    // extensions.value = extensions.value.filter((e) => e.manifest.name !== ext.manifest.name);
-    // extensions.value.push(ext);
-    // await repositories.extensions.upsertExtensions([ext]);
-    // if (ext.module || ext.manifest.sourceType === 'builtin') {
-    //   await mountExtension(ext);
-    // }
+  const addExtension = async (meta: ExtensionMeta, source: ExtensionSource): Promise<void> => {
+    extensions.value = extensions.value.filter((e) => e.manifest.name !== meta.manifest.name);
+    extensions.value.push(meta);
+
+    const safeUpsert = to(
+      api.infrastructure.extensionSourceRepository.upsert,
+      'Failed to save extension source',
+    );
+    const upsertResult = await safeUpsert(source);
+
+    if (upsertResult.isErr()) {
+      reporter.reportError(upsertResult.error);
+      return;
+    }
+
+    await sync();
+
+    if (meta.active) {
+      await mountExtension(meta, source);
+    }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const deleteExtension = async (ext: ExtensionMeta) => {
-    // await disableExtension(ext.manifest.name);
-    // await repositories.extensions.delete(ext.manifest.name);
-    // extensions.value = extensions.value.map((e) => {
-    //   if (e.manifest.name !== ext.manifest.name) {
-    //     return e;
-    //   }
-    //   return { ...e, uploaded: false };
-    // });
+  const resolveExtensionPaths = async (
+    repoHandle: GitRepoHandle,
+  ): Promise<{ entryPath: string; manifestPath: string }> => {
+    const hasDist = await repoHandle.fileExists(distFolder);
+    const baseDir = hasDist ? `${distFolder}/` : '';
+    return {
+      entryPath: `${baseDir}index.js`,
+      manifestPath: `${baseDir}manifest.json`,
+    };
   };
 
-  const enableSafeMode = async () => {};
+  const extractManifestFromModule = async (moduleContent: string): Promise<ExtensionManifest> => {
+    const encodedModule = encodeURIComponent(moduleContent);
+    const moduleUrl = `data:text/javascript,${encodedModule}`;
+    const m = (await import(/* @vite-ignore */ moduleUrl)) as {
+      manifest?: ExtensionManifest;
+    };
 
-  const disableSafeMode = async () => {};
+    if (!m.manifest) {
+      throw new Error('Extension manifest not found in module exports');
+    }
 
-  return {
+    return m.manifest;
+  };
+
+  const parseManifestJson = (content: string): ExtensionManifest => JSON.parse(content);
+
+  const resolveManifest = async (
+    repoHandle: GitRepoHandle,
+    manifestPath: string,
+    moduleContent: string,
+  ): Promise<ExtensionManifest> => {
+    const hasManifest = await repoHandle.fileExists(manifestPath);
+
+    if (!hasManifest) {
+      const manifest = await extractManifestFromModule(moduleContent);
+      validateManifest(manifest);
+      return manifest;
+    }
+
+    const content = await repoHandle.readFile(manifestPath, 'utf8');
+    const safeParse = to(parseManifestJson, `Invalid manifest JSON in ${manifestPath}`);
+    const parseResult = safeParse(content);
+
+    if (parseResult.isErr()) {
+      throw parseResult.error;
+    }
+
+    validateManifest(parseResult.value);
+    return parseResult.value;
+  };
+
+  const fetchFromGit = async (source: GitSource): Promise<FetchedExtension> => {
+    const gitStore = useGitStore();
+    const repoHandle = await gitStore.openRepo({
+      url: source.repo,
+      branch: source.branch ?? source.tag,
+    });
+
+    const paths = await resolveExtensionPaths(repoHandle);
+    const moduleContent = await repoHandle.readFile(paths.entryPath, 'utf8');
+    const manifest = await resolveManifest(repoHandle, paths.manifestPath, moduleContent);
+    manifest.source = source;
+
+    return {
+      manifest,
+      module: encodeURIComponent(moduleContent),
+      rawContent: moduleContent,
+    };
+  };
+
+  const sourceFetchers: Record<ExtensionSourceInfo['type'], SourceFetcher> = {
+    git: (source) => fetchFromGit(source as GitSource),
+    local: () => {
+      throw new Error('Local extensions cannot be installed via installExtension');
+    },
+  };
+
+  const installExtension = async (source: ExtensionSourceInfo): Promise<void> => {
+    const fetcher = sourceFetchers[source.type];
+
+    const safeFetch = to(fetcher, 'Failed to fetch extension');
+    const fetchResult = await safeFetch(source);
+
+    if (fetchResult.isErr()) {
+      reporter.reportError(fetchResult.error);
+      return;
+    }
+
+    const fetched = fetchResult.value;
+
+    const meta: ExtensionMeta = {
+      manifest: fetched.manifest,
+      active: true,
+    };
+
+    const extensionSource: ExtensionSource = {
+      name: fetched.manifest.name,
+      version: fetched.manifest.version,
+      source: source.type === 'git' ? (source as GitSource).repo : 'local',
+      module: fetched.module,
+      docFiles: [],
+    };
+
+    await addExtension(meta, extensionSource);
+  };
+
+  const deleteExtension = async (extensionName: string): Promise<void> => {
+    await unmountExtension(extensionName);
+
+    const safeDelete = to(
+      api.infrastructure.extensionSourceRepository.delete,
+      'Failed to delete extension source',
+    );
+    const deleteResult = await safeDelete(extensionName);
+
+    if (deleteResult.isErr()) {
+      reporter.reportError(deleteResult.error);
+    }
+
+    extensions.value = extensions.value.filter((e) => e.manifest.name !== extensionName);
+    await sync();
+  };
+
+  const importExtension = async (file: File): Promise<void> => {
+    const safeParse = to(parseExtensionFromFile, 'Failed to parse extension file');
+    const parseResult = await safeParse(file);
+
+    if (parseResult.isErr()) {
+      reporter.reportError(parseResult.error);
+      return;
+    }
+
+    const { manifest, rawContent } = parseResult.value;
+
+    const localSource: LocalSource = { type: 'local' };
+    manifest.source = localSource;
+    manifest.development = true;
+
+    const meta: ExtensionMeta = {
+      manifest,
+      active: true,
+      uploaded: true,
+    };
+
+    const extensionSource: ExtensionSource = {
+      name: manifest.name,
+      version: manifest.version,
+      source: 'local',
+      module: rawContent,
+      docFiles: [],
+    };
+
+    await addExtension(meta, extensionSource);
+  };
+
+  const enableSafeMode = async (): Promise<void> => {
+    const nonLocalExtensions = activeExtensions.value.filter(
+      (ext) => ext.manifest.source.type !== 'local',
+    );
+
+    const unmountPromises = nonLocalExtensions.map((ext) => unmountExtension(ext.manifest.name));
+    await Promise.allSettled(unmountPromises);
+  };
+
+  const disableSafeMode = async (): Promise<void> => {
+    const activeExtensionsMeta = extensions.value.filter((meta) => meta.active);
+
+    const mountPromises = activeExtensionsMeta.map(async (meta) => {
+      const source = await api.infrastructure.extensionSourceRepository.get(meta.manifest.name);
+      if (!source) {
+        return;
+      }
+      await mountExtension(meta, source);
+    });
+
+    await Promise.allSettled(mountPromises);
+  };
+
+  const store: ExtensionStore = {
     extensions,
     ready,
 
     sync,
-    init,
     enableExtension,
     disableExtension,
     isExtensionExist,
     addExtension,
+    installExtension,
+    importExtension,
     deleteExtension,
     enableSafeMode,
     disableSafeMode,
   };
+
+  return store;
 });

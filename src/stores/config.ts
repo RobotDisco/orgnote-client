@@ -6,7 +6,7 @@ import clone from 'rfdc';
 import { useFileSystemStore } from './file-system';
 import { parse } from 'valibot';
 import { formatValidationErrors } from 'src/utils/format-validation-errors';
-import { getSystemFilesPath } from 'src/utils/get-sytem-files-path';
+import { getSystemFilesPath } from 'src/utils/get-system-files-path';
 import { debounce } from 'src/utils/debounce';
 import { useSettingsStore } from './settings';
 import { useFileSystemManagerStore } from './file-system-manager';

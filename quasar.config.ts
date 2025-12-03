@@ -32,6 +32,7 @@ export default defineConfig((ctx) => {
       'viewport-patch',
       'default-file-readers',
       { path: 'default-cron-tasks', server: false },
+      { path: 'extensions', server: false },
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css

@@ -70,6 +70,7 @@
     "register-service-worker": "^1.7.2",
     "rfdc": "1.4.1",
     "setimmediate": "^1.0.5",
+    "smol-toml": "1.5.2",
     "spectrallogs": "0.2.2",
     "splitpanes": "4.0.3",
     "toad-scheduler": "3.1.0",

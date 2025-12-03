@@ -1,7 +1,11 @@
 import type { Command, CommandHandlerParams, OrgNoteApi } from 'orgnote-api';
-import { DefaultCommands } from 'orgnote-api';
+import { DefaultCommands, I18N } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import { defineAsyncComponent } from 'vue';
+import { uploadFile } from 'src/utils/file-upload';
+
+import { getHostRelatedPath } from 'src/utils/get-host-related-path';
+import { selectCommand } from 'src/utils/select-command';
 
 export function getDeveloperCommands(): Command[] {
   const openQueueManager = () => {
@@ -122,6 +126,47 @@ export function getDeveloperCommands(): Command[] {
       },
       icon: 'sym_o_schedule',
       group: 'developer',
+    },
+    {
+      command: DefaultCommands.IMPORT_EXTENSION,
+      handler: async (api: OrgNoteApi) => {
+        const file = await uploadFile({ accept: '.js' });
+        if (!file) {
+          return;
+        }
+        await api.core.useExtensions().importExtension(file);
+      },
+      hide: (api: OrgNoteApi) => {
+        const config = api.core.useConfig();
+        return !config.config.developer.developerMode;
+      },
+      icon: 'sym_o_upload',
+      group: 'developer',
+    },
+    {
+      command: DefaultCommands.COPY_COMMAND_URL,
+      handler: async (api: OrgNoteApi) => {
+        const command = await selectCommand(api, I18N.SELECT_COMMAND_TO_COPY_URL);
+
+        if (!command) {
+          return;
+        }
+
+        const searchParams = new URLSearchParams();
+        searchParams.set('execute', JSON.stringify({ command: command.command }));
+        const url = getHostRelatedPath(`?${searchParams.toString()}`);
+
+        await api.utils.copyToClipboard(url);
+        api.core.useNotifications().notify({
+          message: I18N.COPIED_TO_CLIPBOARD,
+          level: 'info',
+        });
+      },
+      icon: 'sym_o_link',
+      hide: (api: OrgNoteApi) => {
+        const config = api.core.useConfig();
+        return !config.config.developer.developerMode;
+      },
     },
   ];
 

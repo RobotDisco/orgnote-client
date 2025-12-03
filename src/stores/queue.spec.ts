@@ -11,6 +11,9 @@ interface MockQueue {
   getStats: Mock;
   on: Mock;
   removeAllListeners: Mock;
+  removeListener: Mock;
+  length: number;
+  _running: number;
 }
 
 const { createMockQueue, mockQueueConstructor, mockQueueRepository } = vi.hoisted(() => {
@@ -28,6 +31,9 @@ const { createMockQueue, mockQueueConstructor, mockQueueRepository } = vi.hoiste
     })),
     on: vi.fn(),
     removeAllListeners: vi.fn(),
+    removeListener: vi.fn(),
+    length: 0,
+    _running: 0,
   });
 
   const mockQueueConstructor = vi.fn(() => createMockQueue());
@@ -323,4 +329,217 @@ test('useQueueStore destroy removes event listeners to prevent memory leak', () 
   store.destroy('test-queue');
 
   expect(queue?.removeAllListeners).toHaveBeenCalled();
+});
+
+test('useQueueStore executeBatchTasks returns empty array for empty data', async () => {
+  const store = useQueueStore();
+
+  const result = await store.executeBatchTasks({ process: vi.fn() }, []);
+
+  expect(result).toEqual([]);
+});
+
+test('useQueueStore executeBatchTasks returns empty array for non-array data', async () => {
+  const store = useQueueStore();
+
+  const result = await store.executeBatchTasks({ process: vi.fn() }, null as unknown as unknown[]);
+
+  expect(result).toEqual([]);
+});
+
+test('useQueueStore executeBatchTasks rejects when process function is missing', async () => {
+  const store = useQueueStore();
+
+  await expect(store.executeBatchTasks({}, ['item1'])).rejects.toThrow(
+    'process function is required in options',
+  );
+});
+
+test('useQueueStore executeBatchTasks processes all items and returns results', async () => {
+  const store = useQueueStore();
+  const processedItems: unknown[] = [];
+
+  let taskFinishHandler: ((taskId: string, result: unknown) => void) | undefined;
+
+  mockQueueConstructor.mockImplementation(() => {
+    const queue = createMockQueue();
+    queue.on = vi.fn((event: string, handler: (taskId: string, result: unknown) => void) => {
+      if (event === 'task_finish') {
+        taskFinishHandler = handler;
+      }
+    });
+    queue.push = vi.fn((task: { id: string; payload: unknown }) => {
+      processedItems.push(task.payload);
+      setTimeout(() => {
+        taskFinishHandler?.(task.id, `processed-${task.payload}`);
+      }, 0);
+    });
+    return queue;
+  });
+
+  const result = await store.executeBatchTasks<string, string[]>(
+    {
+      process: (task: unknown, cb: (err?: unknown, result?: unknown) => void) => {
+        const { payload } = task as { payload: string };
+        cb(undefined, `processed-${payload}`);
+      },
+    },
+    ['item1', 'item2', 'item3'],
+  );
+
+  expect(processedItems).toEqual(['item1', 'item2', 'item3']);
+  expect(result).toHaveLength(3);
+  expect(result).toContain('processed-item1');
+  expect(result).toContain('processed-item2');
+  expect(result).toContain('processed-item3');
+});
+
+test('useQueueStore executeBatchTasks rejects on task failure', async () => {
+  const store = useQueueStore();
+  const testError = new Error('Task failed');
+
+  let taskFailedHandler: ((taskId: string, err: unknown) => void) | undefined;
+
+  mockQueueConstructor.mockImplementation(() => {
+    const queue = createMockQueue();
+    queue.on = vi.fn((event: string, handler: (taskId: string, err: unknown) => void) => {
+      if (event === 'task_failed') {
+        taskFailedHandler = handler;
+      }
+    });
+    queue.push = vi.fn((task: { id: string }) => {
+      setTimeout(() => {
+        taskFailedHandler?.(task.id, testError);
+      }, 0);
+    });
+    return queue;
+  });
+
+  await expect(
+    store.executeBatchTasks(
+      {
+        process: (_task: unknown, cb: (err?: unknown) => void) => {
+          cb(testError);
+        },
+      },
+      ['item1'],
+    ),
+  ).rejects.toThrow('Task failed');
+
+  expect(mockQueueRepository.clear).toHaveBeenCalledTimes(1);
+  const failedQueueId = mockQueueRepository.clear.mock.calls[0]?.[0];
+  expect(failedQueueId).toMatch(/^batch-/);
+});
+
+test('useQueueStore executeBatchTasks cleans up queue after completion', async () => {
+  const store = useQueueStore();
+
+  let taskFinishHandler: ((taskId: string, result: unknown) => void) | undefined;
+  const mockQueue = createMockQueue();
+
+  mockQueueConstructor.mockImplementation(() => {
+    mockQueue.on = vi.fn((event: string, handler: (taskId: string, result: unknown) => void) => {
+      if (event === 'task_finish') {
+        taskFinishHandler = handler;
+      }
+    });
+    mockQueue.push = vi.fn((task: { id: string }) => {
+      setTimeout(() => {
+        taskFinishHandler?.(task.id, 'result');
+      }, 0);
+    });
+    return mockQueue;
+  });
+
+  await store.executeBatchTasks(
+    {
+      process: (_task: unknown, cb: (err?: unknown, result?: unknown) => void) => {
+        cb(undefined, 'result');
+      },
+    },
+    ['item1'],
+  );
+
+  expect(mockQueue.pause).toHaveBeenCalled();
+  expect(mockQueue.removeListener).toHaveBeenCalledWith('task_finish', taskFinishHandler);
+  expect(mockQueue.removeListener).toHaveBeenCalledWith('task_failed', expect.any(Function));
+  expect(mockQueue.removeAllListeners).toHaveBeenCalled();
+  expect(mockQueueRepository.clear).toHaveBeenCalledTimes(1);
+  const clearedQueueId = mockQueueRepository.clear.mock.calls[0]?.[0];
+  expect(clearedQueueId).toMatch(/^batch-/);
+});
+
+test('useQueueStore executeBatchTasks passes concurrent option to queue', async () => {
+  const store = useQueueStore();
+
+  let taskFinishHandler: ((taskId: string, result: unknown) => void) | undefined;
+
+  mockQueueConstructor.mockImplementation(() => {
+    const queue = createMockQueue();
+    queue.on = vi.fn((event: string, handler: (taskId: string, result: unknown) => void) => {
+      if (event === 'task_finish') {
+        taskFinishHandler = handler;
+      }
+    });
+    queue.push = vi.fn((task: { id: string }) => {
+      setTimeout(() => {
+        taskFinishHandler?.(task.id, 'result');
+      }, 0);
+    });
+    return queue;
+  });
+
+  await store.executeBatchTasks(
+    {
+      concurrent: 5,
+      process: (_task: unknown, cb: (err?: unknown, result?: unknown) => void) => {
+        cb(undefined, 'result');
+      },
+    },
+    ['item1'],
+  );
+
+  expect(mockQueueConstructor).toHaveBeenCalledWith(
+    expect.any(Function),
+    expect.objectContaining({ concurrent: 5 }),
+  );
+});
+
+test('useQueueStore executeBatchTasks wraps items with id and payload', async () => {
+  const store = useQueueStore();
+  const pushedTasks: unknown[] = [];
+
+  let taskFinishHandler: ((taskId: string, result: unknown) => void) | undefined;
+
+  mockQueueConstructor.mockImplementation(() => {
+    const queue = createMockQueue();
+    queue.on = vi.fn((event: string, handler: (taskId: string, result: unknown) => void) => {
+      if (event === 'task_finish') {
+        taskFinishHandler = handler;
+      }
+    });
+    queue.push = vi.fn((task: unknown) => {
+      pushedTasks.push(task);
+      const typedTask = task as { id: string };
+      setTimeout(() => {
+        taskFinishHandler?.(typedTask.id, 'result');
+      }, 0);
+    });
+    return queue;
+  });
+
+  await store.executeBatchTasks(
+    {
+      process: (_task: unknown, cb: (err?: unknown, result?: unknown) => void) => {
+        cb(undefined, 'result');
+      },
+    },
+    ['item1', 'item2'],
+  );
+
+  expect(pushedTasks).toHaveLength(2);
+  expect(pushedTasks[0]).toMatchObject({ payload: 'item1' });
+  expect(pushedTasks[1]).toMatchObject({ payload: 'item2' });
+  expect((pushedTasks[0] as { id: string }).id).toBeDefined();
+  expect((pushedTasks[1] as { id: string }).id).toBeDefined();
 });

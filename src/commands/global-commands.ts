@@ -5,10 +5,12 @@ import { GITHUB_LINK, PATREON_LINK, WIKI_LINK } from 'src/constants/external-lin
 import { ISSUE_PAGE } from 'src/constants/issue-page';
 import { clientOnly } from 'src/utils/platform-specific';
 import type { Router } from 'vue-router';
+import LogsContainer from 'src/containers/LogsContainer.vue';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getGlobalCommands({ router }: { router?: Router } = {}): Command[] {
   const sidebarStore = api.ui.useSidebar();
+  const modalStore = api.ui.useModal();
   const commands: Command[] = [
     {
       command: DefaultCommands.REPORT_BUG,
@@ -27,8 +29,9 @@ export function getGlobalCommands({ router }: { router?: Router } = {}): Command
     {
       command: DefaultCommands.SHOW_LOGS,
       group: 'debug',
+      icon: 'sym_o_bug_report',
       handler: () => {
-        // modalStore.open(LoggerPage, { title: 'logs' });
+        modalStore.open(LogsContainer, { title: I18N.LOGS, wide: true });
       },
     },
     {

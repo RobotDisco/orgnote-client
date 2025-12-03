@@ -16,6 +16,11 @@ import {
 } from './layout-snapshot-repository';
 import type Dexie from 'dexie';
 import { createQueueRepository, QUEUE_MIGRATIONS, QUEUE_REPOSITORY_NAME } from './queue-repository';
+import {
+  createExtensionSourceRepository,
+  EXTENSION_SOURCE_MIGRATIONS,
+  EXTENSION_SOURCE_REPOSITORY_NAME,
+} from './extension-source-repository';
 
 let database: Dexie | undefined;
 
@@ -28,6 +33,7 @@ export async function initRepositories(): Promise<OrgNoteApi['infrastructure']> 
     { storeName: LOGGER_REPOSITORY_NAME, migrations: LOGGER_MIGRATIONS },
     { storeName: PANE_SNAPSHOT_REPOSITORY_NAME, migrations: PANE_SNAPSHOT_MIGRATIONS },
     { storeName: QUEUE_REPOSITORY_NAME, migrations: QUEUE_MIGRATIONS },
+    { storeName: EXTENSION_SOURCE_REPOSITORY_NAME, migrations: EXTENSION_SOURCE_MIGRATIONS },
   ]);
   database = db;
   return {
@@ -36,5 +42,6 @@ export async function initRepositories(): Promise<OrgNoteApi['infrastructure']> 
     logRepository: createLoggerRepository(db),
     layoutSnapshotRepository: createLayoutSnapshotRepository(db),
     queueRepository: createQueueRepository(db),
+    extensionSourceRepository: createExtensionSourceRepository(db),
   };
 }
