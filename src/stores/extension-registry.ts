@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import type {
   ExtensionManifest,
   ExtensionRegistryStore,
+  GitFile,
   GitRepoHandle,
   ProcessCallback,
 } from 'orgnote-api';
@@ -11,13 +12,16 @@ import { useGitStore } from './git';
 import { useQueueStore } from './queue';
 import { reporter } from 'src/boot/report';
 import { validateManifest } from 'src/utils/validate-manifest';
-import { parse as parseToml } from 'smol-toml';
 import {
   RECIPES_FOLDER,
   EXTENSION_REGISTRY_MAX_CONCURRENT,
 } from 'src/constants/extension-registry';
 import { isPresent } from 'src/utils/nullable-guards';
 import { to } from 'src/utils/to-error';
+import { parseConfig, isSupportedConfigFile } from 'src/utils/config-parsers';
+
+const isRecipeFile = (entry: GitFile): boolean =>
+  entry.type === 'file' && isSupportedConfigFile(entry.path);
 
 export const useExtensionRegistryStore = defineStore<'extension-registry', ExtensionRegistryStore>(
   'extension-registry',
@@ -41,9 +45,7 @@ export const useExtensionRegistryStore = defineStore<'extension-registry', Exten
 
     const readRecipesFromRepo = async (repoHandle: GitRepoHandle): Promise<ExtensionManifest[]> => {
       const entries = await repoHandle.listDirectory(RECIPES_FOLDER);
-      const recipeFiles = entries.filter(
-        (e) => e.type === 'file' && (e.path.endsWith('.toml') || e.path.endsWith('.json')),
-      );
+      const recipeFiles = entries.filter(isRecipeFile);
 
       const manifestPromises = recipeFiles.map(async (file) => {
         const content = await repoHandle.readFile(file.path, 'utf8');
@@ -54,19 +56,12 @@ export const useExtensionRegistryStore = defineStore<'extension-registry', Exten
       return results.filter(isPresent);
     };
 
-    const parseManifestContent = (content: string, isToml: boolean): ExtensionManifest => {
-      return isToml
-        ? (parseToml(content) as ExtensionManifest)
-        : (JSON.parse(content) as ExtensionManifest);
-    };
-
     const safeParseManifest = (
       content: string,
       filePath: string,
     ): ExtensionManifest | undefined => {
-      const isToml = filePath.endsWith('.toml');
       const safeParse = to(
-        () => parseManifestContent(content, isToml),
+        () => parseConfig<ExtensionManifest>(content, filePath),
         `Invalid manifest format in ${filePath}`,
       );
 

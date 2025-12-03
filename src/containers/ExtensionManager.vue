@@ -56,7 +56,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { api } from 'src/boot/api';
 import type { ExtensionMeta, ExtensionManifest, GitSource } from 'orgnote-api';
@@ -120,19 +120,15 @@ const emptyMessageKey = computed(() => {
 
 const refresh = async () => {
   await extensionStore.sync();
-  if (!availableExtensions.value.length) {
-    await extensionRegistry.refresh();
-  }
+  await ensureAvailabileExtensions();
 };
 
-watch(
-  () => selectedTab.value,
-  async (tab) => {
-    if (tab.value === 'all' && availableExtensions.value.length === 0) {
-      await extensionRegistry.refresh();
-    }
-  },
-);
+const ensureAvailabileExtensions = async (): Promise<void> => {
+  if (availableExtensions.value.length) {
+    return;
+  }
+  await extensionRegistry.refresh();
+};
 
 const enableExtension = async (name: string) => {
   await extensionStore.enableExtension(name);
