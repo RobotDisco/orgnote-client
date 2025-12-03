@@ -50,7 +50,7 @@
                 outline
                 border
                 icon="sym_o_delete"
-                :tooltip="deleteTooltip"
+                :tooltip="t(i18n.DELETE_EXTENSION)"
               />
             </template>
 
@@ -62,7 +62,7 @@
               outline
               border
               icon="sym_o_download"
-              :tooltip="installTooltip"
+              :tooltip="t(i18n.INSTALL_EXTENSION)"
             />
           </app-flex>
         </app-flex>
@@ -71,12 +71,12 @@
       <template #body>
         <app-flex column align-start gap="sm" class="extension-details">
           <app-flex v-if="manifest.author" gap="sm">
-            <span class="label">{{ authorLabel }}:</span>
+            <span class="label">{{ t(i18n.AUTHOR) }}:</span>
             <span>{{ manifest.author }}</span>
           </app-flex>
 
           <app-flex v-if="manifest.keywords?.length" gap="sm">
-            <span class="label">{{ keywordsLabel }}:</span>
+            <span class="label">{{ t(i18n.KEYWORDS) }}:</span>
             <app-flex gap="xs">
               <app-badge
                 v-for="keyword in manifest.keywords"
@@ -90,12 +90,12 @@
           </app-flex>
 
           <app-flex v-if="repoUrl" gap="sm">
-            <span class="label">{{ repositoryLabel }}:</span>
-            <a :href="repoUrl" target="_blank" class="repo-link">{{ repoUrl }}</a>
+            <span class="label">{{ t(i18n.REPOSITORY) }}:</span>
+            <app-link :href="repoUrl">{{ repoUrl }}</app-link>
           </app-flex>
 
           <app-flex v-if="manifest.permissions?.length" gap="sm">
-            <span class="label">{{ permissionsLabel }}:</span>
+            <span class="label">{{ t(i18n.PERMISSIONS) }}:</span>
             <app-flex gap="xs">
               <app-badge
                 v-for="permission in manifest.permissions"
@@ -125,6 +125,7 @@ import AppSpoiler from './AppSpoiler.vue';
 import AppFlex from './AppFlex.vue';
 import MonochromeFace from './MonochromeFace.vue';
 import ActionButton from './ActionButton.vue';
+import AppLink from './AppLink.vue';
 import {
   EXTENSION_CATEGORY_ICONS,
   EXTENSION_CATEGORY_COLORS,
@@ -190,13 +191,6 @@ const toggleTooltip = computed(() => {
   return isActive.value ? t(i18n.DISABLE_EXTENSION) : t(i18n.ENABLE_EXTENSION);
 });
 
-const installTooltip = computed(() => t(i18n.INSTALL_EXTENSION));
-const deleteTooltip = computed(() => t(i18n.DELETE_EXTENSION));
-const authorLabel = computed(() => t(i18n.AUTHOR));
-const keywordsLabel = computed(() => t(i18n.KEYWORDS));
-const repositoryLabel = computed(() => t(i18n.REPOSITORY));
-const permissionsLabel = computed(() => t(i18n.PERMISSIONS));
-
 const toggleActive = (value: boolean) => {
   const name = manifest.value.name;
   if (value) {
@@ -219,14 +213,5 @@ const handleInstall = () => {
 .label {
   color: var(--fg-alt);
   min-width: 80px;
-}
-
-.repo-link {
-  color: var(--blue);
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
 }
 </style>

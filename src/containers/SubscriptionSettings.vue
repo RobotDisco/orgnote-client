@@ -25,9 +25,9 @@
         <p class="capitalize">{{ t(I18N.SEVERAL_OPTIONS) }}</p>
         <ul>
           <li>
-            <a href="https://about.org-note.com" target="_blank" class="link capitalize">{{
+            <app-link href="https://about.org-note.com" class="capitalize">{{
               t(I18N.SIGNUP_FOR_BETA)
-            }}</a>
+            }}</app-link>
             {{ t(I18N.ACTIVE_TESTERS_KEY) }}
           </li>
           <li class="capitalize">
@@ -37,7 +37,7 @@
             {{ t(I18N.TRY_OWN_SERVER) }}
           </li>
           <li class="capitalize">
-            <a :href="PATREON_LINK" target="_blank" class="link">{{ t(I18N.SUBSCRIBE_PATREON) }}</a>
+            <app-link :href="PATREON_LINK">{{ t(I18N.SUBSCRIBE_PATREON) }}</app-link>
           </li>
         </ul>
       </app-description>
@@ -55,6 +55,7 @@ import { ref } from 'vue';
 import { PATREON_LINK } from 'src/constants/external-link';
 import AppCard from 'src/components/AppCard.vue';
 import AppFlex from 'src/components/AppFlex.vue';
+import AppLink from 'src/components/AppLink.vue';
 
 const { t } = useI18n({
   useScope: 'global',
