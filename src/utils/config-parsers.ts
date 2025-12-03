@@ -1,4 +1,4 @@
-import { parse as parseToml } from 'smol-toml';
+import { parseToml } from 'orgnote-api/utils';
 
 type ConfigParser = (content: string) => unknown;
 
