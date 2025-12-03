@@ -14,12 +14,13 @@ import { to } from 'src/utils/to-error';
 import { reporter } from 'src/boot/report';
 import type { Result } from 'neverthrow';
 import { ok, err } from 'neverthrow';
+import { parseToml, stringifyToml } from 'orgnote-api/utils';
 
 export const useConfigStore = defineStore<'config', ConfigStore>(
   'config',
   () => {
     const fileSystem = useFileSystemStore();
-    const diskConfigPath = getSystemFilesPath('config.json');
+    const diskConfigPath = getSystemFilesPath('config.toml');
     const lastSyncTime = ref<number>(0);
     const { settings } = storeToRefs(useSettingsStore());
     const vault = computed(() => settings.value.vault);
@@ -31,7 +32,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
     const sync = async (): Promise<void> => {
       configErrors.value = [];
 
-      const content = JSON.stringify(config);
+      const content = stringifyToml(config);
       const newConfig = await fileSystem.syncFile(diskConfigPath, content, lastSyncTime.value);
 
       if (!newConfig) {
@@ -46,13 +47,13 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
     };
 
     const parseConfig = (rawConfigContent: string): Result<void, Error> => {
-      const safeJsonParse = to(
-        JSON.parse,
-        (e) => new SyntaxError('Invalid JSON format', { cause: e }),
+      const safeTomlParse = to(
+        parseToml,
+        (e) => new SyntaxError('Invalid TOML format', { cause: e }),
       );
       const safeValidate = to(parse, (e) => new TypeError('Invalid config format', { cause: e }));
 
-      const res = safeJsonParse(rawConfigContent).andThen((obj) =>
+      const res = safeTomlParse(rawConfigContent).andThen((obj) =>
         safeValidate(ORG_NOTE_CONFIG_SCHEMA, obj),
       );
 

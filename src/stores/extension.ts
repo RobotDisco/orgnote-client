@@ -18,7 +18,7 @@ import { reporter } from 'src/boot/report';
 import { to } from 'src/utils/to-error';
 import { useFileSystemStore } from './file-system';
 import { getSystemFilesPath } from 'src/utils/get-system-files-path';
-import { parse as parseToml, stringify as stringifyToml } from 'smol-toml';
+import { parseToml, stringifyToml } from 'orgnote-api/utils';
 import { useGitStore } from './git';
 
 interface ActiveExtension extends ExtensionMeta {
