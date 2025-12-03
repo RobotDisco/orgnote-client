@@ -17,7 +17,7 @@ import { validateManifest } from 'src/utils/validate-manifest';
 import { reporter } from 'src/boot/report';
 import { to } from 'src/utils/to-error';
 import { useFileSystemStore } from './file-system';
-import { getSystemFilesPath } from 'src/utils/get-sytem-files-path';
+import { getSystemFilesPath } from 'src/utils/get-system-files-path';
 import { parse as parseToml, stringify as stringifyToml } from 'smol-toml';
 import { useGitStore } from './git';
 
@@ -118,7 +118,7 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
     });
 
     await Promise.allSettled(mountPromises);
-  };;
+  };
 
   const mountExtension = async (
     meta: ExtensionMeta,
@@ -266,17 +266,31 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
     return m.manifest;
   };
 
+  const parseManifestJson = (content: string): ExtensionManifest => JSON.parse(content);
+
   const resolveManifest = async (
     repoHandle: GitRepoHandle,
     manifestPath: string,
     moduleContent: string,
   ): Promise<ExtensionManifest> => {
     const hasManifest = await repoHandle.fileExists(manifestPath);
-    const manifest = hasManifest
-      ? (JSON.parse(await repoHandle.readFile(manifestPath, 'utf8')) as ExtensionManifest)
-      : await extractManifestFromModule(moduleContent);
-    validateManifest(manifest);
-    return manifest;
+
+    if (!hasManifest) {
+      const manifest = await extractManifestFromModule(moduleContent);
+      validateManifest(manifest);
+      return manifest;
+    }
+
+    const content = await repoHandle.readFile(manifestPath, 'utf8');
+    const safeParse = to(parseManifestJson, `Invalid manifest JSON in ${manifestPath}`);
+    const parseResult = safeParse(content);
+
+    if (parseResult.isErr()) {
+      throw parseResult.error;
+    }
+
+    validateManifest(parseResult.value);
+    return parseResult.value;
   };
 
   const fetchFromGit = async (source: GitSource): Promise<FetchedExtension> => {
@@ -390,7 +404,7 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
 
     const unmountPromises = nonLocalExtensions.map((ext) => unmountExtension(ext.manifest.name));
     await Promise.allSettled(unmountPromises);
-  };;
+  };
 
   const disableSafeMode = async (): Promise<void> => {
     const activeExtensionsMeta = extensions.value.filter((meta) => meta.active);
@@ -404,7 +418,7 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
     });
 
     await Promise.allSettled(mountPromises);
-  };;
+  };
 
   const store: ExtensionStore = {
     extensions,

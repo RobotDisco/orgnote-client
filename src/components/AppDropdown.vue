@@ -119,6 +119,10 @@ defineExpose({
 </script>
 
 <style lang="scss">
+.app-dropdown {
+  width: 100%;
+}
+
 .app-select {
   padding: var(--menu-item-padding);
   border-radius: var(--menu-item-border-radius);

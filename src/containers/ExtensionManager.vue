@@ -1,37 +1,25 @@
 <template>
   <container-layout gap="md">
     <template #header>
-      <app-grid :cols="1" gap="md">
-        <app-flex end align-center gap="sm">
-          <action-button
-            @click="refresh"
-            color="fg"
-            size="sm"
-            outline
-            border
-            icon="sym_o_refresh"
-            :tooltip="$t(i18n.REFRESH)"
-          />
-          <action-button
-            @click="openInstallDialog"
-            color="green"
-            size="sm"
-            outline
-            border
-            icon="sym_o_add"
-            :tooltip="$t(i18n.INSTALL_EXTENSION)"
-          />
-        </app-flex>
-
+      <app-flex between gap="md">
         <app-dropdown
           v-model="selectedTab"
           :options="tabOptions"
           option-label="label"
           :clearable="false"
           :use-input="false"
-          class="tab-dropdown"
         />
-      </app-grid>
+
+        <action-button
+          @click="refresh"
+          color="fg"
+          size="sm"
+          outline
+          border
+          icon="sym_o_refresh"
+          :tooltip="$t(i18n.REFRESH)"
+        />
+      </app-flex>
     </template>
 
     <template #body>
@@ -79,7 +67,6 @@ import AppDropdown from 'src/components/AppDropdown.vue';
 import ExtensionItem from 'src/components/ExtensionItem.vue';
 import MenuItem from './MenuItem.vue';
 import ContainerLayout from 'src/components/ContainerLayout.vue';
-import AppGrid from 'src/components/AppGrid.vue';
 import AppFlex from 'src/components/AppFlex.vue';
 import EmptyState from 'src/components/EmptyState.vue';
 import LoadingDots from 'src/components/LoadingDots.vue';
@@ -177,10 +164,6 @@ const installExtension = async (manifest: ExtensionManifest) => {
   }
   await extensionStore.installExtension(manifest.source as GitSource);
   notifications.notify({ message: t(i18n.EXTENSION_INSTALLED), level: 'info' });
-};
-
-const openInstallDialog = () => {
-  openInstallFromUrl();
 };
 
 const handleImportExtension = () => {

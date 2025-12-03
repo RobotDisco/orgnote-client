@@ -155,37 +155,109 @@ export const useQueueStore = defineStore<'queue', QueueStore>('queue', () => {
     return Promise.resolve({ ...stats });
   };
 
-
-  const isQueueEmpty = (queue: Queue): boolean => {
-    const queueWithInternals = queue as Queue & { length: number; _running: number };
-    return queueWithInternals.length === 0 && queueWithInternals._running === 0;
-  };
-
-  const waitQeueueEmpty = <T = unknown[]>(queueId: string = 'default'): Promise<T> => {
-    const queue = ensureQueue(queueId);
-    const { promise, resolve } = Promise.withResolvers<T>();
-
-    if (isQueueEmpty(queue)) {
-      resolve([] as T);
-      return promise;
+  const executeBatchTasks = <T = unknown[], R = unknown[]>(
+    options: QueueCreationOptions,
+    data: T[],
+  ): Promise<R> => {
+    if (!Array.isArray(data) || data.length === 0) {
+      return Promise.resolve([] as R);
     }
 
-    const results: unknown[] = [];
+    const originalProcess = options.process;
+    if (!originalProcess) {
+      return Promise.reject(new Error('process function is required in options'));
+    }
 
-    const onTaskFinish = (_taskId: string, result: unknown) => {
-      results.push(result);
+    const queueId = `batch-${crypto.randomUUID()}`;
+    const { promise, resolve, reject } = Promise.withResolvers<R>();
+
+    const state = createBatchState<R>(data.length, resolve, reject);
+    const queue = createBatchQueue(queueId, options, originalProcess, state);
+
+    setupBatchEventHandlers(queue, queueId, state);
+    enqueueBatchItems(queue, data);
+
+    return promise;
+  };
+
+  const createBatchState = <R>(
+    totalTasks: number,
+    resolve: (value: R) => void,
+    reject: (reason?: unknown) => void,
+  ) => ({
+    results: [] as unknown[],
+    completedCount: 0,
+    hasError: false,
+    totalTasks,
+    resolve,
+    reject,
+  });
+
+  type BatchState<R> = ReturnType<typeof createBatchState<R>>;
+
+  const createBatchQueue = <R>(
+    queueId: string,
+    options: QueueCreationOptions,
+    originalProcess: NonNullable<QueueCreationOptions['process']>,
+    state: BatchState<R>,
+  ): Queue => {
+    destroy(queueId);
+
+    const wrappedProcess = (task: unknown, cb: (err?: unknown, result?: unknown) => void) => {
+      if (state.hasError) {
+        cb();
+        return;
+      }
+      originalProcess(task, cb);
     };
 
-    const onDrain = () => {
+    return register(queueId, { ...options, process: wrappedProcess });
+  };
+
+  const setupBatchEventHandlers = <R>(
+    queue: Queue,
+    queueId: string,
+    state: BatchState<R>,
+  ): void => {
+    const cleanup = () => {
+      queue.pause();
       queue.removeListener('task_finish', onTaskFinish);
-      queue.removeListener('drain', onDrain);
-      resolve(results as T);
+      queue.removeListener('task_failed', onTaskFailed);
+      queue.removeAllListeners();
+      destroy(queueId);
+      void repositories.queueRepository.clear(queueId);
+    };
+
+    const onTaskFinish = (_taskId: string, result: unknown) => {
+      if (state.hasError) {
+        return;
+      }
+      state.results.push(result);
+      state.completedCount++;
+
+      if (state.completedCount === state.totalTasks) {
+        cleanup();
+        state.resolve(state.results as R);
+      }
+    };
+
+    const onTaskFailed = (_taskId: string, err: unknown) => {
+      if (state.hasError) {
+        return;
+      }
+      state.hasError = true;
+      cleanup();
+      state.reject(err);
     };
 
     queue.on('task_finish', onTaskFinish);
-    queue.on('drain', onDrain);
+    queue.on('task_failed', onTaskFailed);
+  };
 
-    return promise;
+  const enqueueBatchItems = <T>(queue: Queue, data: T[]): void => {
+    data.forEach((item) => {
+      queue.push({ id: crypto.randomUUID(), payload: item });
+    });
   };
 
   const queueStore: QueueStore = {
@@ -201,8 +273,8 @@ export const useQueueStore = defineStore<'queue', QueueStore>('queue', () => {
     destroy,
     clear,
     getStats,
-    waitQeueueEmpty,
     queueIds,
+    executeBatchTasks,
   };
 
   return queueStore;

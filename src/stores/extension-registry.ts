@@ -14,7 +14,6 @@ import { validateManifest } from 'src/utils/validate-manifest';
 import { parse as parseToml } from 'smol-toml';
 import {
   RECIPES_FOLDER,
-  EXTENSION_REGISTRY_QUEUE_ID,
   EXTENSION_REGISTRY_MAX_CONCURRENT,
 } from 'src/constants/extension-registry';
 import { isPresent } from 'src/utils/nullable-guards';
@@ -94,7 +93,7 @@ export const useExtensionRegistryStore = defineStore<'extension-registry', Exten
 
     const createSourceProcessor = () => {
       return async (task: unknown, cb: ProcessCallback) => {
-        const { source } = task as { source: string };
+        const { payload: source } = task as { payload: string };
         const safeFetch = to(fetchManifestsFromSource, `Failed to fetch from ${source}`);
         const result = await safeFetch(source);
 
@@ -111,21 +110,14 @@ export const useExtensionRegistryStore = defineStore<'extension-registry', Exten
     const fetchManifests = async (sources: string[]): Promise<ExtensionManifest[]> => {
       const queueStore = useQueueStore();
 
-      await queueStore.clear(EXTENSION_REGISTRY_QUEUE_ID);
-      queueStore.register(EXTENSION_REGISTRY_QUEUE_ID, {
-        concurrent: EXTENSION_REGISTRY_MAX_CONCURRENT,
-        process: createSourceProcessor(),
-      });
-
-      sources.forEach((source) =>
-        queueStore.add({ source }, undefined, EXTENSION_REGISTRY_QUEUE_ID),
+      const results = await queueStore.executeBatchTasks<string, ExtensionManifest[]>(
+        {
+          concurrent: EXTENSION_REGISTRY_MAX_CONCURRENT,
+          process: createSourceProcessor(),
+        },
+        sources,
       );
 
-      const results = await queueStore.waitQeueueEmpty<ExtensionManifest[][]>(
-        EXTENSION_REGISTRY_QUEUE_ID,
-      );
-
-      queueStore.destroy(EXTENSION_REGISTRY_QUEUE_ID);
       return results.flat();
     };
 
