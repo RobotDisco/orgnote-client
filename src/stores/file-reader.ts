@@ -20,6 +20,12 @@ export const useFileReaderStore = defineStore<string, FileReaderStore>(
       readers.set(readerMatch, reader);
     };
 
+    const addReaders = (newReaders: Record<string, (path: string) => Promise<void>>): void => {
+      Object.entries(newReaders).forEach(([pattern, reader]) => {
+        readers.set(pattern, reader);
+      });
+    };
+
     /**
      * Opens a file using the appropriate reader based on the file path
      * @param path - Array of path segments to the file
@@ -40,6 +46,7 @@ export const useFileReaderStore = defineStore<string, FileReaderStore>(
 
     return {
       addReader,
+      addReaders,
       openFile,
     };
   },

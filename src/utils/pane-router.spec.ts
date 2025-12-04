@@ -12,6 +12,10 @@ vi.mock('src/pages/EditNote.vue', () => ({
   default: { name: 'EditNote' },
 }));
 
+vi.mock('src/pages/EditCode.vue', () => ({
+  default: { name: 'EditCode' },
+}));
+
 vi.mock('src/pages/AppBuffer.vue', () => ({
   default: { name: 'AppBuffer' },
 }));
@@ -207,4 +211,52 @@ test('handles complex file paths correctly', () => {
     throw new Error('Expected titleGenerator to be defined');
   }
   expect(titleGenerator(complexPathRoute)).toBe('meeting-notes.org');
+});
+
+test('pane-router has edit code route configured', () => {
+  const editCodeRoute = router.getRoutes().find((route) => route.name === RouteNames.EditCode);
+
+  expect(editCodeRoute).toBeDefined();
+  expect(editCodeRoute?.path).toBe('/:paneId/edit-code/:path(.*)');
+  expect(editCodeRoute?.meta?.titleGenerator).toBeDefined();
+});
+
+test('pane-router edit code title generator extracts filename from path', () => {
+  const editCodeRoute = router.getRoutes().find((route) => route.name === RouteNames.EditCode);
+  const titleGenerator = editCodeRoute?.meta?.titleGenerator;
+
+  expect(titleGenerator).toBeDefined();
+
+  const mockRoute = {
+    params: { path: 'config/settings.toml' },
+    query: {},
+    hash: '',
+    fullPath: '/test/edit-code/config/settings.toml',
+    path: '/test/edit-code/config/settings.toml',
+    name: RouteNames.EditCode,
+    matched: [],
+    meta: {},
+    redirectedFrom: undefined,
+  } as RouteLocationNormalized;
+
+  if (!titleGenerator) {
+    throw new Error('Expected titleGenerator to be defined');
+  }
+  expect(titleGenerator(mockRoute)).toBe('settings.toml');
+});
+
+test('pane-router can navigate to edit code route', async () => {
+  const testPath = 'config/app.toml';
+
+  await router.push({
+    name: RouteNames.EditCode,
+    params: {
+      paneId: testTabId,
+      path: testPath,
+    },
+  });
+
+  expect(router.currentRoute.value.name).toBe(RouteNames.EditCode);
+  expect(router.currentRoute.value.params.paneId).toBe(testTabId);
+  expect(router.currentRoute.value.params.path).toBe(testPath);
 });

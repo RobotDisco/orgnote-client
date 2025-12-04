@@ -1,7 +1,7 @@
 <template>
   <textarea
     v-model="model"
-    class="simple-org-editor"
+    class="simple-editor"
     placeholder="Start writing your note..."
     role="textbox"
     aria-label="Note editor"
@@ -14,7 +14,7 @@ const model = defineModel<string>();
 </script>
 
 <style lang="scss" scoped>
-.simple-org-editor {
+.simple-editor {
   @include reset-input;
 
   & {

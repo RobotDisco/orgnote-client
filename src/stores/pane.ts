@@ -186,7 +186,6 @@ export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
   };
 
   const restorePanesData = async (snapshot: PaneSnapshot[]): Promise<void> => {
-    console.log('[line 489][LAYOUT]: RESTORE PANES?');
     clearPanesState();
 
     for (const paneSnapshot of snapshot) {
