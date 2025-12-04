@@ -468,3 +468,78 @@ test('should init layout when no snapshot available', async () => {
 
   expect(paneStore.activePaneId).toBeTruthy();
 });
+
+test('updateNodeSizes updates sizes for root split node', async () => {
+  const layoutStore = useLayoutStore();
+  const paneStore = usePaneStore();
+
+  await layoutStore.initLayout();
+  const paneId = paneStore.activePaneId!;
+  await layoutStore.splitPaneInLayout(paneId, 'right');
+
+  const splitNode = layoutStore.layout;
+  expect(splitNode?.type).toBe('split');
+  if (splitNode?.type !== 'split') return;
+
+  layoutStore.updateNodeSizes(splitNode.id, [60, 40]);
+
+  expect(layoutStore.layout?.type).toBe('split');
+  if (layoutStore.layout?.type === 'split') {
+    expect(layoutStore.layout.sizes).toEqual([60, 40]);
+  }
+});
+
+test('updateNodeSizes updates sizes for nested split node', async () => {
+  const layoutStore = useLayoutStore();
+  const paneStore = usePaneStore();
+
+  await layoutStore.initLayout();
+  const firstPaneId = paneStore.activePaneId!;
+  await layoutStore.splitPaneInLayout(firstPaneId, 'right');
+
+  const secondPaneId = paneStore.activePaneId!;
+  await layoutStore.splitPaneInLayout(secondPaneId, 'bottom');
+
+  const rootNode = layoutStore.layout;
+  expect(rootNode?.type).toBe('split');
+  if (rootNode?.type !== 'split') return;
+
+  const nestedNode = rootNode.children.find((c) => c.type === 'split');
+  expect(nestedNode?.type).toBe('split');
+  if (nestedNode?.type !== 'split') return;
+
+  layoutStore.updateNodeSizes(nestedNode.id, [70, 30]);
+
+  const updatedRoot = layoutStore.layout;
+  if (updatedRoot?.type !== 'split') return;
+
+  const updatedNested = updatedRoot.children.find((c) => c.type === 'split');
+  if (updatedNested?.type !== 'split') return;
+
+  expect(updatedNested.sizes).toEqual([70, 30]);
+});
+
+test('updateNodeSizes creates new object references for immutability', async () => {
+  const layoutStore = useLayoutStore();
+  const paneStore = usePaneStore();
+
+  await layoutStore.initLayout();
+  const paneId = paneStore.activePaneId!;
+  await layoutStore.splitPaneInLayout(paneId, 'right');
+
+  const originalLayout = layoutStore.layout;
+
+  if (originalLayout?.type !== 'split') return;
+
+  layoutStore.updateNodeSizes(originalLayout.id, [55, 45]);
+
+  expect(layoutStore.layout).not.toBe(originalLayout);
+});
+
+test('updateNodeSizes does nothing when layout is undefined', () => {
+  const layoutStore = useLayoutStore();
+
+  expect(layoutStore.layout).toBeUndefined();
+  layoutStore.updateNodeSizes('non-existent-id', [50, 50]);
+  expect(layoutStore.layout).toBeUndefined();
+});

@@ -1,12 +1,17 @@
 <template>
   <div
     :class="['pane-splitter', orientation, { active: isResizing }]"
+    role="separator"
+    :aria-orientation="orientation"
+    :aria-valuenow="currentPosition"
+    aria-valuemin="25"
+    aria-valuemax="75"
     @mousedown="startResize"
   />
 </template>
 
 <script lang="ts" setup>
-import { ref, onUnmounted } from 'vue';
+import { ref, onUnmounted, computed } from 'vue';
 
 const MIN_PANE_SIZE_PERCENT = 25;
 
@@ -30,16 +35,17 @@ const resizeState = {
 
 const getSplitterCount = (): number => props.sizes.length - 1;
 
-const getContainerSize = (element: HTMLElement): number => {
-  const parent = element.parentElement;
+const getContainerSize = (splitterElement: HTMLElement): number => {
+  const parent = splitterElement.parentElement;
   if (!parent) return 0;
 
   const totalSize =
     props.orientation === 'horizontal' ? parent.offsetWidth : parent.offsetHeight;
 
-  const splitterElement = element;
   const splitterSize =
-    props.orientation === 'horizontal' ? splitterElement.offsetWidth : splitterElement.offsetHeight;
+    props.orientation === 'horizontal'
+      ? splitterElement.offsetWidth
+      : splitterElement.offsetHeight;
 
   return totalSize - splitterSize * getSplitterCount();
 };
@@ -118,6 +124,10 @@ onUnmounted(() => {
   document.removeEventListener('mouseup', onMouseUp);
   document.body.style.cursor = '';
   document.body.style.userSelect = '';
+});
+
+const currentPosition = computed((): number => {
+  return Math.round(props.sizes[props.splitIndex] ?? 50);
 });
 </script>
 

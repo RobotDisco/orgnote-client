@@ -54,9 +54,11 @@ const splitterCount = computed((): number => {
 const normalizedSizes = computed((): number[] => {
   if (props.layout.type !== 'split') return [];
 
-  const sizes = props.layout.sizes;
+  const splitLayout = props.layout;
+  const sizes = splitLayout.sizes;
+
   if (!sizes || sizes.length === 0) {
-    const count = props.layout.children.length;
+    const count = splitLayout.children.length;
     return Array(count).fill(100 / count);
   }
 
