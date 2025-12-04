@@ -4,10 +4,18 @@ import { ref, shallowRef, type Ref, type ShallowRef } from 'vue';
 import type { Pane, Tab } from 'orgnote-api';
 import { sleep } from 'src/utils/sleep';
 
-const createMockPaneStore = () => ({
-  panes: shallowRef({} as Record<string, ShallowRef<Pane>>),
-  $onAction: vi.fn(() => vi.fn()),
-});
+const createMockPaneStore = () => {
+  const panes = shallowRef({} as Record<string, ShallowRef<Pane>>);
+  return {
+    get panes() {
+      return panes.value;
+    },
+    set panes(val) {
+      panes.value = val;
+    },
+    $onAction: vi.fn(() => vi.fn()),
+  };
+};
 
 const createMockLayoutStore = () => ({
   saveLayout: vi.fn(() => Promise.resolve()),
@@ -98,7 +106,7 @@ const createTestPane = (tabs: Tab[] = []): ShallowRef<Pane> => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockPaneStore.panes.value = {} as Record<string, ShallowRef<Pane>>;
+  mockPaneStore.panes = {} as Record<string, ShallowRef<Pane>>;
   mockPaneStore.$onAction.mockReturnValue(vi.fn());
   mockLayoutStore.saveLayout.mockReturnValue(Promise.resolve());
   mockLayoutStore.restoreLayout.mockReturnValue(Promise.resolve());
@@ -151,7 +159,7 @@ test('start registers router hooks for existing tabs', async () => {
   const tab1 = createTestTab({ router: router1 });
   const tab2 = createTestTab({ router: router2 });
   const pane = createTestPane([tab1, tab2]);
-  mockPaneStore.panes.value = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
+  mockPaneStore.panes = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
   const { start } = usePanePersistence();
   await start();
   expect(router1.afterEach).toHaveBeenCalledOnce();
@@ -171,7 +179,7 @@ test('stop clears router hooks', async () => {
   const tab1 = createTestTab({ router: router1 });
   const tab2 = createTestTab({ router: router2 });
   const pane = createTestPane([tab1, tab2]);
-  mockPaneStore.panes.value = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
+  mockPaneStore.panes = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
   const { start, stop } = usePanePersistence();
   await start();
   const removeHook1 = (router1.afterEach as ReturnType<typeof vi.fn>).mock.results[0]?.value;
@@ -208,7 +216,7 @@ test('router afterEach triggers save', async () => {
   const router = createMockRouter();
   const tab = createTestTab({ router });
   const pane = createTestPane([tab]);
-  mockPaneStore.panes.value = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
+  mockPaneStore.panes = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
   const { start } = usePanePersistence();
   await start();
   vi.clearAllMocks();
@@ -223,7 +231,7 @@ test('logs error when save fails', async () => {
   const router = createMockRouter();
   const tab = createTestTab({ router });
   const pane = createTestPane([tab]);
-  mockPaneStore.panes.value = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
+  mockPaneStore.panes = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
   const { start } = usePanePersistence();
   await start();
   (router as unknown as { triggerAfterEach: () => void }).triggerAfterEach();
@@ -241,7 +249,7 @@ test('uses default delay when config delay is missing', async () => {
   const router = createMockRouter();
   const tab = createTestTab({ router });
   const pane = createTestPane([tab]);
-  mockPaneStore.panes.value = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
+  mockPaneStore.panes = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
   const { start } = usePanePersistence();
   await start();
   (router as unknown as { triggerAfterEach: () => void }).triggerAfterEach();
@@ -255,14 +263,14 @@ test('removes hooks for routers that no longer exist', async () => {
   const tab1 = createTestTab({ router: router1 });
   const tab2 = createTestTab({ router: router2 });
   const pane = createTestPane([tab1, tab2]);
-  mockPaneStore.panes.value = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
+  mockPaneStore.panes = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
   const { start } = usePanePersistence();
   await start();
   expect(router1.afterEach).toHaveBeenCalled();
   expect(router2.afterEach).toHaveBeenCalled();
   const removeHook2 = (router2.afterEach as ReturnType<typeof vi.fn>).mock.results[0]?.value;
   pane.value.tabs.value = { [tab1.id]: tab1 } as Record<string, Tab>;
-  mockPaneStore.panes.value = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
+  mockPaneStore.panes = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
   const actionCallback = (mockPaneStore.$onAction as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
   const afterCallback = vi.fn();
   type ActionContext = { after: (cb: () => void) => unknown };
@@ -282,7 +290,7 @@ test('does not add duplicate hooks for the same router', async () => {
   const tab1 = createTestTab({ router });
   const tab2 = createTestTab({ router });
   const pane = createTestPane([tab1, tab2]);
-  mockPaneStore.panes.value = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
+  mockPaneStore.panes = { [pane.value.id]: pane } as Record<string, ShallowRef<Pane>>;
   const { start } = usePanePersistence();
   await start();
   expect(router.afterEach).toHaveBeenCalledOnce();
