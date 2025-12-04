@@ -136,7 +136,7 @@ test('file-manager OPEN_CODE_EDITOR command does not navigate when params is und
 
   if (isNullable(openCodeEditorCommand)) return;
 
-  await openCodeEditorCommand.handler(mockApi as OrgNoteApi);
+  await openCodeEditorCommand.handler(mockApi as OrgNoteApi, { data: undefined, meta: {} });
 
   expect(mockNavigate).not.toHaveBeenCalled();
 });
