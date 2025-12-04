@@ -3,6 +3,17 @@ import { test, expect, vi } from 'vitest';
 import LayoutRenderer from './LayoutRenderer.vue';
 import type { LayoutNode, LayoutSplitNode } from 'orgnote-api';
 
+vi.mock('src/boot/api', () => ({
+  api: {
+    core: {
+      useLayout: () => ({
+        normalizeSizes: (sizes: number[]) => sizes,
+        updateNodeSizes: vi.fn(),
+      }),
+    },
+  },
+}));
+
 const createPaneNode = (paneId: string): LayoutNode => ({
   id: `node-${paneId}`,
   type: 'pane',
@@ -12,11 +23,13 @@ const createPaneNode = (paneId: string): LayoutNode => ({
 const createSplitNode = (
   orientation: 'horizontal' | 'vertical',
   children: LayoutNode[],
+  sizes?: number[],
 ): LayoutNode => ({
   id: `split-${Math.random()}`,
   type: 'split',
   orientation,
   children,
+  sizes: sizes ?? children.map(() => 100 / children.length),
 });
 
 test('renders single pane node', () => {
@@ -60,7 +73,7 @@ test('renders horizontal split with two panes', () => {
   });
 
   expect(wrapper.find('.layout-split').exists()).toBe(true);
-  expect(wrapper.find('.layout-split--horizontal').exists()).toBe(true);
+  expect(wrapper.find('.layout-split.horizontal').exists()).toBe(true);
   expect(wrapper.findAll('.layout-split-child')).toHaveLength(2);
 });
 
@@ -74,7 +87,7 @@ test('renders vertical split with two panes', () => {
     },
   });
 
-  expect(wrapper.find('.layout-split--vertical').exists()).toBe(true);
+  expect(wrapper.find('.layout-split.vertical').exists()).toBe(true);
   expect(wrapper.findAll('.layout-split-child')).toHaveLength(2);
 });
 
@@ -110,7 +123,7 @@ test('applies correct CSS classes to split nodes', () => {
   });
 
   const splitDiv = wrapper.find('.layout-split');
-  expect(splitDiv.classes()).toContain('layout-split--horizontal');
+  expect(splitDiv.classes()).toContain('horizontal');
 });
 
 test('renders three panes in horizontal split', () => {
@@ -143,6 +156,6 @@ test('vertical split has correct orientation', () => {
   });
 
   const splitDiv = wrapper.find('.layout-split');
-  expect(splitDiv.classes()).toContain('layout-split--vertical');
-  expect(splitDiv.classes()).not.toContain('layout-split--horizontal');
+  expect(splitDiv.classes()).toContain('vertical');
+  expect(splitDiv.classes()).not.toContain('horizontal');
 });

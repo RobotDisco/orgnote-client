@@ -258,28 +258,27 @@ export const useLayoutStore = defineStore<'layout', LayoutStore>('layout', () =>
     };
   };
 
-  const findNodeById = (nodeId: string, node?: LayoutNode): LayoutNode | undefined => {
-    const searchNode = node ?? layout.value;
-
-    if (searchNode?.id === nodeId) return searchNode;
-
-    if (searchNode?.type !== 'split') {
-      return;
+  const updateNodeInTree = (
+    node: LayoutNode,
+    targetId: string,
+    newSizes: number[],
+  ): LayoutNode => {
+    if (node.id === targetId && node.type === 'split') {
+      return { ...node, sizes: newSizes };
     }
 
-    for (const child of searchNode.children) {
-      const found = findNodeById(nodeId, child);
-      if (found) return found;
-    }
+    if (node.type !== 'split') return node;
+
+    return {
+      ...node,
+      children: node.children.map((child) => updateNodeInTree(child, targetId, newSizes)),
+    };
   };
 
   const updateNodeSizes = (nodeId: string, sizes: number[]): void => {
-    const node = findNodeById(nodeId);
-    if (!node || node.type !== 'split') return;
+    if (!layout.value) return;
 
-    node.sizes = sizes;
-
-    layout.value = { ...layout.value! };
+    layout.value = updateNodeInTree(layout.value, nodeId, sizes);
     scheduleSave();
   };
 

@@ -4,6 +4,7 @@ import { getFileManagerCommands } from 'src/commands/file-manager';
 import { getGlobalCommands } from 'src/commands/global-commands';
 import { getNoteCommands } from 'src/commands/note-commands';
 import { getTabsCommands } from 'src/commands/tabs';
+import { getPaneCommands } from 'src/commands/pane-commands';
 import { getRoutesCommands } from 'src/commands/router-commands';
 import { getSettingsCommands } from 'src/commands/settings-commands';
 import { useCommandsStore } from 'src/stores/command';
@@ -19,6 +20,7 @@ export default defineBoot(async ({ router }) => {
     ...getSettingsCommands(),
     ...getCompletionCommands(),
     ...getTabsCommands(),
+    ...getPaneCommands(),
     ...getFileManagerCommands(),
     ...getNoteCommands(),
     ...getModalCommands(),

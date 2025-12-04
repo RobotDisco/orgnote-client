@@ -11,7 +11,7 @@ type RouterHook = () => void;
 type PaneStore = ReturnType<typeof api.core.usePane>;
 
 const collectRoutersFromPanes = (paneStore: PaneStore): Router[] =>
-  Object.values(paneStore.panes.value ?? {})
+  Object.values(paneStore.panes ?? {})
     .flatMap((paneRef) => Object.values(paneRef.value?.tabs.value ?? {}) as Tab[])
     .map((tab) => tab.router)
     .filter((r): r is Router => Boolean(r));
