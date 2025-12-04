@@ -15,14 +15,14 @@ import type { Buffer as OrgBuffer } from 'orgnote-api';
 
 const router = inject<ShallowRef<Router>>(TAB_ROUTER_KEY);
 
-const currentNotePath = computed(() => {
+const currentFilePath = computed(() => {
   return router?.value?.currentRoute.value.params.path as string | undefined;
 });
 
 const buffers = api.core.useBuffers();
 
 const buffer = computed<OrgBuffer | undefined>(() => {
-  const path = currentNotePath.value;
+  const path = currentFilePath.value;
   if (!path) return;
   return buffers.getBufferByPath(path);
 });

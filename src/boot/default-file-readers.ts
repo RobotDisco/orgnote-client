@@ -7,7 +7,12 @@ export default defineBoot(async () => {
   const fileReader = api.core.useFileReader();
   const commands = api.core.useCommands();
 
-  fileReader.addReader('\\.org(\\.gpg)?$', async (path: string) => {
-    commands.execute(DefaultCommands.OPEN_NOTE, { path });
+  fileReader.addReaders({
+    '\\.org(\\.gpg)?$': async (path: string) => {
+      commands.execute(DefaultCommands.OPEN_NOTE, { path });
+    },
+    '\\.toml$': async (path: string) => {
+      commands.execute(DefaultCommands.OPEN_CODE_EDITOR, { path });
+    },
   });
 });
