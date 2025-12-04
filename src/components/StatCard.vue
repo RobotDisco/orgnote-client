@@ -34,6 +34,6 @@ defineProps<{
 
 .stat-label {
   font-size: 0.8rem;
-  color: var(--fg-alt);
+  color: var(--fg-muted);
 }
 </style>

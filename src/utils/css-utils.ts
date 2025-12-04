@@ -6,6 +6,8 @@ import type {
   GetCssNumericProperty,
   ApplyCSSVariables,
   ResetCSSVariables,
+  ApplyScopedStyles,
+  RemoveScopedStyles,
   ThemeVariable,
 } from 'orgnote-api';
 import { toKebabCase } from './to-kebab-case';
@@ -78,4 +80,17 @@ export const getCssVariableName = (variable: string): string => {
     return variable;
   }
   return `var(${normalizeCssVariable(variable)})`;
+};
+
+export const applyScopedStyles: ApplyScopedStyles = (scopeName, styles) => {
+  removeScopedStyles(scopeName);
+  const styleElement = document.createElement('style');
+  styleElement.setAttribute('id', scopeName);
+  styleElement.innerHTML = styles;
+  document.head.appendChild(styleElement);
+};
+
+export const removeScopedStyles: RemoveScopedStyles = (scopeName) => {
+  const styleElement = document.getElementById(scopeName);
+  styleElement?.remove();
 };

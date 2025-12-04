@@ -12,14 +12,14 @@
             <action-button
               @click="api.utils.copyToClipboard(token.token ?? '')"
               icon="content_copy"
-              color="fg-alt"
+              color="fg-muted"
               fire-icon="done"
               size="sm"
               fire-color="green"
               outline
               border
             ></action-button>
-            <action-button color="fg-alt" icon="delete" size="sm" outline border></action-button>
+            <action-button color="fg-muted" icon="delete" size="sm" outline border></action-button>
           </app-flex>
         </template>
       </menu-item>

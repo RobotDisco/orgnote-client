@@ -11,10 +11,10 @@
     gap="sm"
   >
     <app-flex class="label" row start align-center gap="sm">
-      <app-icon v-if="icon" :name="icon" size="xs" color="fg-alt" />
+      <app-icon v-if="icon" :name="icon" size="xs" color="fg-muted" />
       <slot />
     </app-flex>
-    <action-button @click.prevent.stop="emits('close')" icon="close" size="xs" color="fg-alt" />
+    <action-button @click.prevent.stop="emits('close')" icon="close" size="xs" color="fg-muted" />
   </app-flex>
 </template>
 

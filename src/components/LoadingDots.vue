@@ -51,16 +51,16 @@ const dots = computed(() => '.'.repeat(dotCount.value));
   display: inline-flex;
   align-items: center;
   gap: var(--gap-xs);
-  color: var(--fg-alt);
+  color: var(--fg-muted);
   font-size: var(--font-size-sm);
 }
 
 .label {
-  color: var(--fg-alt);
+  color: var(--fg-muted);
 }
 
 .dots {
   width: 2ch;
-  color: var(--fg-alt);
+  color: var(--fg-muted);
 }
 </style>

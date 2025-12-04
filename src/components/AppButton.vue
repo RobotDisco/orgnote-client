@@ -20,7 +20,7 @@ withDefaults(
 
 <style lang="scss" scoped>
 $type-colors: (
-  plain: var(--bg-alt2),
+  plain: var(--bg-elevated),
   active: var(--accent),
   info: var(--blue),
   warning: var(--yellow),

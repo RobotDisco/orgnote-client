@@ -24,7 +24,10 @@ import {
   applyCSSVariables,
   resetCSSVariables,
   getCssVar,
+  applyScopedStyles,
+  removeScopedStyles,
 } from 'src/utils/css-utils';
+import { useThemeStore } from 'src/stores/theme';
 import { useBackgroundSettings } from 'src/composables/background';
 import { useSidebarStore } from 'src/stores/sidebar';
 import { useToolbarStore } from 'src/stores/toolbar';
@@ -101,6 +104,8 @@ async function initApi(app: App, router: Router): Promise<void> {
       getCssNumericProperty,
       applyCSSVariables,
       resetCSSVariables,
+      applyScopedStyles,
+      removeScopedStyles,
 
       copyToClipboard,
 
@@ -122,6 +127,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useConfirmationModal,
       useScreenDetection,
       useContextMenu: useContextMenuStore,
+      useTheme: useThemeStore,
     },
     vue: {
       router,

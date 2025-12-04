@@ -127,9 +127,9 @@ defineExpose({
   padding: var(--menu-item-padding);
   border-radius: var(--menu-item-border-radius);
   --vs-border-width: 0;
-  background: var(--bg-alt2);
-  --vs-dropdown-bg: var(--bg-alt2);
-  --vs-search-input-bg: var(--bg-alt2);
+  background: var(--bg-elevated);
+  --vs-dropdown-bg: var(--bg-elevated);
+  --vs-search-input-bg: var(--bg-elevated);
   --vs-search-input-color: var(--fg);
   --vs-dropdown-option-padding: var(--menu-item-padding);
   --vs-dropdown-box-shadow: none;

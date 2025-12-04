@@ -102,7 +102,7 @@ const { t } = useI18n({
   & {
     padding: var(--padding-lg);
     height: var(--completion-footer-height);
-    color: var(--fg-alt);
+    color: var(--fg-muted);
   }
 }
 
@@ -140,7 +140,7 @@ const { t } = useI18n({
 
 .not-found {
   & {
-    color: var(--fg-alt);
+    color: var(--fg-muted);
   }
 }
 </style>

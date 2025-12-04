@@ -30,6 +30,7 @@ interface Props {
 
 const props = withDefaults(defineProps<QIconProps & Props>(), {
   size: 'md',
+  color: 'fg',
 });
 
 const bgColor = computed(() => props.background && getCssVariableName(props.background));

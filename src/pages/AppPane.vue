@@ -7,14 +7,14 @@
             <action-button
               icon="keyboard_arrow_left"
               size="sm"
-              color="fg-alt"
+              color="fg-muted"
               :disabled="!canGoBack"
               @click="handleNavigation('back')"
             />
             <action-button
               icon="keyboard_arrow_right"
               size="sm"
-              color="fg-alt"
+              color="fg-muted"
               :disabled="!canGoForward"
               @click="handleNavigation('forward')"
             />
@@ -47,14 +47,14 @@
           <action-button
             icon="keyboard_arrow_left"
             size="sm"
-            color="fg-alt"
+            color="fg-muted"
             :disabled="!canGoBack"
             @click="handleNavigation('back')"
           />
           <action-button
             icon="keyboard_arrow_right"
             size="sm"
-            color="fg-alt"
+            color="fg-muted"
             :disabled="!canGoForward"
             @click="handleNavigation('forward')"
           />

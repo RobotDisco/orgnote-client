@@ -117,7 +117,7 @@ const statusIcons: Record<string, string> = {
 const statusColors: Record<string, ThemeVariable> = {
   active: 'green',
   paused: 'orange',
-  stopped: 'fg-alt',
+  stopped: 'fg-muted',
   error: 'red',
 };
 
@@ -126,7 +126,7 @@ const getStatusIcon = (status: string = '') => {
 };
 
 const getStatusColor = (status: string = ''): ThemeVariable => {
-  return statusColors[status] ?? 'fg-alt';
+  return statusColors[status] ?? 'fg-muted';
 };
 
 const scheduleLabel = computed(() => {

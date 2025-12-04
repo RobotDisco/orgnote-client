@@ -29,7 +29,7 @@ body {
   --description-font-family: var(--main-font-family);
   --description-font-size: 16px;
   --description-font-style: unset;
-  --description-font-color: var(--fg-alt);
+  --description-font-color: var(--fg-muted);
   --description-padding: 18px 0px;
 }
 
@@ -72,7 +72,7 @@ li {
 }
 
 .color-secondary {
-  color: var(--fg-alt);
+  color: var(--fg-muted);
 }
 
 .color-red {

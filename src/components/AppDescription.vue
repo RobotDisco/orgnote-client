@@ -19,7 +19,7 @@ const { t } = useI18n({
 
 <style lang="scss" scoped>
 .description {
-  color: var(--fg-alt);
+  color: var(--fg-muted);
   font-size: var(--font-size-sm);
   width: 100%;
   padding: 0;
@@ -31,14 +31,14 @@ const { t } = useI18n({
 }
 
 .warning {
-  color: color-mix(in srgb, var(--yellow), var(--fg-alt) 50%);
+  color: color-mix(in srgb, var(--yellow), var(--fg-muted) 50%);
 }
 
 .danger {
-  color: color-mix(in srgb, var(--red), var(--fg-alt) 50%);
+  color: color-mix(in srgb, var(--red), var(--fg-muted) 50%);
 }
 
 .info {
-  color: color-mix(in srgb, var(--blue), var(--fg-alt) 50%);
+  color: color-mix(in srgb, var(--blue), var(--fg-muted) 50%);
 }
 </style>

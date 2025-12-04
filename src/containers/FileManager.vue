@@ -208,7 +208,7 @@ const { t } = useI18n({
 
 .file-path {
   & {
-    color: var(--fg-alt);
+    color: var(--fg-muted);
     flex: 1;
   }
 }

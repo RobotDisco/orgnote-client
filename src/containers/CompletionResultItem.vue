@@ -130,8 +130,8 @@ const executeCompletionItem = async (e: MouseEvent) => {
   & {
     height: 100%;
     font-weight: bold;
-    color: var(--fg-alt);
-    background: var(--bg-alt2);
+    color: var(--fg-muted);
+    background: var(--bg-elevated);
     user-select: none;
   }
 

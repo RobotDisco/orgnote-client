@@ -82,7 +82,7 @@ const getStatusIcon = (status: string = '') => {
 };
 
 const getStatusColor = (status: string = ''): ThemeVariable => {
-  return statusColors[status] ?? 'fg-alt';
+  return statusColors[status] ?? 'fg-muted';
 };
 
 const nonCancellableStatuses = ['completed', 'failed', 'canceled'];

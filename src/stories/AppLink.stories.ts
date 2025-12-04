@@ -69,7 +69,7 @@ export const Colors: Story = {
         'violet',
         'teal',
         'fg',
-        'fg-alt',
+        'fg-muted',
         'accent',
       ];
 

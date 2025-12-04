@@ -13,6 +13,11 @@ body {
   padding: 0;
   height: var(--screen-height);
   box-sizing: border-box;
+  background: var(--bg);
+}
+
+dialog {
+  background: var(--bg);
 }
 
 #q-app {
@@ -26,4 +31,5 @@ dialog:not(.mini) {
 
 .q-menu {
   border-radius: var(--card-border-radius);
+  box-shadow: unset;
 }
