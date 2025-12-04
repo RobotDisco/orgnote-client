@@ -266,6 +266,7 @@ const fileManager = useFileManagerStore(); // Don't do this
 - *Theme support* - dark/light mode via CSS custom properties
 - *Responsive* - mobile-first breakpoints
 - *Mixins* Always use mixins when possible =src/css/mixins.scss=
+- *Never* use BEM! Vuejs already provides scoped styles!
 
 * Internationalization (i18n)
 

@@ -4,7 +4,7 @@
   </div>
   <div
     v-if="layout.type === 'split'"
-    :class="['layout-split', `layout-split--${layout.orientation}`]"
+    :class="['layout-split', layout.orientation]"
   >
     <template v-for="(child, index) in layout.children" :key="child.id">
       <div class="layout-split-child" :style="getChildStyle(index)">
@@ -93,11 +93,11 @@ const handleResize = (newSizes: number[]): void => {
 
   display: flex;
 
-  &--horizontal {
+  &.horizontal {
     flex-direction: row;
   }
 
-  &--vertical {
+  &.vertical {
     flex-direction: column;
   }
 }

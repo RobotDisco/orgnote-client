@@ -79,6 +79,39 @@ const clampSizes = (leftSize: number, rightSize: number): [number, number] => {
   return [leftSize, rightSize];
 };
 
+const getResizeIndices = (
+  childIndex: number,
+  sizesLength: number,
+  isDecreaseDirection: boolean,
+): { leftIndex: number; rightIndex: number } | undefined => {
+  if (isDecreaseDirection) {
+    if (childIndex <= 0) return;
+    return { leftIndex: childIndex - 1, rightIndex: childIndex };
+  }
+
+  if (childIndex >= sizesLength - 1) return;
+  return { leftIndex: childIndex, rightIndex: childIndex + 1 };
+};
+
+const calculateNewSizes = (
+  sizes: number[],
+  leftIndex: number,
+  rightIndex: number,
+  delta: number,
+): number[] => {
+  const newSizes = [...sizes];
+
+  let newLeftSize = (sizes[leftIndex] ?? 50) + delta;
+  let newRightSize = (sizes[rightIndex] ?? 50) - delta;
+
+  [newLeftSize, newRightSize] = clampSizes(newLeftSize, newRightSize);
+
+  newSizes[leftIndex] = newLeftSize;
+  newSizes[rightIndex] = newRightSize;
+
+  return newSizes;
+};
+
 const applyResize = (api: OrgNoteApi, direction: ResizeDirection): void => {
   const result = findSplitNodeForDirection(api, direction);
   if (!result) return;
@@ -87,40 +120,13 @@ const applyResize = (api: OrgNoteApi, direction: ResizeDirection): void => {
   const layoutStore = api.core.useLayout();
 
   const sizes = layoutStore.normalizeSizes(node.sizes ?? [50, 50]);
-  const newSizes = [...sizes];
-
   const isDecreaseDirection = direction === 'left' || direction === 'up';
 
-  const hasLeftNeighbor = childIndex > 0;
-  const hasRightNeighbor = childIndex < newSizes.length - 1;
+  const indices = getResizeIndices(childIndex, sizes.length, isDecreaseDirection);
+  if (!indices) return;
 
-  if (isDecreaseDirection) {
-    if (!hasLeftNeighbor) return;
-
-    const leftIndex = childIndex - 1;
-    const rightIndex = childIndex;
-
-    let newLeftSize = (newSizes[leftIndex] ?? 50) - RESIZE_STEP_PERCENT;
-    let newRightSize = (newSizes[rightIndex] ?? 50) + RESIZE_STEP_PERCENT;
-
-    [newLeftSize, newRightSize] = clampSizes(newLeftSize, newRightSize);
-
-    newSizes[leftIndex] = newLeftSize;
-    newSizes[rightIndex] = newRightSize;
-  } else {
-    if (!hasRightNeighbor) return;
-
-    const leftIndex = childIndex;
-    const rightIndex = childIndex + 1;
-
-    let newLeftSize = (newSizes[leftIndex] ?? 50) + RESIZE_STEP_PERCENT;
-    let newRightSize = (newSizes[rightIndex] ?? 50) - RESIZE_STEP_PERCENT;
-
-    [newLeftSize, newRightSize] = clampSizes(newLeftSize, newRightSize);
-
-    newSizes[leftIndex] = newLeftSize;
-    newSizes[rightIndex] = newRightSize;
-  }
+  const delta = isDecreaseDirection ? -RESIZE_STEP_PERCENT : RESIZE_STEP_PERCENT;
+  const newSizes = calculateNewSizes(sizes, indices.leftIndex, indices.rightIndex, delta);
 
   layoutStore.updateNodeSizes(node.id, newSizes);
 };

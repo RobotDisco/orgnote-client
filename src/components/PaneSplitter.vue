@@ -11,7 +11,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onUnmounted, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useEventListener } from '@vueuse/core';
 
 const MIN_PANE_SIZE_PERCENT = 25;
 
@@ -92,14 +93,8 @@ const onMouseMove = (e: MouseEvent): void => {
   emit('resize', newSizes);
 };
 
-const onMouseUp = (): void => {
-  if (!isResizing.value) return;
-
+const stopResize = (): void => {
   isResizing.value = false;
-  document.removeEventListener('mousemove', onMouseMove);
-  document.removeEventListener('mouseup', onMouseUp);
-  document.body.style.cursor = '';
-  document.body.style.userSelect = '';
 };
 
 const startResize = (e: MouseEvent): void => {
@@ -110,20 +105,20 @@ const startResize = (e: MouseEvent): void => {
   resizeState.startPosition = props.orientation === 'horizontal' ? e.clientX : e.clientY;
   resizeState.startSizes = [...props.sizes];
   resizeState.containerSize = getContainerSize(e.target as HTMLElement);
-
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup', onMouseUp);
-
-  const cursor = props.orientation === 'horizontal' ? 'col-resize' : 'row-resize';
-  document.body.style.cursor = cursor;
-  document.body.style.userSelect = 'none';
 };
 
-onUnmounted(() => {
-  document.removeEventListener('mousemove', onMouseMove);
-  document.removeEventListener('mouseup', onMouseUp);
-  document.body.style.cursor = '';
-  document.body.style.userSelect = '';
+useEventListener(document, 'mousemove', onMouseMove);
+useEventListener(document, 'mouseup', stopResize);
+
+watch(isResizing, (resizing) => {
+  if (resizing) {
+    const cursor = props.orientation === 'horizontal' ? 'col-resize' : 'row-resize';
+    document.body.style.cursor = cursor;
+    document.body.style.userSelect = 'none';
+  } else {
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }
 });
 
 const currentPosition = computed((): number => {

@@ -1,13 +1,7 @@
 import { test, expect, vi, beforeEach } from 'vitest';
 import { getPaneCommands } from './pane-commands';
 import type { OrgNoteApi, LayoutSplitNode, LayoutPaneNode } from 'orgnote-api';
-
-const ResizeCommands = {
-  RESIZE_PANE_LEFT: 'resize pane left',
-  RESIZE_PANE_RIGHT: 'resize pane right',
-  RESIZE_PANE_UP: 'resize pane up',
-  RESIZE_PANE_DOWN: 'resize pane down',
-} as const;
+import { DefaultCommands } from 'orgnote-api';
 
 const createMockApi = (layout?: LayoutSplitNode, activePaneId?: string): OrgNoteApi => {
   const mockLayoutStore = {
@@ -55,10 +49,10 @@ test('getPaneCommands returns four resize commands', () => {
 
   expect(commands).toHaveLength(4);
   expect(commands.map((c) => c.command)).toEqual([
-    ResizeCommands.RESIZE_PANE_LEFT,
-    ResizeCommands.RESIZE_PANE_RIGHT,
-    ResizeCommands.RESIZE_PANE_UP,
-    ResizeCommands.RESIZE_PANE_DOWN,
+    DefaultCommands.RESIZE_PANE_LEFT,
+    DefaultCommands.RESIZE_PANE_RIGHT,
+    DefaultCommands.RESIZE_PANE_UP,
+    DefaultCommands.RESIZE_PANE_DOWN,
   ]);
 });
 
@@ -66,7 +60,7 @@ test('RESIZE_PANE_RIGHT increases left pane size in horizontal split', () => {
   const layout = createSplitLayout('horizontal', ['pane-1', 'pane-2'], [50, 50]);
   const api = createMockApi(layout, 'pane-1');
 
-  const command = getPaneCommands().find((c) => c.command === ResizeCommands.RESIZE_PANE_RIGHT);
+  const command = getPaneCommands().find((c) => c.command === DefaultCommands.RESIZE_PANE_RIGHT);
   command?.handler(api, { data: undefined, meta: {} });
 
   const layoutStore = api.core.useLayout();
@@ -77,7 +71,7 @@ test('RESIZE_PANE_LEFT moves boundary left (requires left neighbor)', () => {
   const layout = createSplitLayout('horizontal', ['pane-1', 'pane-2'], [50, 50]);
   const api = createMockApi(layout, 'pane-2');
 
-  const command = getPaneCommands().find((c) => c.command === ResizeCommands.RESIZE_PANE_LEFT);
+  const command = getPaneCommands().find((c) => c.command === DefaultCommands.RESIZE_PANE_LEFT);
   command?.handler(api, { data: undefined, meta: {} });
 
   const layoutStore = api.core.useLayout();
@@ -88,7 +82,7 @@ test('RESIZE_PANE_DOWN increases top pane size in vertical split', () => {
   const layout = createSplitLayout('vertical', ['pane-1', 'pane-2'], [50, 50]);
   const api = createMockApi(layout, 'pane-1');
 
-  const command = getPaneCommands().find((c) => c.command === ResizeCommands.RESIZE_PANE_DOWN);
+  const command = getPaneCommands().find((c) => c.command === DefaultCommands.RESIZE_PANE_DOWN);
   command?.handler(api, { data: undefined, meta: {} });
 
   const layoutStore = api.core.useLayout();
@@ -99,7 +93,7 @@ test('RESIZE_PANE_UP moves boundary up (requires top neighbor)', () => {
   const layout = createSplitLayout('vertical', ['pane-1', 'pane-2'], [50, 50]);
   const api = createMockApi(layout, 'pane-2');
 
-  const command = getPaneCommands().find((c) => c.command === ResizeCommands.RESIZE_PANE_UP);
+  const command = getPaneCommands().find((c) => c.command === DefaultCommands.RESIZE_PANE_UP);
   command?.handler(api, { data: undefined, meta: {} });
 
   const layoutStore = api.core.useLayout();
@@ -109,7 +103,7 @@ test('RESIZE_PANE_UP moves boundary up (requires top neighbor)', () => {
 test('resize commands are hidden when no split layout exists', () => {
   const api = createMockApi(undefined, 'pane-1');
 
-  const command = getPaneCommands().find((c) => c.command === ResizeCommands.RESIZE_PANE_RIGHT);
+  const command = getPaneCommands().find((c) => c.command === DefaultCommands.RESIZE_PANE_RIGHT);
   const isHidden = command?.hide?.(api);
 
   expect(isHidden).toBe(true);
@@ -119,7 +113,7 @@ test('resize respects minimum pane size of 25%', () => {
   const layout = createSplitLayout('horizontal', ['pane-1', 'pane-2'], [30, 70]);
   const api = createMockApi(layout, 'pane-2');
 
-  const command = getPaneCommands().find((c) => c.command === ResizeCommands.RESIZE_PANE_LEFT);
+  const command = getPaneCommands().find((c) => c.command === DefaultCommands.RESIZE_PANE_LEFT);
   command?.handler(api, { data: undefined, meta: {} });
 
   const layoutStore = api.core.useLayout();
@@ -130,7 +124,7 @@ test('horizontal resize does nothing on vertical split', () => {
   const layout = createSplitLayout('vertical', ['pane-1', 'pane-2'], [50, 50]);
   const api = createMockApi(layout, 'pane-1');
 
-  const command = getPaneCommands().find((c) => c.command === ResizeCommands.RESIZE_PANE_RIGHT);
+  const command = getPaneCommands().find((c) => c.command === DefaultCommands.RESIZE_PANE_RIGHT);
   command?.handler(api, { data: undefined, meta: {} });
 
   const layoutStore = api.core.useLayout();
@@ -141,7 +135,7 @@ test('vertical resize does nothing on horizontal split', () => {
   const layout = createSplitLayout('horizontal', ['pane-1', 'pane-2'], [50, 50]);
   const api = createMockApi(layout, 'pane-1');
 
-  const command = getPaneCommands().find((c) => c.command === ResizeCommands.RESIZE_PANE_DOWN);
+  const command = getPaneCommands().find((c) => c.command === DefaultCommands.RESIZE_PANE_DOWN);
   command?.handler(api, { data: undefined, meta: {} });
 
   const layoutStore = api.core.useLayout();

@@ -73,7 +73,7 @@ test('renders horizontal split with two panes', () => {
   });
 
   expect(wrapper.find('.layout-split').exists()).toBe(true);
-  expect(wrapper.find('.layout-split--horizontal').exists()).toBe(true);
+  expect(wrapper.find('.layout-split.horizontal').exists()).toBe(true);
   expect(wrapper.findAll('.layout-split-child')).toHaveLength(2);
 });
 
@@ -87,7 +87,7 @@ test('renders vertical split with two panes', () => {
     },
   });
 
-  expect(wrapper.find('.layout-split--vertical').exists()).toBe(true);
+  expect(wrapper.find('.layout-split.vertical').exists()).toBe(true);
   expect(wrapper.findAll('.layout-split-child')).toHaveLength(2);
 });
 
@@ -123,7 +123,7 @@ test('applies correct CSS classes to split nodes', () => {
   });
 
   const splitDiv = wrapper.find('.layout-split');
-  expect(splitDiv.classes()).toContain('layout-split--horizontal');
+  expect(splitDiv.classes()).toContain('horizontal');
 });
 
 test('renders three panes in horizontal split', () => {
@@ -156,6 +156,6 @@ test('vertical split has correct orientation', () => {
   });
 
   const splitDiv = wrapper.find('.layout-split');
-  expect(splitDiv.classes()).toContain('layout-split--vertical');
-  expect(splitDiv.classes()).not.toContain('layout-split--horizontal');
+  expect(splitDiv.classes()).toContain('vertical');
+  expect(splitDiv.classes()).not.toContain('horizontal');
 });
