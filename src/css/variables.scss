@@ -154,8 +154,11 @@ body {
   --page-max-width: 960px;
 
   // Panes
-  --splitter-size: 2px;
-  --splitter-background: var(--bg-alt2);
+  --splitter-size: 1px;
+  --splitter-background: var(--fg-alt);
+  --splitter-hover-background: var(--accent);
+  --splitter-hover-scale: 4;
+  --splitter-transition-duration: 0.15s;
 
   // Tab
   --tab-padding: var(--padding-md);

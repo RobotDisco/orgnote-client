@@ -3,6 +3,17 @@ import { test, expect, vi } from 'vitest';
 import LayoutRenderer from './LayoutRenderer.vue';
 import type { LayoutNode, LayoutSplitNode } from 'orgnote-api';
 
+vi.mock('src/boot/api', () => ({
+  api: {
+    core: {
+      useLayout: () => ({
+        normalizeSizes: (sizes: number[]) => sizes,
+        updateNodeSizes: vi.fn(),
+      }),
+    },
+  },
+}));
+
 const createPaneNode = (paneId: string): LayoutNode => ({
   id: `node-${paneId}`,
   type: 'pane',
@@ -12,11 +23,13 @@ const createPaneNode = (paneId: string): LayoutNode => ({
 const createSplitNode = (
   orientation: 'horizontal' | 'vertical',
   children: LayoutNode[],
+  sizes?: number[],
 ): LayoutNode => ({
   id: `split-${Math.random()}`,
   type: 'split',
   orientation,
   children,
+  sizes: sizes ?? children.map(() => 100 / children.length),
 });
 
 test('renders single pane node', () => {
