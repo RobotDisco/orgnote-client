@@ -1,6 +1,7 @@
 <template>
-  <container-layout gap="md">
-    <template #header>
+  <file-uploader @uploaded="onUploaded" :accept="['js', 'json']" label="Drop extension here">
+    <container-layout gap="md">
+      <template #header>
       <app-flex between gap="md">
         <app-dropdown
           v-model="selectedTab"
@@ -53,6 +54,7 @@
       </card-wrapper>
     </template>
   </container-layout>
+  </file-uploader>
 </template>
 
 <script lang="ts" setup>
@@ -70,6 +72,11 @@ import ContainerLayout from 'src/components/ContainerLayout.vue';
 import AppFlex from 'src/components/AppFlex.vue';
 import EmptyState from 'src/components/EmptyState.vue';
 import LoadingDots from 'src/components/LoadingDots.vue';
+import FileUploader from 'src/components/FileUploader.vue';
+import type { FileSystemFileEntry } from 'src/utils/file-traversal';
+import { readFile } from 'src/utils/file-traversal';
+import { to } from 'src/utils/to-error';
+import { reporter } from 'src/boot/report';
 
 interface TabOption {
   label: string;
@@ -185,6 +192,23 @@ const openInstallFromUrl = async () => {
     message: t(i18n.EXTENSION_INSTALLED_FROM_URL),
     level: 'info',
   });
+};
+
+const importExtension = async (entry: FileSystemFileEntry): Promise<void> => {
+  const file = await readFile(entry);
+  await extensionStore.importExtension(file);
+  notifications.notify({ message: `Extension ${file.name} imported` });
+};
+
+const onUploaded = async (fileEntries: FileSystemFileEntry[]) => {
+  const promises = fileEntries.map(async (entry) => {
+    const result = await to(importExtension)(entry);
+    if (result.isErr()) {
+      reporter.reportError(new Error(`Failed to import ${entry.name}`, { cause: result.error }));
+    }
+  });
+
+  await Promise.allSettled(promises);
 };
 
 onMounted(() => {
