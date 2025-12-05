@@ -86,7 +86,7 @@ export const applyScopedStyles: ApplyScopedStyles = (scopeName, styles) => {
   removeScopedStyles(scopeName);
   const styleElement = document.createElement('style');
   styleElement.setAttribute('id', scopeName);
-  styleElement.innerHTML = styles;
+  styleElement.textContent = styles;
   document.head.appendChild(styleElement);
 };
 
