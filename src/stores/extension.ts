@@ -56,13 +56,6 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
 
   const sync = async (): Promise<void> => {
     loading.value++;
-
-    if (extensions.value.length > 0) {
-      await writeToDisk();
-      loading.value--;
-      return;
-    }
-
     await readFromDisk();
     await mountActiveExtensions();
     loading.value--;
@@ -200,7 +193,7 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
 
     await mountExtension(meta, source);
     meta.active = true;
-    await sync();
+    await writeToDisk();
   };
 
   const disableExtension = async (extensionName: string): Promise<void> => {
@@ -212,7 +205,7 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
 
     await unmountExtension(extensionName);
     meta.active = false;
-    await sync();
+    await writeToDisk();
   };
 
   const isExtensionExist = (extensionName: string): boolean => {
@@ -234,7 +227,7 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
       return;
     }
 
-    await sync();
+    await writeToDisk();
 
     if (meta.active) {
       await mountExtension(meta, source);
@@ -362,7 +355,7 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
     }
 
     extensions.value = extensions.value.filter((e) => e.manifest.name !== extensionName);
-    await sync();
+    await writeToDisk();
   };
 
   const importExtension = async (file: File): Promise<void> => {
