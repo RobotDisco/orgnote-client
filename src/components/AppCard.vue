@@ -14,7 +14,7 @@
           <slot name="cardTitle" />
         </h5>
       </app-flex>
-      <div class="card-content">
+      <div class="card-content" :style="{ color: bg }">
         <slot />
       </div>
     </app-flex>
