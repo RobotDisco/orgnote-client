@@ -134,7 +134,16 @@ body {
   --desktop: #{a.$desktop};
 
   // Toggle button
-  --toggle-button-scale: 0.45;
+  --toggle-height: 24px;
+  --toggle-width: 42px;
+  --toggle-knob-size: 22px;
+  --toggle-knob-offset: 1px;
+  --toggle-border-radius: 60px;
+  --toggle-bg: var(--bg-hover);
+  --toggle-bg-checked: var(--accent);
+  --toggle-knob-bg: var(--bg);
+  --toggle-knob-shadow: 0 0 0 1px hsla(0, 0%, 0%, 0.1), 0 2px 4px hsla(0, 0%, 0%, 0.1);
+  --toggle-transition: 0.2s ease;
 
   // Completion
   --completion-width: 100vw;
