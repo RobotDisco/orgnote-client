@@ -25,3 +25,29 @@ export interface ValibotScheme {
 export function valibotScheme(t: any): ValibotScheme {
   return t as unknown as ValibotScheme;
 }
+
+interface SchemeWithEntries<TEntries extends Record<string, unknown>> {
+  entries: TEntries;
+}
+
+export function pickSchemeKeys<TEntries extends Record<string, unknown>>(
+  scheme: SchemeWithEntries<TEntries>,
+  keys: (keyof TEntries)[],
+): ValibotScheme {
+  const keySet = new Set<string>(keys as string[]);
+  const entries = Object.fromEntries(
+    Object.entries(scheme.entries).filter(([key]) => keySet.has(key)),
+  );
+  return valibotScheme({ ...scheme, entries });
+}
+
+export function omitSchemeKeys<TEntries extends Record<string, unknown>>(
+  scheme: SchemeWithEntries<TEntries>,
+  keys: (keyof TEntries)[],
+): ValibotScheme {
+  const keySet = new Set<string>(keys as string[]);
+  const entries = Object.fromEntries(
+    Object.entries(scheme.entries).filter(([key]) => !keySet.has(key)),
+  );
+  return valibotScheme({ ...scheme, entries });
+}

@@ -1,12 +1,13 @@
 import { defineStore, storeToRefs } from 'pinia';
 import type { ThemeStore, ThemeMode, ThemeColors } from 'orgnote-api';
 import { THEME_VARIABLES } from 'orgnote-api';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useConfigStore } from './config';
 import { useExtensionsStore } from './extension';
 import { Dark } from 'quasar';
 import { getCssTheme, resetCSSVariables } from 'src/utils/css-utils';
 import { useBackgroundSettings } from 'src/composables/background';
+import { to } from 'src/utils/to-error';
 
 export const useThemeStore = defineStore<'theme', ThemeStore>('theme', () => {
   const { config } = storeToRefs(useConfigStore());
@@ -52,14 +53,6 @@ export const useThemeStore = defineStore<'theme', ThemeStore>('theme', () => {
     await extensionsStore.enableExtension(themeName);
   };
 
-  const deactivateCurrentTheme = async (): Promise<void> => {
-    const currentTheme = activeThemeName.value;
-    if (!currentTheme) {
-      return;
-    }
-    await extensionsStore.disableExtension(currentTheme);
-  };
-
   const switchThemeExtension = async (
     previousThemeName: string | null,
     newThemeName: string | null,
@@ -74,14 +67,7 @@ export const useThemeStore = defineStore<'theme', ThemeStore>('theme', () => {
   };
 
   const setMode = async (mode: ThemeMode): Promise<void> => {
-    const previousThemeName = activeThemeName.value;
-
     config.value.ui.theme = mode;
-    syncQuasarDarkMode();
-
-    const newThemeName = activeThemeName.value;
-    await switchThemeExtension(previousThemeName, newThemeName);
-    await syncBackgroundSettings();
   };
 
   const toggleMode = async (): Promise<void> => {
@@ -98,11 +84,8 @@ export const useThemeStore = defineStore<'theme', ThemeStore>('theme', () => {
   };
 
   const setTheme = async (themeName: string | null): Promise<void> => {
-    await deactivateCurrentTheme();
     resetCSSVariables(getInitialThemeColors());
     setThemeNameForCurrentMode(themeName);
-    await activateThemeExtension(themeName);
-    await syncBackgroundSettings();
   };
 
   const resetTheme = async (): Promise<void> => {
@@ -115,6 +98,23 @@ export const useThemeStore = defineStore<'theme', ThemeStore>('theme', () => {
     await activateThemeExtension(activeThemeName.value);
     await syncBackgroundSettings();
   };
+
+  watch(
+    () => config.value.ui.theme,
+    () => syncQuasarDarkMode(),
+  );
+
+  const safeHandleThemeChange = to(
+    async (newTheme: string | null, oldTheme: string | null) => {
+      await switchThemeExtension(oldTheme, newTheme);
+      await syncBackgroundSettings();
+    },
+    'Failed to switch theme',
+  );
+
+  watch(activeThemeName, (newTheme, oldTheme) => {
+    safeHandleThemeChange(newTheme, oldTheme);
+  });
 
   const store: ThemeStore = {
     isDark,
