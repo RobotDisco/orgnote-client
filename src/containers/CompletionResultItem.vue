@@ -23,7 +23,7 @@
     align="center"
     gap="md"
   >
-    <app-icon v-if="item.icon" :name="extractDynamicValue(item.icon)" size="md" bordered></app-icon>
+    <app-icon v-if="item.icon" :name="extractDynamicValue(item.icon)" size="sm"></app-icon>
     <div class="text-bold color-main">
       <div class="line-limit-1">
         {{ extractDynamicValue(item.title) }}
