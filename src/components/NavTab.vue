@@ -104,8 +104,6 @@ const handleDragEnd = () => {
 }
 
 .label-text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  @include line-limit(1);
 }
 </style>

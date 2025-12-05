@@ -77,7 +77,7 @@ test('AppIcon should apply both color and background styles when both props are 
   expect(style).toContain('background-color: var(--yellow)');
 });
 
-test('AppIcon should not have style attribute when no color or background provided', () => {
+test('AppIcon should have default color style when no color is provided', () => {
   const wrapper = mount(AppIcon, {
     props: {
       name: 'sym_o_home',
@@ -85,7 +85,7 @@ test('AppIcon should not have style attribute when no color or background provid
   });
 
   const icon = wrapper.find('.icon');
-  expect(icon.attributes('style')).toBeUndefined();
+  expect(icon.attributes('style')).toContain('color: var(--fg)');
 });
 
 test('AppIcon should apply size class for each size variant', () => {
