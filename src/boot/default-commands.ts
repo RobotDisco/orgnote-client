@@ -7,6 +7,7 @@ import { getTabsCommands } from 'src/commands/tabs';
 import { getPaneCommands } from 'src/commands/pane-commands';
 import { getRoutesCommands } from 'src/commands/router-commands';
 import { getSettingsCommands } from 'src/commands/settings-commands';
+import { getThemeCommands } from 'src/commands/theme-commands';
 import { useCommandsStore } from 'src/stores/command';
 import { getModalCommands } from 'src/commands/modal-commands';
 import { getDeveloperCommands } from 'src/commands/developer-commands';
@@ -18,6 +19,7 @@ export default defineBoot(async ({ router }) => {
     ...getRoutesCommands(router),
     ...getGlobalCommands(),
     ...getSettingsCommands(),
+    ...getThemeCommands(),
     ...getCompletionCommands(),
     ...getTabsCommands(),
     ...getPaneCommands(),

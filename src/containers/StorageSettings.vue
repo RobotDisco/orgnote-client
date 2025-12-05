@@ -21,9 +21,7 @@
 
     <app-card v-if="currentFsName" type="danger">
       <template #cardTitle>
-        <div class="capitalize">
-          {{ t(I18N.STORAGE_CHANGE_WARNING) }}
-        </div>
+        <div class="capitalize">{{ t(I18N.STORAGE_CHANGE_WARNING) }}</div>
       </template>
       <div class="capitalize">
         {{ t(I18N.STORAGE_CHANGE_WARNING_DESCRIPTION) }}

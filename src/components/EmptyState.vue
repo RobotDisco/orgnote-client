@@ -33,7 +33,7 @@ defineProps<EmptyStateProps>();
 }
 
 .description {
-  @include fontify(var(--font-size-md), normal, var(--fg-alt));
+  @include fontify(var(--font-size-md), normal, var(--fg-muted));
   max-width: 400px;
 }
 </style>

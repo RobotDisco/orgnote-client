@@ -4,7 +4,7 @@
       <template #title>
         <app-flex row between class="full-width">
           <app-flex gap="md" align="center">
-            <app-icon :name="categoryIcon" :color="isActive ? 'green' : 'fg-alt'" size="sm" />
+            <app-icon :name="categoryIcon" :color="isActive ? 'green' : 'fg-muted'" size="sm" />
 
             <app-flex column gap="xs">
               <app-flex gap="sm" align="center">
@@ -16,7 +16,7 @@
                   {{ manifest.category }}
                 </app-badge>
 
-                <app-badge v-if="manifest.version" color="fg-alt" size="xs">
+                <app-badge v-if="manifest.version" color="fg-muted" size="xs">
                   v{{ manifest.version }}
                 </app-badge>
 
@@ -36,7 +36,7 @@
               <action-button
                 @click.stop="toggleActive(!isActive)"
                 size="sm"
-                :color="isActive ? 'green' : 'fg-alt'"
+                :color="isActive ? 'green' : 'fg-muted'"
                 outline
                 border
                 :icon="isActive ? 'sym_o_check_box' : 'sym_o_check_box_outline_blank'"
@@ -81,7 +81,7 @@
               <app-badge
                 v-for="keyword in manifest.keywords"
                 :key="keyword"
-                color="fg-alt"
+                color="fg-muted"
                 size="xs"
               >
                 {{ keyword }}
@@ -211,7 +211,7 @@ const handleInstall = () => {
 }
 
 .label {
-  color: var(--fg-alt);
+  color: var(--fg-muted);
   min-width: 80px;
 }
 </style>

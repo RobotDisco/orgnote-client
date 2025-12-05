@@ -29,7 +29,7 @@
           v-if="narrow"
           name="sym_o_arrow_forward_ios"
           size="xs"
-          :color="active ? 'accent' : 'fg-alt'"
+          :color="active ? 'accent' : 'fg-muted'"
         />
         <app-icon v-else-if="selected" name="sym_o_check" color="accent" size="sm" />
       </div>

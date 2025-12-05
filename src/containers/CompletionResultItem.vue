@@ -23,7 +23,7 @@
     align="center"
     gap="md"
   >
-    <app-icon v-if="item.icon" :name="extractDynamicValue(item.icon)" size="md" bordered></app-icon>
+    <app-icon v-if="item.icon" :name="extractDynamicValue(item.icon)" size="sm"></app-icon>
     <div class="text-bold color-main">
       <div class="line-limit-1">
         {{ extractDynamicValue(item.title) }}
@@ -130,8 +130,8 @@ const executeCompletionItem = async (e: MouseEvent) => {
   & {
     height: 100%;
     font-weight: bold;
-    color: var(--fg-alt);
-    background: var(--bg-alt2);
+    color: var(--fg-muted);
+    background: var(--bg-elevated);
     user-select: none;
   }
 

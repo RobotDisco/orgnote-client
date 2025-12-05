@@ -33,11 +33,14 @@
 
 @include dark-mode {
   --default-bg: #22272e;
-  --default-bg-alt: var(--q-dark);
-  --default-bg-alt2: var(--q-dark);
-  --default-bg-active: rgba(99, 110, 123, 0.4);
+  --default-bg-secondary: var(--q-dark);
+  --default-bg-elevated: var(--q-dark);
+  --default-bg-muted: color-mix(in srgb, #22272e, var(--q-dark) 35%);
+  --default-bg-hover: rgba(99, 110, 123, 0.4);
   --default-fg: #adbac7;
-  --default-fg-alt: #{$grey-6};
+  --default-fg-muted: #{$grey-6};
+
+  --violet: #b98df6;
 
   // Tab overview for dark theme
   --tab-preview-overlay-bg: linear-gradient(
@@ -51,11 +54,12 @@
 
 @include light-mode {
   --default-bg: #ffffff;
-  --default-bg-alt: #ffffff;
-  --default-bg-alt2: #f8f8f7;
-  --default-bg-active: rgba(175, 184, 193, 0.2);
+  --default-bg-secondary: #ffffff;
+  --default-bg-muted: #fafbfc;
+  --default-bg-hover: rgba(175, 184, 193, 0.2);
+  --default-bg-elevated: rgba(175, 184, 193, 0.2);
   --default-fg: #34495e;
-  --default-fg-alt: #{$grey-5};
+  --default-fg-muted: #{$grey-5};
 
   // Tab overview for light theme
   --tab-preview-overlay-bg: linear-gradient(
@@ -68,12 +72,12 @@
 }
 
 body {
-  // Colors
   --bg: var(--default-bg);
-  --bg-alt: var(--default-bg-alt);
-  --bg-alt2: var(--default-bg-alt2);
-  --bg-active: var(--default-bg-active);
+  --bg-secondary: var(--default-bg-secondary);
+  --bg-elevated: var(--default-bg-elevated);
+  --bg-muted: var(--default-bg-muted);
+  --bg-hover: var(--default-bg-hover);
   --fg: var(--default-fg);
-  --fg-alt: var(--default-fg-alt);
+  --fg-muted: var(--default-fg-muted);
   --accent: var(--violet);
 }

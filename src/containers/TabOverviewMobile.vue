@@ -79,7 +79,7 @@ const closeTab = async (tab: Tab) => {
 
 .empty-text {
   font-size: var(--font-size-lg);
-  color: var(--fg-alt);
+  color: var(--fg-muted);
 }
 
 .tab-grid {

@@ -11,10 +11,12 @@
     gap="sm"
   >
     <app-flex class="label" row start align-center gap="sm">
-      <app-icon v-if="icon" :name="icon" size="xs" color="fg-alt" />
-      <slot />
+      <app-icon v-if="icon" :name="icon" size="xs" color="fg-muted" />
+      <span class="label-text">
+        <slot />
+      </span>
     </app-flex>
-    <action-button @click.prevent.stop="emits('close')" icon="close" size="xs" color="fg-alt" />
+    <action-button @click.prevent.stop="emits('close')" icon="close" size="xs" color="fg-muted" />
   </app-flex>
 </template>
 
@@ -99,5 +101,9 @@ const handleDragEnd = () => {
   border: var(--tab-active-border);
   color: var(--tab-active-color);
   background: var(--tab-active-background);
+}
+
+.label-text {
+  @include line-limit(1);
 }
 </style>

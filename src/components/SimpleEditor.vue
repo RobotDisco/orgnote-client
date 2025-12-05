@@ -35,7 +35,7 @@ const model = defineModel<string>();
   }
 
   &::placeholder {
-    color: var(--fg-alt);
+    color: var(--fg-muted);
     font-style: italic;
   }
 

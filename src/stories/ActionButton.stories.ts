@@ -17,7 +17,7 @@ export const Default: StoryObj<typeof ActionButton> = {
   args: {
     icon: 'folder',
     active: true,
-    color: 'fg-alt',
+    color: 'fg-muted',
     hoverColor: 'red',
     outline: false,
   },

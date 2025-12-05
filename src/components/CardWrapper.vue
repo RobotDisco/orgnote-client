@@ -38,7 +38,7 @@ withDefaults(
   }
 
   &.plain {
-    background: var(--bg-alt2);
+    background: var(--bg-elevated);
   }
 
   &.clear {

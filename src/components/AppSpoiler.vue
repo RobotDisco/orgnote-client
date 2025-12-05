@@ -7,7 +7,7 @@
       <app-icon
         name="sym_o_expand_more"
         size="sm"
-        color="fg-alt"
+        color="fg-muted"
         :class="{ rotated: expanded }"
         class="spoiler-icon"
       />

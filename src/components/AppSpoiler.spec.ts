@@ -202,7 +202,7 @@ test('AppSpoiler should render expand icon with correct props', () => {
   expect(icon.exists()).toBe(true);
   expect(icon.props('name')).toBe('sym_o_expand_more');
   expect(icon.props('size')).toBe('sm');
-  expect(icon.props('color')).toBe('fg-alt');
+  expect(icon.props('color')).toBe('fg-muted');
 });
 
 test('AppSpoiler should wrap content in AnimationWrapper with expand animation', () => {

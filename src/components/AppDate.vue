@@ -38,7 +38,7 @@ const formattedDate = computed(() => {
 
 <style lang="scss" scoped>
 .app-date {
-  @include fontify(var(--font-size-xs), normal, var(--fg-alt));
+  @include fontify(var(--font-size-xs), normal, var(--fg-muted));
 
   &.monospace {
     font-family: var(--code-font-family);

@@ -163,7 +163,7 @@ defineExpose({
 
 .no-errors,
 .no-filtered-logs {
-  @include fontify(var(--font-size-base), var(--font-weight-normal), var(--fg-alt));
+  @include fontify(var(--font-size-base), var(--font-weight-normal), var(--fg-muted));
 
   & {
     margin: 0;

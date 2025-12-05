@@ -36,7 +36,7 @@ import AppFlex from 'src/components/AppFlex.vue';
     width: 1px;
     z-index: 10;
     height: 66%;
-    background: var(--bg-alt2);
+    background: var(--bg-elevated);
   }
 }
 </style>

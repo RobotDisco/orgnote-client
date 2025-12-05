@@ -11,8 +11,8 @@ export const EXTENSION_CATEGORY_COLORS: Record<string, ThemeVariable> = {
   theme: 'violet',
   extension: 'blue',
   'language pack': 'cyan',
-  other: 'fg-alt',
+  other: 'fg-muted',
 };
 
 export const DEFAULT_EXTENSION_ICON = 'sym_o_extension';
-export const DEFAULT_EXTENSION_COLOR: ThemeVariable = 'fg-alt';
+export const DEFAULT_EXTENSION_COLOR: ThemeVariable = 'fg-muted';
