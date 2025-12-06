@@ -183,7 +183,7 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
   };
 
   const isThemeExtension = (manifest: ExtensionManifest): boolean => {
-    return manifest.category === 'theme';
+    return (manifest.category ?? '').toLowerCase() === 'theme';
   };
 
   const disableOtherThemes = async (currentThemeName: string): Promise<void> => {
@@ -232,14 +232,26 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
       return;
     }
 
-    if (isThemeExtension(meta.manifest)) {
-      await handleThemeActivation(extensionName);
+    if (meta.active) {
+      return;
     }
 
     const source = await api.infrastructure.extensionSourceRepository.get(extensionName);
     if (!source) {
       reporter.reportWarning(`Extension source ${extensionName} not found in cache`);
       return;
+    }
+
+    const safeCompile = to(compileExtension, 'Failed to load extension');
+    const compileResult = await safeCompile(source.module);
+
+    if (compileResult.isErr()) {
+      reporter.reportError(compileResult.error);
+      return;
+    }
+
+    if (isThemeExtension(meta.manifest)) {
+      await handleThemeActivation(extensionName);
     }
 
     await mountExtension(meta, source);

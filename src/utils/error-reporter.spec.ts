@@ -39,9 +39,9 @@ test('createErrorReporter returns proper interface', () => {
 
 test('report logs error and shows notification', () => {
   const error = new Error('Test error message');
-  
+
   errorReporter.report(error);
-  
+
   expect(mockLogger.error).toHaveBeenCalledWith('Test error message', {
     cause: error.cause,
     stack: error.stack,
@@ -55,9 +55,9 @@ test('report logs error and shows notification', () => {
 
 test('report handles options.level', () => {
   const error = new Error('Test warning');
-  
+
   errorReporter.report(error, { level: 'warn' });
-  
+
   expect(mockLogger.warn).toHaveBeenCalledWith('Test warning', {
     cause: error.cause,
     stack: error.stack,
@@ -72,11 +72,15 @@ test('report handles options.level', () => {
 test('report handles error with cause', () => {
   const originalError = new Error('Original error');
   const error = new Error('User friendly message', { cause: originalError });
-  
+
   errorReporter.report(error);
-  
+
   expect(mockLogger.error).toHaveBeenCalledWith('User friendly message', {
-    cause: originalError,
+    cause: {
+      message: originalError.message,
+      stack: originalError.stack,
+      cause: undefined,
+    },
     stack: error.stack,
   });
   expect(mockNotifications.notify).toHaveBeenCalledWith({
@@ -89,9 +93,9 @@ test('report handles error with cause', () => {
 test('reportResult works with neverthrow-like Result', () => {
   const resultError = { error: 'File not found' };
   const message = 'Failed to read file';
-  
+
   errorReporter.reportResult(resultError, message);
-  
+
   expect(mockLogger.error).toHaveBeenCalledWith(message, {
     cause: 'File not found',
     stack: expect.any(String),
@@ -106,9 +110,9 @@ test('reportResult works with neverthrow-like Result', () => {
 test('reportResult handles options.level', () => {
   const resultError = { error: 'Warning condition' };
   const message = 'Warning';
-  
+
   errorReporter.reportResult(resultError, message, { level: 'warn' });
-  
+
   expect(mockLogger.warn).toHaveBeenCalledWith(message, {
     cause: 'Warning condition',
     stack: expect.any(String),
@@ -122,9 +126,9 @@ test('reportResult handles options.level', () => {
 
 test('reportError is shortcut for error level', () => {
   const error = new Error('Error message');
-  
+
   errorReporter.reportError(error);
-  
+
   expect(mockLogger.error).toHaveBeenCalledWith('Error message', {
     cause: error.cause,
     stack: error.stack,
@@ -138,9 +142,9 @@ test('reportError is shortcut for error level', () => {
 
 test('reportWarning is shortcut for warn level', () => {
   const error = new Error('Warning message');
-  
+
   errorReporter.reportWarning(error);
-  
+
   expect(mockLogger.warn).toHaveBeenCalledWith('Warning message', {
     cause: error.cause,
     stack: error.stack,
@@ -154,9 +158,9 @@ test('reportWarning is shortcut for warn level', () => {
 
 test('reportInfo is shortcut for info level', () => {
   const error = new Error('Info message');
-  
+
   errorReporter.reportInfo(error);
-  
+
   expect(mockLogger.info).toHaveBeenCalledWith('Info message', {
     cause: error.cause,
     stack: error.stack,
