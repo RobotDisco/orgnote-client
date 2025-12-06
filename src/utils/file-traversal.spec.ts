@@ -22,9 +22,19 @@ const createMockDirectoryEntry = (name: string, children: FileSystemEntry[] = []
   isDirectory: true,
   name,
   fullPath: `/${name}`,
-  createReader: () => ({
-    readEntries: (cb: (entries: FileSystemEntry[]) => void) => cb(children),
-  }),
+  createReader: () => {
+    let read = false;
+    return {
+      readEntries: (cb: (entries: FileSystemEntry[]) => void) => {
+        if (!read) {
+          read = true;
+          cb(children);
+        } else {
+          cb([]);
+        }
+      },
+    };
+  },
 });
 
 describe('file-traversal', () => {

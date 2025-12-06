@@ -76,9 +76,9 @@ const handleDragEnd = () => {
 .tab {
   & {
     padding: var(--tab-padding);
-    background: var(--tab-background);
+    background: var(--tab-bg);
     border-radius: var(--tab-border-radius);
-    color: var(--tab-color);
+    color: var(--tab-fg);
     border: var(--tab-border);
     width: var(--tab-width);
     cursor: pointer;
@@ -89,7 +89,7 @@ const handleDragEnd = () => {
   }
 
   &:not(.active):hover {
-    background: var(--tab-active-hover-background);
+    background: var(--tab-active-hover-bg);
   }
 
   &.dragging {
@@ -99,8 +99,8 @@ const handleDragEnd = () => {
 
 .tab.active {
   border: var(--tab-active-border);
-  color: var(--tab-active-color);
-  background: var(--tab-active-background);
+  color: var(--tab-active-fg);
+  background: var(--tab-active-bg);
 }
 
 .label-text {

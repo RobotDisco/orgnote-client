@@ -48,5 +48,9 @@ input {
     height: 100%;
     flex: 1;
   }
+
+  &::placeholder {
+    color: var(--placeholder-color);
+  }
 }
 </style>

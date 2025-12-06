@@ -34,9 +34,25 @@ const pickMessage = (v: unknown, fallback: string): string => {
     return (v as { message: string }).message;
   return fallback;
 };
+const extractCauseDetails = (cause: unknown): unknown => {
+  if (!isError(cause)) {
+    return cause;
+  }
+  return {
+    message: cause.message,
+    stack: cause.stack,
+    cause: cause.cause ? extractCauseDetails(cause.cause) : undefined,
+  };
+};
+
 const toLogContext = (v: unknown): Record<string, unknown> => {
-  if (isError(v)) return { cause: v.cause, stack: v.stack };
-  return { cause: v };
+  if (!isError(v)) {
+    return { cause: v };
+  }
+  return {
+    cause: v.cause ? extractCauseDetails(v.cause) : undefined,
+    stack: v.stack,
+  };
 };
 
 const createOnClick = (executeCommand: CommandExecutor) => () =>

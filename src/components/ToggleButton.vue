@@ -26,7 +26,7 @@ const id = useId();
   height: var(--toggle-height);
   width: var(--toggle-width);
   background: var(--toggle-bg);
-  border-radius: var(--toggle-border-radius);
+  border-radius: var(--toggle-radius);
   transition: var(--toggle-transition);
 }
 
@@ -38,7 +38,7 @@ const id = useId();
   width: var(--toggle-height);
   top: 0;
   left: 0;
-  border-radius: var(--toggle-border-radius);
+  border-radius: var(--toggle-radius);
   background: transparent;
   transition: 0.2s cubic-bezier(0.24, 0, 0.5, 1);
 }
@@ -51,7 +51,7 @@ const id = useId();
   width: var(--toggle-knob-size);
   top: var(--toggle-knob-offset);
   left: var(--toggle-knob-offset);
-  border-radius: var(--toggle-border-radius);
+  border-radius: var(--toggle-radius);
   background: var(--toggle-knob-bg);
   box-shadow: var(--toggle-knob-shadow);
   transition: 0.35s cubic-bezier(0.54, 1.6, 0.5, 1);

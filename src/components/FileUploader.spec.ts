@@ -4,12 +4,13 @@ import FileUploader from './FileUploader.vue';
 import { extractFiles } from 'src/utils/file-traversal';
 
 vi.mock('src/utils/file-traversal', () => ({
-  extractFiles: vi.fn(),
+  extractFiles: vi.fn().mockResolvedValue([]),
 }));
 
 describe('FileUploader', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (extractFiles as Mock).mockResolvedValue([]);
   });
 
   const createDragEvent = (type: string) => {

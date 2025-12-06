@@ -20,6 +20,10 @@ import { useFileSystemStore } from './file-system';
 import { getSystemFilesPath } from 'src/utils/get-system-files-path';
 import { parseToml, stringifyToml } from 'orgnote-api/utils';
 import { useGitStore } from './git';
+import { resetCSSVariables } from 'src/utils/css-utils';
+import { THEME_VARIABLES } from 'orgnote-api';
+import { useConfigStore } from './config';
+import { Dark } from 'quasar';
 
 interface ActiveExtension extends ExtensionMeta {
   module: Extension;
@@ -178,11 +182,58 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
     );
   };
 
+  const isThemeExtension = (manifest: ExtensionManifest): boolean => {
+    return manifest.category === 'theme';
+  };
+
+  const disableOtherThemes = async (currentThemeName: string): Promise<void> => {
+    const otherActiveThemes = extensions.value.filter(
+      (e) => e.active && isThemeExtension(e.manifest) && e.manifest.name !== currentThemeName,
+    );
+
+    const unmountPromises = otherActiveThemes.map(async (theme) => {
+      await unmountExtension(theme.manifest.name);
+      theme.active = false;
+    });
+
+    await Promise.allSettled(unmountPromises);
+  };
+
+  const setConfigThemeName = (themeName: string | null): void => {
+    const { config } = useConfigStore();
+    if (Dark.isActive) {
+      config.ui.darkThemeName = themeName;
+      return;
+    }
+    config.ui.lightThemeName = themeName;
+  };
+
+  const handleThemeActivation = async (extensionName: string): Promise<void> => {
+    await disableOtherThemes(extensionName);
+    resetCSSVariables([...THEME_VARIABLES]);
+    setConfigThemeName(extensionName);
+  };
+
+  const handleThemeDeactivation = (extensionName: string): void => {
+    const { config } = useConfigStore();
+    const isCurrentDarkTheme = Dark.isActive && config.ui.darkThemeName === extensionName;
+    const isCurrentLightTheme = !Dark.isActive && config.ui.lightThemeName === extensionName;
+    if (!isCurrentDarkTheme && !isCurrentLightTheme) {
+      return;
+    }
+    resetCSSVariables([...THEME_VARIABLES]);
+    setConfigThemeName(null);
+  };
+
   const enableExtension = async (extensionName: string): Promise<void> => {
     const meta = extensions.value.find((e) => e.manifest.name === extensionName);
     if (!meta) {
       reporter.reportWarning(`Extension ${extensionName} not found`);
       return;
+    }
+
+    if (isThemeExtension(meta.manifest)) {
+      await handleThemeActivation(extensionName);
     }
 
     const source = await api.infrastructure.extensionSourceRepository.get(extensionName);
@@ -201,6 +252,10 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
     if (!meta) {
       reporter.reportWarning(`Extension ${extensionName} not found`);
       return;
+    }
+
+    if (isThemeExtension(meta.manifest)) {
+      handleThemeDeactivation(extensionName);
     }
 
     await unmountExtension(extensionName);
@@ -230,7 +285,7 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
     await writeToDisk();
 
     if (meta.active) {
-      await mountExtension(meta, source);
+      await enableExtension(meta.manifest.name);
     }
   };
 
@@ -359,7 +414,10 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
   };
 
   const importExtension = async (file: File): Promise<void> => {
-    const safeParse = to(parseExtensionFromFile, 'Failed to parse extension file');
+    const safeParse = to(parseExtensionFromFile, (e: unknown) => {
+      const error = e instanceof Error ? e : new Error(String(e));
+      return new Error(`Failed to parse extension "${file.name}"`, { cause: error });
+    });
     const parseResult = await safeParse(file);
 
     if (parseResult.isErr()) {

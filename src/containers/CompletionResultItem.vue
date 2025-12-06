@@ -115,7 +115,7 @@ const executeCompletionItem = async (e: MouseEvent) => {
   & {
     height: 100%;
     cursor: pointer;
-    border-radius: var(--completion-item-border-radius);
+    border-radius: var(--completion-item-radius);
     padding: var(--completion-item-padding);
   }
 

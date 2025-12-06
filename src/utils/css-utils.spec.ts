@@ -114,12 +114,12 @@ test('applies CSS variables to the body', () => {
 });
 
 test('resets CSS variables to default values', () => {
-  const spy = vi.spyOn(document.body.style, 'setProperty');
+  const spy = vi.spyOn(document.body.style, 'removeProperty');
 
-  resetCSSVariables({ testVar: '', anotherVar: '' });
+  resetCSSVariables(['testVar', 'anotherVar']);
 
-  expect(spy).toHaveBeenCalledWith('--test-var', 'var(--default-test-var)');
-  expect(spy).toHaveBeenCalledWith('--another-var', 'var(--default-another-var)');
+  expect(spy).toHaveBeenCalledWith('--test-var');
+  expect(spy).toHaveBeenCalledWith('--another-var');
 });
 
 test('returns the variable as is if it starts with "--"', () => {

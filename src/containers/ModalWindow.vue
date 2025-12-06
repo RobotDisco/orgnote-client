@@ -125,7 +125,7 @@ dialog {
     max-height: var(--modal-max-height);
     margin: auto;
     border: var(--modal-border);
-    border-radius: var(--modal-border-radius);
+    border-radius: var(--modal-radius);
     padding: 0;
     position: fixed;
   }

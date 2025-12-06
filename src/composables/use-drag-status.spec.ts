@@ -50,15 +50,7 @@ describe('useDragStatus', () => {
 
   it('should prevent default on events', () => {
     const { onDragEnter, onDragLeave, onDragOver } = useDragStatus();
-    const enterEvent = createDragEvent('dragenter');
-    const leaveEvent = createDragEvent('dragleave');
-    const overEvent = createDragEvent('dragover');
 
-    const enterSpy =  { preventDefault: () => {} }; // Using simple spy object logic if needed, but Event helper is native
-    // Vitest DragEvent might not have tracked spies, checking if defaultPrevented works
-    // But JSDOM implementation of Event constructor sets defaultPrevented to false initially.
-
-    // We can spy on preventDefault
     let prevented = false;
     const mockEvent = {
         preventDefault: () => { prevented = true; },

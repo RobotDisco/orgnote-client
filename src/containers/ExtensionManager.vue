@@ -2,58 +2,58 @@
   <file-uploader @uploaded="onUploaded" :accept="['js', 'json']" label="Drop extension here">
     <container-layout gap="md">
       <template #header>
-      <app-flex between gap="md">
-        <app-dropdown
-          v-model="selectedTab"
-          :options="tabOptions"
-          option-label="label"
-          :clearable="false"
-          :use-input="false"
-        />
+        <app-flex between gap="md">
+          <app-dropdown
+            v-model="selectedTab"
+            :options="tabOptions"
+            option-label="label"
+            :clearable="false"
+            :use-input="false"
+          />
 
-        <action-button
-          @click="refresh"
-          color="fg"
-          size="sm"
-          outline
-          border
-          icon="sym_o_refresh"
-          :tooltip="$t(i18n.REFRESH)"
-        />
-      </app-flex>
-    </template>
-
-    <template #body>
-      <card-wrapper class="extensions-list">
-        <app-flex v-if="isLoading" class="loading-container" center align-center>
-          <loading-dots :text="$t(i18n.LOADING)" />
+          <action-button
+            @click="refresh"
+            color="fg"
+            size="sm"
+            outline
+            border
+            icon="sym_o_refresh"
+            :tooltip="$t(i18n.REFRESH)"
+          />
         </app-flex>
-        <empty-state v-else-if="displayedExtensions.length === 0" :title="$t(emptyMessageKey)" />
-        <ExtensionItem
-          v-else
-          v-for="ext in displayedExtensions"
-          :key="'manifest' in ext ? ext.manifest.name : ext.name"
-          :extension="ext"
-          :mode="currentMode"
-          @enable="enableExtension"
-          @disable="disableExtension"
-          @delete="confirmDeleteExtension"
-          @install="installExtension"
-        />
-      </card-wrapper>
-    </template>
+      </template>
 
-    <template #footer>
-      <card-wrapper>
-        <menu-item type="info" @click="handleImportExtension" icon="sym_o_upload">
-          {{ $t(i18n.IMPORT_EXTENSION) }}
-        </menu-item>
-        <menu-item type="info" @click="openInstallFromUrl" icon="sym_o_link">
-          {{ $t(i18n.INSTALL_FROM_URL) }}
-        </menu-item>
-      </card-wrapper>
-    </template>
-  </container-layout>
+      <template #body>
+        <card-wrapper class="extensions-list">
+          <app-flex v-if="isLoading" class="loading-container" center align-center>
+            <loading-dots :text="$t(i18n.LOADING)" />
+          </app-flex>
+          <empty-state v-else-if="displayedExtensions.length === 0" :title="$t(emptyMessageKey)" />
+          <ExtensionItem
+            v-else
+            v-for="ext in displayedExtensions"
+            :key="'manifest' in ext ? ext.manifest.name : ext.name"
+            :extension="ext"
+            :mode="currentMode"
+            @enable="enableExtension"
+            @disable="disableExtension"
+            @delete="confirmDeleteExtension"
+            @install="installExtension"
+          />
+        </card-wrapper>
+      </template>
+
+      <template #footer>
+        <card-wrapper>
+          <menu-item type="info" @click="handleImportExtension" icon="sym_o_upload">
+            {{ $t(i18n.IMPORT_EXTENSION) }}
+          </menu-item>
+          <menu-item type="info" @click="openInstallFromUrl" icon="sym_o_link">
+            {{ $t(i18n.INSTALL_FROM_URL) }}
+          </menu-item>
+        </card-wrapper>
+      </template>
+    </container-layout>
   </file-uploader>
 </template>
 

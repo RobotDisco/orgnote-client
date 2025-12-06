@@ -84,7 +84,7 @@ button {
   & {
     padding: var(--btn-action-padding);
     border-radius: var(--btn-action-radius);
-    color: var(--btn-action-color);
+    color: var(--btn-action-fg);
     cursor: pointer;
     border: var(--btn-action-border);
     box-sizing: border-box;
@@ -127,7 +127,7 @@ button {
 
   &.active {
     background: var(--btn-action-active-bg);
-    color: var(--btn-action-active-color);
+    color: var(--btn-action-active-fg);
   }
 
   &.border {

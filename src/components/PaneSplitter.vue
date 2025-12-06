@@ -129,7 +129,7 @@ const currentPosition = computed((): number => {
 <style scoped lang="scss">
 .pane-splitter {
   flex-shrink: 0;
-  background: var(--splitter-background);
+  background: var(--splitter-bg);
   transition:
     background var(--splitter-transition-duration) ease,
     transform var(--splitter-transition-duration) ease;
@@ -142,7 +142,7 @@ const currentPosition = computed((): number => {
 
     &:hover,
     &.active {
-      background: var(--splitter-hover-background);
+      background: var(--splitter-hover-bg);
       transform: scaleX(var(--splitter-hover-scale));
     }
   }
@@ -154,7 +154,7 @@ const currentPosition = computed((): number => {
 
     &:hover,
     &.active {
-      background: var(--splitter-hover-background);
+      background: var(--splitter-hover-bg);
       transform: scaleY(var(--splitter-hover-scale));
     }
   }

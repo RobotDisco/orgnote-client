@@ -42,6 +42,9 @@ storybook-static
 .early.coverage
 
 .certs
-.aider*
 
+
+# AI
+.aider*
 .serena
+plans/review

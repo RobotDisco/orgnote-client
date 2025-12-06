@@ -35,6 +35,23 @@ export function getGlobalCommands({ router }: { router?: Router } = {}): Command
       },
     },
     {
+      command: DefaultCommands.CLEAR_LOGS,
+      group: 'debug',
+      icon: 'delete',
+      handler: async () => {
+        const { confirm } = api.ui.useConfirmationModal();
+
+        const confirmed = await confirm({
+          message: I18N.CONFIRM_CLEAR_LOGS,
+        });
+
+        if (confirmed) {
+          const logStore = api.core.useLog();
+          logStore.clearLogs();
+        }
+      },
+    },
+    {
       command: DefaultCommands.TOGGLE_SIDEBAR,
       group: 'global',
       icon: () => {

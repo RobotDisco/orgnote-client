@@ -140,9 +140,9 @@ const groupByKey = (notifications: NotiwindNotification[]): NotiwindNotification
 
 .notification-item {
   padding: var(--notification-padding);
-  border-radius: var(--notification-border-radius);
+  border-radius: var(--notification-radius);
   background: var(--notification-bg);
-  color: var(--notification-color);
+  color: var(--notification-fg);
   border: var(--notification-border);
   box-shadow: var(--notification-shadow);
   max-width: var(--notification-max-width);

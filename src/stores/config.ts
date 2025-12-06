@@ -78,6 +78,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
     watch(
       [vault, config, currentFsInfo],
       async () => {
+        lastSyncTime.value = Date.now();
         await syncWithDebounce();
       },
       { deep: true },

@@ -38,6 +38,7 @@
   --default-bg-muted: color-mix(in srgb, #22272e, var(--q-dark) 35%);
   --default-bg-hover: rgba(99, 110, 123, 0.4);
   --default-fg: #adbac7;
+  --default-fg-secondary: #adbac7;
   --default-fg-muted: #{$grey-6};
 
   --violet: #b98df6;
@@ -56,9 +57,10 @@
   --default-bg: #ffffff;
   --default-bg-secondary: #ffffff;
   --default-bg-muted: #fafbfc;
-  --default-bg-hover: rgba(175, 184, 193, 0.2);
-  --default-bg-elevated: rgba(175, 184, 193, 0.2);
+  --default-bg-hover: #eff1f3;
+  --default-bg-elevated: #eff1f3;
   --default-fg: #34495e;
+  --default-secondary: #34495e;
   --default-fg-muted: #{$grey-5};
 
   // Tab overview for light theme

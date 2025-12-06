@@ -49,7 +49,7 @@ const miniMode = screenDetector.tabletAbove;
 
 /* TODO: plugin */
 /* Plugin */
-/* --sidebar-background: var(--fg); */
+/* --sidebar-bg: var(--fg); */
 
 /* ::v-deep(*) {
    color: var(--bg) !important;
