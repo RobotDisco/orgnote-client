@@ -19,6 +19,8 @@ body {
   --font-size-md: 16px;
   --font-size-lg: 20px;
   --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+  --font-size-3xl: 48px;
 
   // Font Weights
   --font-weight-regular: 400;
@@ -159,7 +161,7 @@ body {
   --completion-item-padding: 10px;
 
   // Inputs
-  --placeholder-color: var(--fg-muted);
+  --placeholder-fg: var(--fg-muted);
 
   // Pages
   --page-padding: var(--padding-lg);
@@ -211,6 +213,12 @@ body {
   --drop-zone-border: 4px dashed var(--accent);
   --drop-zone-bg: none;
   --drop-zone-opacity: 0.3;
+
+  // Uploader
+  --uploader-info-bg: var(--bg-elevated);
+  --uploader-info-fg: var(--fg);
+  --uploader-info-border: 4px dashed var(--fg-muted);
+  --uploader-info-radius: 16px;
 
   // Spoiler
 

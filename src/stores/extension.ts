@@ -1,14 +1,15 @@
 import { defineStore } from 'pinia';
-import type {
-  Extension,
-  ExtensionManifest,
-  ExtensionMeta,
-  ExtensionSource,
-  ExtensionSourceInfo,
-  ExtensionStore,
-  GitRepoHandle,
-  GitSource,
-  LocalSource,
+import {
+  ExtensionParsingError,
+  type Extension,
+  type ExtensionManifest,
+  type ExtensionMeta,
+  type ExtensionSource,
+  type ExtensionSourceInfo,
+  type ExtensionStore,
+  type GitRepoHandle,
+  type GitSource,
+  type LocalSource,
 } from 'orgnote-api';
 import { ref, computed } from 'vue';
 import { api } from 'src/boot/api';
@@ -428,7 +429,7 @@ export const useExtensionsStore = defineStore<'extension', ExtensionStore>('exte
   const importExtension = async (file: File): Promise<void> => {
     const safeParse = to(parseExtensionFromFile, (e: unknown) => {
       const error = e instanceof Error ? e : new Error(String(e));
-      return new Error(`Failed to parse extension "${file.name}"`, { cause: error });
+      return new ExtensionParsingError(file.name, { cause: error });
     });
     const parseResult = await safeParse(file);
 

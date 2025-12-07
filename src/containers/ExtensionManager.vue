@@ -29,7 +29,7 @@
             <loading-dots :text="$t(i18n.LOADING)" />
           </app-flex>
           <empty-state v-else-if="displayedExtensions.length === 0" :title="$t(emptyMessageKey)" />
-          <ExtensionItem
+          <extension-item
             v-else
             v-for="ext in displayedExtensions"
             :key="'manifest' in ext ? ext.manifest.name : ext.name"

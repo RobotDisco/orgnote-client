@@ -8,24 +8,25 @@
     @dragover.prevent="onDragOver"
   >
     <transition name="fade">
-      <div v-if="dragInProgress" class="upload-overlay">
-        <div class="uploader-info">
-          <div class="icon-wrapper">
-            <q-icon name="cloud_upload" size="4rem" />
-          </div>
-          <div class="text-h4 q-mt-md">{{ label || 'Drop files here' }}</div>
-        </div>
-      </div>
+      <app-flex v-if="dragInProgress" class="upload-overlay" center align-center>
+        <app-flex class="uploader-info" column align="center">
+          <app-icon name="cloud_upload" style="font-size: 4rem" />
+          <app-title :level="4" class="q-mt-md">{{ label || 'Drop files here' }}</app-title>
+        </app-flex>
+      </app-flex>
     </transition>
     <slot></slot>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { onBeforeUnmount, onMounted } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { useDragStatus } from 'src/composables/use-drag-status';
 import type { FileSystemFileEntry } from 'src/utils/file-traversal';
 import { extractFiles } from 'src/utils/file-traversal';
+import AppTitle from 'src/components/AppTitle.vue';
+import AppIcon from 'src/components/AppIcon.vue';
+import AppFlex from 'src/components/AppFlex.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -34,7 +35,7 @@ const props = withDefaults(
   }>(),
   {
     accept: () => [],
-  }
+  },
 );
 
 const emit = defineEmits<{
@@ -59,22 +60,14 @@ const onDrop = async (e: DragEvent) => {
 
 const preventDefault = (e: DragEvent) => e.preventDefault();
 
-onMounted(() => {
-  window.addEventListener('dragover', preventDefault, false);
-  window.addEventListener('drop', preventDefault, false);
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('dragover', preventDefault);
-  window.removeEventListener('drop', preventDefault);
-});
+useEventListener(window, 'dragover', preventDefault);
+useEventListener(window, 'drop', preventDefault);
 </script>
 
 <style lang="scss" scoped>
 .file-uploader {
   position: relative;
-  height: 100%;
-  width: 100%;
+  @include fit;
 }
 
 .upload-overlay {
@@ -83,28 +76,18 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--uploader-overlay-bg);
   backdrop-filter: blur(4px);
   z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
+  color: var(--uploader-info-fg);
   pointer-events: none;
 }
 
 .uploader-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   padding: 40px;
-  border: 4px dashed rgba(255, 255, 255, 0.5);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.drag-target {
-  // Optional: add styles to the container when dragging
+  border: var(--uploader-info-border);
+  border-radius: var(--uploader-info-radius);
+  background: var(--uploader-info-bg);
 }
 
 .fade-enter-active,

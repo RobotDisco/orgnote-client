@@ -39,7 +39,7 @@ withDefaults(
   --btn-action-hover-bg: var(--sidebar-hover-bg);
   --bg-hover: var(--sidebar-hover-bg);
   --menu-item-hover-bg: var(--sidebar-hover-bg);
-  --placeholder-color: var(--sidebar-fg-muted);
+  --placeholder-fg: var(--sidebar-fg-muted);
 
   & {
     border-right: var(--sidebar-border-right);

@@ -78,11 +78,11 @@ describe('FileUploader', () => {
     const removeSpy = vi.spyOn(window, 'removeEventListener');
 
     const wrapper = mount(FileUploader);
-    expect(addSpy).toHaveBeenCalledWith('dragover', expect.any(Function), false);
-    expect(addSpy).toHaveBeenCalledWith('drop', expect.any(Function), false);
+    expect(addSpy).toHaveBeenCalledWith('dragover', expect.any(Function), undefined);
+    expect(addSpy).toHaveBeenCalledWith('drop', expect.any(Function), undefined);
 
     wrapper.unmount();
-    expect(removeSpy).toHaveBeenCalledWith('dragover', expect.any(Function));
-    expect(removeSpy).toHaveBeenCalledWith('drop', expect.any(Function));
+    expect(removeSpy).toHaveBeenCalledWith('dragover', expect.any(Function), undefined);
+    expect(removeSpy).toHaveBeenCalledWith('drop', expect.any(Function), undefined);
   });
 });

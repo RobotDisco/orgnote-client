@@ -44,7 +44,7 @@ input {
   @include reset-input();
 
   &::placeholder {
-    color: var(--placeholder-color);
+    color: var(--placeholder-fg);
   }
 }
 </style>
