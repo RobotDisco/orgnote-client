@@ -31,16 +31,14 @@ const createSelectThemeCommand = (): Command => ({
           searchFilter(filter, t.manifest.name, t.manifest.description, t.manifest.category),
         );
 
-        const candidates = filteredThemes.map((t) => {
-          const isActive = t.manifest.name === themeStore.activeThemeName;
-          return {
-            icon: isActive ? 'check' : 'sym_o_palette',
-            title: t.manifest.name,
-            description: t.manifest.description ?? '',
-            data: t,
-            commandHandler: () => extensionsStore.enableExtension(t.manifest.name),
-          };
-        });
+        const candidates = filteredThemes.map((t) => ({
+          icon: () =>
+            t.manifest.name === themeStore.activeThemeName ? 'check' : 'sym_o_palette',
+          title: t.manifest.name,
+          description: t.manifest.description ?? '',
+          data: t,
+          commandHandler: () => extensionsStore.enableExtension(t.manifest.name),
+        }));
 
         return {
           total: filteredThemes.length,
@@ -110,17 +108,16 @@ const createSelectThemeModeCommand = (): Command => ({
       type: 'choice',
       itemsGetter: () => ({
         total: themeModes.length,
-        result: themeModes.map((mode) => {
-          const isActive = isActiveMode(mode.id, themeStore.isDynamicMode, themeStore.isDark);
-          const description = t(mode.descriptionKey);
-          return {
-            icon: isActive ? 'sym_o_check' : mode.icon,
-            title: t(mode.titleKey),
-            description: description,
-            data: mode,
-            commandHandler: () => themeStore.setMode(mode.id),
-          };
-        }),
+        result: themeModes.map((mode) => ({
+          icon: () =>
+            isActiveMode(mode.id, themeStore.isDynamicMode, themeStore.isDark)
+              ? 'sym_o_check'
+              : mode.icon,
+          title: t(mode.titleKey),
+          description: t(mode.descriptionKey),
+          data: mode,
+          commandHandler: () => themeStore.setMode(mode.id),
+        })),
       }),
     });
   },
