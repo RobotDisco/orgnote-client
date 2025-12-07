@@ -3,7 +3,7 @@ import { type CompletionConfig, type CompletionStore } from 'orgnote-api';
 import { defineStore } from 'pinia';
 import { useModalStore } from './modal';
 import AppCompletion from 'src/containers/AppCompletion.vue';
-import { computed, ref } from 'vue';
+import { computed, shallowRef, shallowReactive } from 'vue';
 import { watch } from 'vue';
 import { debounce } from 'src/utils/debounce';
 import { DEFAULT_INPUT_DEBOUNCE } from 'src/constants/default-input-debounce';
@@ -18,7 +18,7 @@ export const useCompletionStore = defineStore<'completion-store', CompletionStor
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let lastModalConfig: CompletionConfig<any> | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const openedCompletions = ref<Completion<any>[]>([]);
+    const openedCompletions = shallowRef<Completion<any>[]>([]);
 
     const open = async <TItem, TReturn = void>(
       config: CompletionConfig<TItem>,
@@ -35,7 +35,13 @@ export const useCompletionStore = defineStore<'completion-store', CompletionStor
       });
 
       const [result, resolve] = createPromise();
-      openedCompletions.value.push({ ...config, searchQuery: config.searchText ?? '', result });
+      const completion = shallowReactive({
+        ...config,
+        searchQuery: config.searchText ?? '',
+        result,
+      });
+
+      openedCompletions.value = [...openedCompletions.value, completion];
 
       search();
       const res = await closed;

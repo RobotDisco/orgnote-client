@@ -3,10 +3,10 @@ import { type CommandsStore, type Command } from 'orgnote-api';
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
 import { clientOnly } from 'src/utils/platform-specific';
-import { ref } from 'vue';
+import { ref, shallowRef, triggerRef } from 'vue';
 
 export const useCommandsStore = defineStore<'commands', CommandsStore>('commands', () => {
-  const commands = ref<Command[]>([]);
+  const commands = shallowRef<Command[]>([]);
 
   const callbacks = ref<Map<string, CommandCallback[]>>(new Map());
 
@@ -15,6 +15,7 @@ export const useCommandsStore = defineStore<'commands', CommandsStore>('commands
       return;
     }
     commands.value.push(...newCommands);
+    triggerRef(commands);
   };
 
   const unregister = (...commandsToUnregister: Command[]) => {
