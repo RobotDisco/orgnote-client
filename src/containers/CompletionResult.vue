@@ -32,10 +32,9 @@ import { api } from 'src/boot/api';
 import AsyncItemContainer from './AsyncItemContainer.vue';
 import CompletionResultItem from './CompletionResultItem.vue';
 import type { CompletionCandidate } from 'orgnote-api';
-import { computed } from 'vue';
+import { computed, toValue } from 'vue';
 import { DEFAULT_COMPLETIO_ITEM_HEIGHT } from 'src/constants/completion-item';
 import type { GroupedCompletionCandidate } from 'src/models/grouped-completion-candidate';
-import { extractDynamicValue } from 'src/utils/extract-dynamic-value';
 
 defineEmits<{
   select: [];
@@ -60,9 +59,9 @@ const groupedCandidates = computed<[GroupedCompletionCandidate[], string[]]>(() 
 
   return completion.activeCompletion!.candidates.reduce<[GroupedCompletionCandidate[], string[]]>(
     (acc: [GroupedCompletionCandidate[], string[]], item: CompletionCandidate, index: number) => {
-      const groupChanged = acc[1][acc[1].length - 1] !== item.group;
+      const groupName = toValue(item.group) ?? '';
+      const groupChanged = acc[1][acc[1].length - 1] !== groupName;
       if (groupChanged) {
-        const groupName = extractDynamicValue(item.group) ?? '';
         acc[0].push({ groupTitle: groupName });
         acc[1].push(groupName);
       }

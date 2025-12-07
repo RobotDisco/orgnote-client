@@ -14,11 +14,11 @@
 </template>
 
 <script lang="ts" setup>
+import { toValue } from 'vue';
 import type { MenuAction, CommandMenuAction, Command } from 'orgnote-api';
 import CardWrapper from 'src/components/CardWrapper.vue';
 import MenuItem from 'src/containers/MenuItem.vue';
 import { useCommandsStore } from 'src/stores/command';
-import { extractDynamicValue } from 'src/utils/extract-dynamic-value';
 import { camelCaseToWords } from 'src/utils/camel-case-to-words';
 import { useNotificationsStore } from 'src/stores/notifications';
 import { to } from 'src/utils/to-error';
@@ -43,7 +43,7 @@ const getCommand = (item: CommandMenuAction): Command | undefined =>
 const getIcon = (item: MenuAction) => {
   if (isCommandAction(item)) {
     const command = getCommand(item);
-    return command ? extractDynamicValue(command.icon) : undefined;
+    return command ? toValue(command.icon) : undefined;
   }
   return item.icon;
 };

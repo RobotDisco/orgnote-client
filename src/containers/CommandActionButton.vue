@@ -2,7 +2,7 @@
   <action-button
     @click="execute"
     v-if="command && !command.hide?.(api)"
-    :icon="extractDynamicValue(command.icon)"
+    :icon="resolvedIcon"
     :size="size"
     classes="action-btn"
     :alignment="alignment"
@@ -17,8 +17,7 @@
 import ActionButton, { type ButtonAlignment } from 'src/components/ActionButton.vue';
 import type { CommandName, StyleSize } from 'orgnote-api';
 import { useCommandsStore } from 'src/stores/command';
-import { computed } from 'vue';
-import { extractDynamicValue } from 'src/utils/extract-dynamic-value';
+import { computed, toValue } from 'vue';
 import { camelCaseToWords } from 'src/utils/camel-case-to-words';
 import { api } from 'src/boot/api';
 
@@ -40,6 +39,8 @@ const props = withDefaults(
 const commandsStore = useCommandsStore();
 
 const command = computed(() => commandsStore.get(props.command));
+
+const resolvedIcon = computed(() => toValue(command.value?.icon));
 
 const execute = () => {
   commandsStore.execute(props.command, props.data);

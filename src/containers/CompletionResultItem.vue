@@ -10,7 +10,7 @@
   </app-flex>
   <app-flex
     v-else
-    :key="extractDynamicValue(item.title)"
+    :key="resolvedTitle"
     class="completion-item"
     :class="{ selected }"
     @click="executeCompletionItem"
@@ -23,28 +23,28 @@
     align="center"
     gap="md"
   >
-    <app-icon v-if="item.icon" :name="extractDynamicValue(item.icon)" size="sm"></app-icon>
+    <app-icon v-if="resolvedIcon" :name="resolvedIcon" size="sm"></app-icon>
     <div class="text-bold color-main">
       <div class="line-limit-1">
-        {{ extractDynamicValue(item.title) }}
+        {{ resolvedTitle }}
       </div>
     </div>
     <div>
       <span class="text-italic color-secondary line-limit-1">
-        {{ extractDynamicValue(item.description) }}
+        {{ resolvedDescription }}
       </span>
     </div>
   </app-flex>
 </template>
 
 <script lang="ts" setup>
+import { computed, toValue } from 'vue';
 import { api } from 'src/boot/api';
 import AppIcon from 'src/components/AppIcon.vue';
 import type {
   GroupedCompletionCandidate,
   IndexedCompletionCandidate,
 } from 'src/models/grouped-completion-candidate';
-import { extractDynamicValue } from 'src/utils/extract-dynamic-value';
 import AppFlex from 'src/components/AppFlex.vue';
 
 const props = defineProps<{
@@ -56,6 +56,18 @@ const props = defineProps<{
 const emit = defineEmits<{
   select: [];
 }>();
+
+const resolvedTitle = computed(() =>
+  'groupTitle' in props.item ? undefined : toValue(props.item.title),
+);
+
+const resolvedIcon = computed(() =>
+  'groupTitle' in props.item ? undefined : toValue(props.item.icon),
+);
+
+const resolvedDescription = computed(() =>
+  'groupTitle' in props.item ? undefined : toValue(props.item.description),
+);
 
 const completion = api.core.useCompletion();
 
@@ -79,9 +91,9 @@ const applyCandidateToInput = (index: number) => {
     return;
   }
 
-  const resolvedTitle = extractDynamicValue(candidate.title);
-  if (typeof resolvedTitle === 'string') {
-    activeCompletion.searchQuery = resolvedTitle;
+  const candidateTitle = toValue(candidate.title);
+  if (typeof candidateTitle === 'string') {
+    activeCompletion.searchQuery = candidateTitle;
     emit('select');
   }
 };

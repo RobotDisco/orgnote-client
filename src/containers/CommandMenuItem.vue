@@ -1,7 +1,7 @@
 <template>
   <menu-item
     @click="execute(props.command)"
-    :icon="extractDynamicValue(command?.icon)"
+    :icon="resolvedIcon"
     :active="command?.isActive?.(api)"
     :narrow="command?.context?.narrow"
   >
@@ -10,11 +10,12 @@
 </template>
 
 <script lang="ts" setup>
+import { computed, toValue } from 'vue';
 import type { CommandName } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import { useI18n } from 'vue-i18n';
 import MenuItem from './MenuItem.vue';
-import { extractDynamicValue } from 'src/utils/extract-dynamic-value';
+
 const props = defineProps<{
   command: CommandName;
 }>();
@@ -22,6 +23,8 @@ const props = defineProps<{
 const { get, execute } = api.core.useCommands();
 
 const command = get(props.command);
+
+const resolvedIcon = computed(() => toValue(command?.icon));
 
 const { t } = useI18n({
   useScope: 'global',
