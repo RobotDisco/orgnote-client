@@ -19,6 +19,8 @@ body {
   --font-size-md: 16px;
   --font-size-lg: 20px;
   --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+  --font-size-3xl: 48px;
 
   // Font Weights
   --font-weight-regular: 400;
@@ -56,19 +58,22 @@ body {
   --footer-height: 0px;
   --footer-border-top: 0;
   --footer-padding: 0;
-  --footer-background: var(--bg-secondary);
+  --footer-bg: var(--bg-secondary);
 
   // Sidebar
   --sidebar-width: 360px;
   --sidebar-mini-width: 54px;
-  --sidebar-background: var(--bg-secondary);
+  --sidebar-bg: var(--bg-secondary);
+  --sidebar-fg: var(--fg);
   --sidebar-border-right: var(--border-default);
   --sidebar-padding: var(--padding-md);
+  --sidebar-hover-bg: var(--bg-hover);
+  --sidebar-fg-muted: var(--fg-muted);
 
   // Button
   --btn-action-padding: var(--padding-md);
   --btn-action-radius: var(--border-radius-md);
-  --btn-action-color: var(--fg);
+  --btn-action-fg: var(--fg);
   --btn-action-bg: var(--bg);
   --btn-action-hover-bg: var(--bg-hover);
   --btn-action-hover-brightness: 100%;
@@ -77,10 +82,10 @@ body {
   --btn-action-md-size: 32px;
   --btn-action-lg-size: 46px;
   --btn-action-border: none;
-  --btn-action-active-color: var(--accent);
+  --btn-action-active-fg: var(--accent);
   --btn-action-text-width: 180px;
 
-  --button-border-raidius: var(--border-radius-md);
+  --button-radius: var(--border-radius-md);
   --button-padding: 12px var(--padding-lg);
   --button-min-width: 120px;
 
@@ -93,7 +98,7 @@ body {
   // Modal
   --modal-backdrop-bg: var(--backdrop-bg);
   --modal-border: var(--border-default);
-  --modal-border-radius: var(--border-radius-md);
+  --modal-radius: var(--border-radius-md);
   --modal-padding: var(--padding-lg);
   --modal-max-width: min(1280px, calc(100vw - var(--padding-xl)));
   --modal-min-width: 460px;
@@ -102,7 +107,7 @@ body {
   // Cards
   --card-padding: var(--padding-lg);
   --card-border: var(--border-default);
-  --card-border-radius: var(--border-radius-md);
+  --card-radius: var(--border-radius-md);
 
   // Menu item
   --menu-item-padding-x: 10px;
@@ -111,23 +116,23 @@ body {
   --menu-item-height: 42px;
   --menu-item-max-height: 200px;
   --menu-item-hover-bg: var(--bg-hover);
-  --menu-item-border-radius: var(--border-radius-md);
+  --menu-item-radius: var(--border-radius-md);
 
   --menu-item-height-sm: 36px;
   --menu-item-height-md: 42px;
   --menu-item-height-lg: 50px;
-  --menu-item-active-color: var(--fg);
+  --menu-item-active-fg: var(--fg);
   --menu-item-active-bg: var(--bg-hover);
 
   // File Manager
   --file-item-active-bg: var(--bg-hover);
-  --file-item-active-color: var(--accent);
+  --file-item-active-fg: var(--accent);
 
   // Icons
-  --icon-rounded-border-radius: var(--border-radius-sm);
+  --icon-rounded-radius: var(--border-radius-sm);
   --icon-border: var(--border-default);
   --icon-border-padding: var(--padding-md);
-  --icon-border-radius: var(--border-radius-md);
+  --icon-radius: var(--border-radius-md);
 
   // Device sizes
   --tablet: #{a.$tablet};
@@ -138,7 +143,7 @@ body {
   --toggle-width: 42px;
   --toggle-knob-size: 22px;
   --toggle-knob-offset: 1px;
-  --toggle-border-radius: 60px;
+  --toggle-radius: 60px;
   --toggle-bg: var(--bg-hover);
   --toggle-bg-checked: var(--accent);
   --toggle-knob-bg: var(--bg);
@@ -152,11 +157,11 @@ body {
   --completion-padding: var(--padding-md);
   --completion-footer-height: 24px;
   --completion-item-hover-bg: var(--bg-elevated);
-  --completion-item-border-radius: var(--border-radius-md);
+  --completion-item-radius: var(--border-radius-md);
   --completion-item-padding: 10px;
 
   // Inputs
-  --placeholder-color: var(--fg-muted);
+  --placeholder-fg: var(--fg-muted);
 
   // Pages
   --page-padding: var(--padding-lg);
@@ -164,23 +169,23 @@ body {
 
   // Panes
   --splitter-size: 1px;
-  --splitter-background: var(--bg-elevated);
-  --splitter-hover-background: var(--accent);
+  --splitter-bg: var(--bg-elevated);
+  --splitter-hover-bg: var(--accent);
   --splitter-hover-scale: 4;
   --splitter-transition-duration: 0.15s;
 
   // Tab
   --tab-padding: var(--padding-md);
   --tab-height: 28px;
-  --tab-background: var(--bg-muted);
+  --tab-bg: var(--bg-muted);
   --tab-border: 0;
   --tab-border-radius: var(--border-radius-sm);
-  --tab-color: var(--fg-muted);
+  --tab-fg: var(--fg-muted);
   --tab-width: 160px;
   --tab-active-border: 0;
-  --tab-active-hover-background: var(--bg-hover);
-  --tab-active-color: var(--fg);
-  --tab-active-background: var(--bg-elevated);
+  --tab-active-hover-bg: var(--bg-hover);
+  --tab-active-fg: var(--fg);
+  --tab-active-bg: var(--bg-elevated);
 
   // Tab overview
   --tab-preview-active-border: 2px solid var(--accent);
@@ -206,8 +211,14 @@ body {
 
   // Drop zone
   --drop-zone-border: 4px dashed var(--accent);
-  --drop-zone-background: none;
+  --drop-zone-bg: none;
   --drop-zone-opacity: 0.3;
+
+  // Uploader
+  --uploader-info-bg: var(--bg-elevated);
+  --uploader-info-fg: var(--fg);
+  --uploader-info-border: 4px dashed var(--fg-muted);
+  --uploader-info-radius: 16px;
 
   // Spoiler
 
@@ -230,9 +241,9 @@ body {
   --notification-container-gap: var(--gap-sm);
 
   --notification-padding: var(--padding-lg);
-  --notification-border-radius: var(--border-radius-md);
+  --notification-radius: var(--border-radius-md);
   --notification-bg: var(--bg-secondary);
-  --notification-color: var(--fg);
+  --notification-fg: var(--fg);
   --notification-border: var(--border-default);
   --notification-shadow: var(--shadow-lg);
 
@@ -250,7 +261,7 @@ body {
     --modal-max-height: 100%;
     --modal-min-width: 100%;
     --modal-border: none;
-    --modal-border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+    --modal-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
 
     --footer-height: 60px;
 

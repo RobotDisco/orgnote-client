@@ -1,58 +1,60 @@
 <template>
-  <container-layout gap="md">
-    <template #header>
-      <app-flex between gap="md">
-        <app-dropdown
-          v-model="selectedTab"
-          :options="tabOptions"
-          option-label="label"
-          :clearable="false"
-          :use-input="false"
-        />
+  <file-uploader @uploaded="onUploaded" :accept="['js', 'json']" label="Drop extension here">
+    <container-layout gap="md">
+      <template #header>
+        <app-flex between gap="md">
+          <app-dropdown
+            v-model="selectedTab"
+            :options="tabOptions"
+            option-label="label"
+            :clearable="false"
+            :use-input="false"
+          />
 
-        <action-button
-          @click="refresh"
-          color="fg"
-          size="sm"
-          outline
-          border
-          icon="sym_o_refresh"
-          :tooltip="$t(i18n.REFRESH)"
-        />
-      </app-flex>
-    </template>
-
-    <template #body>
-      <card-wrapper class="extensions-list">
-        <app-flex v-if="isLoading" class="loading-container" center align-center>
-          <loading-dots :text="$t(i18n.LOADING)" />
+          <action-button
+            @click="refresh"
+            color="fg"
+            size="sm"
+            outline
+            border
+            icon="sym_o_refresh"
+            :tooltip="$t(i18n.REFRESH)"
+          />
         </app-flex>
-        <empty-state v-else-if="displayedExtensions.length === 0" :title="$t(emptyMessageKey)" />
-        <ExtensionItem
-          v-else
-          v-for="ext in displayedExtensions"
-          :key="'manifest' in ext ? ext.manifest.name : ext.name"
-          :extension="ext"
-          :mode="currentMode"
-          @enable="enableExtension"
-          @disable="disableExtension"
-          @delete="confirmDeleteExtension"
-          @install="installExtension"
-        />
-      </card-wrapper>
-    </template>
+      </template>
 
-    <template #footer>
-      <card-wrapper>
-        <menu-item type="info" @click="handleImportExtension" icon="sym_o_upload">
-          {{ $t(i18n.IMPORT_EXTENSION) }}
-        </menu-item>
-        <menu-item type="info" @click="openInstallFromUrl" icon="sym_o_link">
-          {{ $t(i18n.INSTALL_FROM_URL) }}
-        </menu-item>
-      </card-wrapper>
-    </template>
-  </container-layout>
+      <template #body>
+        <card-wrapper class="extensions-list">
+          <app-flex v-if="isLoading" class="loading-container" center align-center>
+            <loading-dots :text="$t(i18n.LOADING)" />
+          </app-flex>
+          <empty-state v-else-if="displayedExtensions.length === 0" :title="$t(emptyMessageKey)" />
+          <extension-item
+            v-else
+            v-for="ext in displayedExtensions"
+            :key="'manifest' in ext ? ext.manifest.name : ext.name"
+            :extension="ext"
+            :mode="currentMode"
+            @enable="enableExtension"
+            @disable="disableExtension"
+            @delete="confirmDeleteExtension"
+            @install="installExtension"
+          />
+        </card-wrapper>
+      </template>
+
+      <template #footer>
+        <card-wrapper>
+          <menu-item type="info" @click="handleImportExtension" icon="sym_o_upload">
+            {{ $t(i18n.IMPORT_EXTENSION) }}
+          </menu-item>
+          <menu-item type="info" @click="openInstallFromUrl" icon="sym_o_link">
+            {{ $t(i18n.INSTALL_FROM_URL) }}
+          </menu-item>
+        </card-wrapper>
+      </template>
+    </container-layout>
+  </file-uploader>
 </template>
 
 <script lang="ts" setup>
@@ -70,6 +72,11 @@ import ContainerLayout from 'src/components/ContainerLayout.vue';
 import AppFlex from 'src/components/AppFlex.vue';
 import EmptyState from 'src/components/EmptyState.vue';
 import LoadingDots from 'src/components/LoadingDots.vue';
+import FileUploader from 'src/components/FileUploader.vue';
+import type { FileSystemFileEntry } from 'src/utils/file-traversal';
+import { readFile } from 'src/utils/file-traversal';
+import { to } from 'src/utils/to-error';
+import { reporter } from 'src/boot/report';
 
 interface TabOption {
   label: string;
@@ -185,6 +192,23 @@ const openInstallFromUrl = async () => {
     message: t(i18n.EXTENSION_INSTALLED_FROM_URL),
     level: 'info',
   });
+};
+
+const importExtension = async (entry: FileSystemFileEntry): Promise<void> => {
+  const file = await readFile(entry);
+  await extensionStore.importExtension(file);
+  notifications.notify({ message: `Extension ${file.name} imported` });
+};
+
+const onUploaded = async (fileEntries: FileSystemFileEntry[]) => {
+  const promises = fileEntries.map(async (entry) => {
+    const result = await to(importExtension)(entry);
+    if (result.isErr()) {
+      reporter.reportError(new Error(`Failed to import ${entry.name}`, { cause: result.error }));
+    }
+  });
+
+  await Promise.allSettled(promises);
 };
 
 onMounted(() => {

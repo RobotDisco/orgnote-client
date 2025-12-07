@@ -73,7 +73,7 @@ const iconSize = computed(() => iconSizeMap[props.size]);
 }
 
 .icon.rounded {
-  border-radius: var(--icon-rounded-border-radius);
+  border-radius: var(--icon-rounded-radius);
   padding: 2px;
   box-sizing: content-box;
 }
@@ -81,6 +81,6 @@ const iconSize = computed(() => iconSizeMap[props.size]);
 .bordered {
   border: var(--icon-border);
   padding: var(--icon-border-padding);
-  border-radius: var(--icon-border-radius);
+  border-radius: var(--icon-radius);
 }
 </style>

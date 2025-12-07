@@ -160,8 +160,8 @@ const itemHeight = computed(() => itemHeightMap[props.size]);
 }
 
 .active {
-  --fg: var(--menu-item-active-color);
-  color: var(--menu-item-active-color);
+  --fg: var(--menu-item-active-fg);
+  color: var(--menu-item-active-fg);
   background-color: var(--menu-item-active-bg);
 }
 </style>

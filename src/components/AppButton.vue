@@ -29,7 +29,7 @@ $type-colors: (
 
 button {
   border: none;
-  border-radius: var(--button-border-raidius);
+  border-radius: var(--button-radius);
   padding: var(--button-padding);
   min-width: var(--button-min-width);
   box-sizing: border-box;

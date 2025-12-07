@@ -36,12 +36,21 @@ withDefaults(
 
 <style lang="scss" scoped>
 .sidebar {
+  --btn-action-hover-bg: var(--sidebar-hover-bg);
+  --bg-hover: var(--sidebar-hover-bg);
+  --menu-item-hover-bg: var(--sidebar-hover-bg);
+  --placeholder-fg: var(--sidebar-fg-muted);
+
   & {
     border-right: var(--sidebar-border-right);
-    background: var(--sidebar-background);
+    background: var(--sidebar-bg);
     position: relative;
     height: calc(100vh - var(--device-padding-top, 0px) - env(safe-area-inset-top));
     height: 100mvh;
+
+    * {
+      color: var(--sidebar-fg);
+    }
   }
 
   .mini {

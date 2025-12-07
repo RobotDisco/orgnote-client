@@ -38,6 +38,7 @@
   --default-bg-muted: color-mix(in srgb, #22272e, var(--q-dark) 35%);
   --default-bg-hover: rgba(99, 110, 123, 0.4);
   --default-fg: #adbac7;
+  --default-fg-secondary: #adbac7;
   --default-fg-muted: #{$grey-6};
 
   --violet: #b98df6;
@@ -50,15 +51,18 @@
     rgba(255, 255, 255, 0)
   );
   --tab-preview-text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+
+  --uploader-overlay-bg: rgba(0, 0, 0, 0.7);
 }
 
 @include light-mode {
   --default-bg: #ffffff;
   --default-bg-secondary: #ffffff;
   --default-bg-muted: #fafbfc;
-  --default-bg-hover: rgba(175, 184, 193, 0.2);
-  --default-bg-elevated: rgba(175, 184, 193, 0.2);
+  --default-bg-hover: #eff1f3;
+  --default-bg-elevated: #fafbfc;
   --default-fg: #34495e;
+  --default-fg-secondary: #34495e;
   --default-fg-muted: #{$grey-5};
 
   // Tab overview for light theme
@@ -69,6 +73,8 @@
     rgba(0, 0, 0, 0)
   );
   --tab-preview-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+
+  --uploader-overlay-bg: rgba(255, 255, 255, 0.7);
 }
 
 body {

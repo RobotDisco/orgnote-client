@@ -13,7 +13,7 @@ import AppFlex from 'src/components/AppFlex.vue';
   & {
     width: 100%;
     height: var(--footer-height);
-    background: var(--footer-background);
+    background: var(--footer-bg);
     border-top: var(--footer-border-top);
     padding: var(--footer-padding);
     padding-bottom: calc(var(--footer-padding-bottom, 0px) + var(--device-padding-bottom));

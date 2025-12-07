@@ -10,6 +10,7 @@ import type {
   RemoveScopedStyles,
   ThemeVariable,
 } from 'orgnote-api';
+
 import { toKebabCase } from './to-kebab-case';
 
 export const getCssVar: GetCssVar = (varName) => {
@@ -64,10 +65,10 @@ export const applyCSSVariables: ApplyCSSVariables<string> = (variables) => {
 };
 
 export const resetCSSVariables: ResetCSSVariables<string> = (variables) => {
-  const body = document.querySelector('body') as HTMLElement;
-  Object.keys(variables).forEach((k) => {
+  const body = document.body;
+  variables.forEach((k) => {
     const kebabedVarName = toKebabCase(k);
-    body.style.setProperty(`--${kebabedVarName}`, `var(--default-${kebabedVarName})`);
+    body.style.removeProperty(`--${kebabedVarName}`);
   });
 };
 

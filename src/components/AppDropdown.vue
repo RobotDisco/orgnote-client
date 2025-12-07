@@ -125,16 +125,18 @@ defineExpose({
 
 .app-select {
   padding: var(--menu-item-padding);
-  border-radius: var(--menu-item-border-radius);
+  border-radius: var(--menu-item-radius);
   --vs-border-width: 0;
   background: var(--bg-elevated);
   --vs-dropdown-bg: var(--bg-elevated);
   --vs-search-input-bg: var(--bg-elevated);
-  --vs-search-input-color: var(--fg);
   --vs-dropdown-option-padding: var(--menu-item-padding);
+  --vs-dropdown-option-color: var(--fg);
+  --vs-search-input-color: var(--fg);
+  --vs-selected-color: var(--fg);
   --vs-dropdown-box-shadow: none;
   --vs-actions-padding: 0;
-  --vs-dropdown-option--active-bg: var(--menu-item-active-color);
+  --vs-dropdown-option--active-bg: var(--default-bg-hover);
 }
 
 .vs__search,

@@ -24,8 +24,8 @@ withDefaults(
 <style lang="scss">
 .card-wrapper {
   & {
-    border-radius: var(--card-border-radius);
-    clip-path: inset(0 round var(--card-border-radius));
+    border-radius: var(--card-radius);
+    clip-path: inset(0 round var(--card-radius));
     width: 100%;
   }
 

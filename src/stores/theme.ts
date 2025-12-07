@@ -1,11 +1,11 @@
 import { defineStore, storeToRefs } from 'pinia';
-import type { ThemeStore, ThemeMode, ThemeColors } from 'orgnote-api';
+import type { ThemeStore, ThemeMode } from 'orgnote-api';
 import { THEME_VARIABLES } from 'orgnote-api';
 import { computed, watch } from 'vue';
 import { useConfigStore } from './config';
 import { useExtensionsStore } from './extension';
 import { Dark } from 'quasar';
-import { getCssTheme, resetCSSVariables } from 'src/utils/css-utils';
+import { resetCSSVariables } from 'src/utils/css-utils';
 import { useBackgroundSettings } from 'src/composables/background';
 import { to } from 'src/utils/to-error';
 
@@ -13,16 +13,9 @@ export const useThemeStore = defineStore<'theme', ThemeStore>('theme', () => {
   const { config } = storeToRefs(useConfigStore());
   const extensionsStore = useExtensionsStore();
 
-  let initialThemeColors: ThemeColors | null = null;
-
-  const getInitialThemeColors = (): ThemeColors => {
-    if (!initialThemeColors) {
-      initialThemeColors = getCssTheme([...THEME_VARIABLES]);
-    }
-    return initialThemeColors;
-  };
-
   const isDark = computed(() => Dark.isActive);
+
+  const isDynamicMode = computed(() => config.value.ui.theme === 'auto');
 
   const effectiveMode = computed<'light' | 'dark'>(() => (isDark.value ? 'dark' : 'light'));
 
@@ -40,38 +33,17 @@ export const useThemeStore = defineStore<'theme', ThemeStore>('theme', () => {
     await backgroundSettings.setBackground();
   };
 
-  const activateThemeExtension = async (themeName: string | null): Promise<void> => {
-    if (!themeName) {
-      return;
-    }
-
-    const isThemeExtensionExist = extensionsStore.isExtensionExist(themeName);
-    if (!isThemeExtensionExist) {
-      return;
-    }
-
-    await extensionsStore.enableExtension(themeName);
-  };
-
-  const switchThemeExtension = async (
-    previousThemeName: string | null,
-    newThemeName: string | null,
-  ): Promise<void> => {
-    if (previousThemeName === newThemeName) {
-      return;
-    }
-    if (previousThemeName) {
-      await extensionsStore.disableExtension(previousThemeName);
-    }
-    await activateThemeExtension(newThemeName);
-  };
-
   const setMode = async (mode: ThemeMode): Promise<void> => {
     config.value.ui.theme = mode;
   };
 
   const toggleMode = async (): Promise<void> => {
     const newMode = isDark.value ? 'light' : 'dark';
+    await setMode(newMode);
+  };
+
+  const toggleDynamicMode = async (): Promise<void> => {
+    const newMode = isDynamicMode.value ? effectiveMode.value : 'auto';
     await setMode(newMode);
   };
 
@@ -84,8 +56,12 @@ export const useThemeStore = defineStore<'theme', ThemeStore>('theme', () => {
   };
 
   const setTheme = async (themeName: string | null): Promise<void> => {
-    resetCSSVariables(getInitialThemeColors());
-    setThemeNameForCurrentMode(themeName);
+    if (!themeName) {
+      resetCSSVariables([...THEME_VARIABLES]);
+      setThemeNameForCurrentMode(null);
+      return;
+    }
+    await extensionsStore.enableExtension(themeName);
   };
 
   const resetTheme = async (): Promise<void> => {
@@ -93,9 +69,7 @@ export const useThemeStore = defineStore<'theme', ThemeStore>('theme', () => {
   };
 
   const sync = async (): Promise<void> => {
-    getInitialThemeColors();
     syncQuasarDarkMode();
-    await activateThemeExtension(activeThemeName.value);
     await syncBackgroundSettings();
   };
 
@@ -105,8 +79,13 @@ export const useThemeStore = defineStore<'theme', ThemeStore>('theme', () => {
   );
 
   const safeHandleThemeChange = to(
-    async (newTheme: string | null, oldTheme: string | null) => {
-      await switchThemeExtension(oldTheme, newTheme);
+    async (newTheme: string | null, oldTheme: string | null | undefined) => {
+      if (oldTheme && oldTheme !== newTheme) {
+        await extensionsStore.disableExtension(oldTheme);
+      }
+      if (newTheme) {
+        await extensionsStore.enableExtension(newTheme);
+      }
       await syncBackgroundSettings();
     },
     'Failed to switch theme',
@@ -118,16 +97,16 @@ export const useThemeStore = defineStore<'theme', ThemeStore>('theme', () => {
 
   const store: ThemeStore = {
     isDark,
+    isDynamicMode,
     effectiveMode,
     activeThemeName,
 
     sync,
     setMode,
     toggleMode,
+    toggleDynamicMode,
     setTheme,
     resetTheme,
-
-    getInitialThemeColors,
   };
 
   return store;

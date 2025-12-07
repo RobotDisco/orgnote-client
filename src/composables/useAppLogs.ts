@@ -85,11 +85,16 @@ export const useAppLogs = () => {
     return prependSystemInfo(systemInfoText.value, logsText);
   });
 
+  const clearLogs = (): void => {
+    logStore.clearLogs();
+  };
+
   return {
     fallbackErrors,
     hasFallbackErrors,
     storeLogs,
     hasStoreLogs,
     errorLogText,
+    clearLogs,
   };
 };

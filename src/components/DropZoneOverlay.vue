@@ -80,7 +80,7 @@ const handleDrop = (event: DragEvent) => {
 
 .drop-zone {
   position: absolute;
-  background: var(--drop-zone-background);
+  background: var(--drop-zone-bg);
   opacity: 0;
   transition: opacity 0.2s;
   pointer-events: none;
