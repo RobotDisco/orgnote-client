@@ -1,14 +1,20 @@
 import { defineStore } from 'pinia';
 import { computed, reactive, ref, watch } from 'vue';
 import { debounce } from 'src/utils/debounce';
-import { isOrgGpgFile, type BufferStore, type Buffer as OrgBuffer } from 'orgnote-api';
+import {
+  isOrgGpgFile,
+  type BufferStore,
+  type Buffer as OrgBuffer,
+  type BufferGuard,
+} from 'orgnote-api';
 import { api } from 'src/boot/api';
 import { to } from 'src/utils/to-error';
 import { reporter } from 'src/boot/report';
 import type { ResultAsync } from 'neverthrow';
 import { errAsync, okAsync } from 'neverthrow';
-
-const SAVE_DELAY_MS = 1000;
+import { useFileGuardStore } from './file-guard';
+import { logger } from 'src/boot/logger';
+import { DEFAULT_SAVE_DELAY_MS, DEFAULT_VALIDATION_DELAY_MS } from 'src/constants/config';
 
 class EncryptionConfigRequiredError extends Error {
   constructor() {
@@ -16,18 +22,49 @@ class EncryptionConfigRequiredError extends Error {
   }
 }
 
+const extractTitleFromPath = (path: string): string => path.split('/').pop() || 'Untitled';
+
+const incrementBufferReference = (buffer: OrgBuffer): OrgBuffer => {
+  buffer.referenceCount += 1;
+  buffer.lastAccessed = new Date();
+  return buffer;
+};
+
+const initValidationLastContent = (buffer: OrgBuffer): void => {
+  if (!buffer.guard?.validation) {
+    return;
+  }
+  buffer.guard.validation.lastValidContent = buffer.content;
+};
+
 export const useBufferStore = defineStore<string, BufferStore>('buffers', (): BufferStore => {
   const buffers = ref<Map<string, OrgBuffer>>(new Map());
-
   const debouncedSavers = new Map<string, () => void>();
+
   const fm = api.core.useFileSystemManager();
   const encryption = api.core.useEncryption();
   const config = api.core.useConfig();
 
-  const _saveBuffer = async (buffer: OrgBuffer): Promise<void> => {
-    buffer.isSaving = true;
-    await writeBufferFile(buffer);
-    buffer.isSaving = false;
+  const isEncryptionConfigValid = (): boolean => config.config.encryption.type !== 'disabled';
+
+  const encryptContent = (filePath: string, content: string): ResultAsync<string, Error> => {
+    if (!isOrgGpgFile(filePath)) {
+      return okAsync(content);
+    }
+    if (!isEncryptionConfigValid()) {
+      return errAsync(new EncryptionConfigRequiredError());
+    }
+    return to(encryption.encrypt)(content);
+  };
+
+  const decryptContent = (filePath: string, content: string): ResultAsync<string, Error> => {
+    if (!content || !isOrgGpgFile(filePath)) {
+      return okAsync(content);
+    }
+    if (!isEncryptionConfigValid()) {
+      return errAsync(new EncryptionConfigRequiredError());
+    }
+    return to(encryption.decrypt)(content);
   };
 
   const writeBufferFile = async (buffer: OrgBuffer): Promise<void> => {
@@ -36,31 +73,15 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
       return;
     }
 
-    const w = await encryptContent(buffer.path, buffer.content)
+    const result = await encryptContent(buffer.path, buffer.content)
       .andThen((content) => to(fm.currentFs!.writeFile)(buffer.path, content))
       .map(() => {
         buffer.metadata.originalContent = buffer.content;
       });
 
-    if (w.isErr()) {
-      reporter.reportError(new Error(`Failed to save: ${buffer.path}`, { cause: w.error }));
+    if (result.isErr()) {
+      reporter.reportError(new Error(`Failed to save: ${buffer.path}`, { cause: result.error }));
     }
-  };
-
-  const encryptContent = (filePath: string, content: string): ResultAsync<string, Error> => {
-    if (!isOrgGpgFile(filePath)) {
-      return okAsync(content);
-    }
-    if (isEncryptionConfigValid()) {
-      return to(encryption.encrypt)(content);
-    }
-    return errAsync(new EncryptionConfigRequiredError());
-  };
-
-  const _loadBufferContent = async (buffer: OrgBuffer): Promise<void> => {
-    buffer.isLoading = true;
-    await readBufferFile(buffer);
-    buffer.isLoading = false;
   };
 
   const readBufferFile = async (buffer: OrgBuffer): Promise<void> => {
@@ -70,49 +91,59 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     }
 
     const safeRead = to(fm.currentFs.readFile, 'Failed to load buffer content');
-
-    const res = await safeRead(buffer.path)
+    const result = await safeRead(buffer.path)
       .andThen((content) => decryptContent(buffer.path, content))
       .map((content) => {
         buffer.content = content;
         buffer.metadata.originalContent = content;
       });
 
-    if (res.isErr()) {
+    if (result.isErr()) {
       const errMsg = `Failed to load: ${buffer.path}`;
-      reporter.reportError(new Error(errMsg, { cause: res.error }));
-      buffer.errors.push(errMsg, res.error.message);
+      reporter.reportError(new Error(errMsg, { cause: result.error }));
+      buffer.errors.push(errMsg, result.error.message);
     }
   };
 
-  const decryptContent = (filePath: string, content: string): ResultAsync<string, Error> => {
-    if (!content || !isOrgGpgFile(filePath)) {
-      return okAsync(content);
-    }
-
-    if (isEncryptionConfigValid()) {
-      return to(encryption.decrypt)(content);
-    }
-    return errAsync(new EncryptionConfigRequiredError());
+  const saveBuffer = async (buffer: OrgBuffer): Promise<void> => {
+    buffer.isSaving = true;
+    await writeBufferFile(buffer);
+    buffer.isSaving = false;
   };
 
-  const isEncryptionConfigValid = (): boolean => {
-    return config.config.encryption.type !== 'disabled';
+  const loadBufferContent = async (buffer: OrgBuffer): Promise<void> => {
+    buffer.isLoading = true;
+    await readBufferFile(buffer);
+    buffer.isLoading = false;
   };
 
-  const allBuffers = computed(() => Array.from(buffers.value.values()));
+  const getSaveDelayMs = (): number => config.config.editor.saveDelayMs ?? DEFAULT_SAVE_DELAY_MS;
 
-  const getOrCreateBuffer = async (path: string): Promise<OrgBuffer> => {
-    const existing = buffers.value.get(path);
-    if (existing) {
-      existing.referenceCount += 1;
-      existing.lastAccessed = new Date();
-      return existing;
+  const getValidationDelayMs = (): number =>
+    config.config.editor.validationDelayMs ?? DEFAULT_VALIDATION_DELAY_MS;
+
+  const buildBufferGuard = (path: string): BufferGuard | undefined => {
+    const fileGuardStore = useFileGuardStore();
+    const isReadonly = fileGuardStore.isReadOnly(path);
+    const hasValidator = !!fileGuardStore.getGuard(path)?.validator;
+
+    if (!isReadonly && !hasValidator) {
+      return undefined;
     }
 
-    const base: OrgBuffer = reactive({
+    return {
+      readonly: isReadonly,
+      reason: fileGuardStore.getReadOnlyReason(path),
+      validation: hasValidator
+        ? { status: 'idle', errors: [], lastValidContent: undefined }
+        : undefined,
+    };
+  };
+
+  const createEmptyBuffer = (path: string): OrgBuffer =>
+    reactive({
       path,
-      title: path.split('/').pop() || 'Untitled',
+      title: extractTitleFromPath(path),
       content: '',
       isSaving: false,
       errors: [],
@@ -120,57 +151,144 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
       lastAccessed: new Date(),
       referenceCount: 1,
       metadata: {},
+      guard: buildBufferGuard(path),
     });
 
-    buffers.value.set(path, base);
-
-    await _loadBufferContent(base);
-
-    const debouncedSave = debounce(() => _saveBuffer(base), SAVE_DELAY_MS);
-    debouncedSavers.set(path, debouncedSave);
-    watch(
-      () => base.content,
-      () => debouncedSavers.get(path)?.(),
+  const validateBufferContent = (path: string, content: string) => {
+    const fileGuardStore = useFileGuardStore();
+    const safeValidate = to(
+      fileGuardStore.validate.bind(fileGuardStore),
+      `Validation failed for "${path}"`,
     );
+    return safeValidate(path, content);
+  };
 
-    return base;
+  const formatValidationErrors = (errors: Array<{ message: string }>): string =>
+    errors.map((e) => e.message).join('\n');
+
+  const reportValidationErrors = (errors: Array<{ message: string }>): void => {
+    const details = formatValidationErrors(errors);
+    reporter.reportWarning(details);
+  };
+
+  const validateAndSaveBuffer = async (buffer: OrgBuffer): Promise<void> => {
+    const validation = buffer.guard!.validation!;
+
+    validation.status = 'validating';
+
+    const result = await validateBufferContent(buffer.path, buffer.content);
+
+    if (result.isErr()) {
+      validation.status = 'invalid';
+      validation.errors = [{ message: result.error.message, severity: 'error' }];
+      reporter.reportError(result.error);
+      return;
+    }
+
+    validation.errors = result.value;
+    validation.status = result.value.length === 0 ? 'valid' : 'invalid';
+
+    if (result.value.length > 0) {
+      reportValidationErrors(result.value);
+      return;
+    }
+
+    await saveBuffer(buffer);
+    validation.lastValidContent = buffer.content;
+  };
+
+  const setupValidatedAutoSave = (buffer: OrgBuffer): void => {
+    const debouncedValidateAndSave = debounce(
+      () => validateAndSaveBuffer(buffer),
+      getValidationDelayMs(),
+    );
+    watch(() => buffer.content, debouncedValidateAndSave);
+  };
+
+  const setupRegularAutoSave = (buffer: OrgBuffer): void => {
+    const debouncedSave = debounce(() => saveBuffer(buffer), getSaveDelayMs());
+    debouncedSavers.set(buffer.path, debouncedSave);
+    watch(
+      () => buffer.content,
+      () => debouncedSavers.get(buffer.path)?.(),
+    );
+  };
+
+  const setupAutoSave = (buffer: OrgBuffer): void => {
+    if (buffer.guard?.readonly) {
+      logger.info(`[FileGuard] Buffer "${buffer.path}" opened as readonly: ${buffer.guard.reason}`);
+      return;
+    }
+
+    if (buffer.guard?.validation) {
+      setupValidatedAutoSave(buffer);
+      return;
+    }
+
+    setupRegularAutoSave(buffer);
+  };
+
+  const allBuffers = computed(() => Array.from(buffers.value.values()));
+
+  const getOrCreateBuffer = async (path: string): Promise<OrgBuffer> => {
+    const existing = buffers.value.get(path);
+    if (existing) {
+      return incrementBufferReference(existing);
+    }
+
+    const buffer = createEmptyBuffer(path);
+    buffers.value.set(path, buffer);
+
+    await loadBufferContent(buffer);
+    initValidationLastContent(buffer);
+    setupAutoSave(buffer);
+
+    return buffer;
   };
 
   const releaseBuffer = (path: string): void => {
     const buffer = buffers.value.get(path);
-    if (!buffer) return;
+    if (!buffer) {
+      return;
+    }
     buffer.referenceCount = Math.max(0, buffer.referenceCount - 1);
   };
 
-  const getBufferByPath = (path: string): OrgBuffer | undefined => {
-    return buffers.value.get(path);
+  const getBufferByPath = (path: string): OrgBuffer | undefined => buffers.value.get(path);
+
+  const saveBufferByPath = async (path: string): Promise<void> => {
+    const buffer = getBufferByPath(path);
+    if (!buffer) {
+      return;
+    }
+    await saveBuffer(buffer);
   };
 
-  const saveBuffer = async (path: string): Promise<void> => {
-    const buffer = getBufferByPath(path);
-    if (!buffer) return;
-    await _saveBuffer(buffer);
-  };
+  const isBufferDirty = (buffer: OrgBuffer): boolean =>
+    buffer.content !== (buffer.metadata.originalContent || '');
 
   const closeBuffer = async (path: string, force = false): Promise<boolean> => {
     const buffer = getBufferByPath(path);
-    if (!buffer) return true;
-    const isDirty = buffer.content !== (buffer.metadata.originalContent || '');
-    if (isDirty && !force) return false;
-    await saveBuffer(path);
+    if (!buffer) {
+      return true;
+    }
+    if (isBufferDirty(buffer) && !force) {
+      return false;
+    }
+    await saveBufferByPath(path);
     buffers.value.delete(path);
     debouncedSavers.delete(path);
     return true;
   };
 
   const saveAllBuffers = async (): Promise<void> => {
-    await Promise.all(allBuffers.value.map((b) => _saveBuffer(b)));
+    await Promise.all(allBuffers.value.map(saveBuffer));
   };
 
-  const cleanup = (): void => {
-    for (const b of buffers.value.values()) {
-      if (b.referenceCount === 0) void closeBuffer(b.path, true);
-    }
+  const cleanupUnusedBuffers = (): void => {
+    allBuffers.value
+      .filter((b) => b.referenceCount === 0)
+      .forEach((b) => void closeBuffer(b.path, true));
   };
 
   const store: BufferStore = {
@@ -181,7 +299,7 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     closeBuffer,
     getBufferByPath,
     saveAllBuffers,
-    cleanup,
+    cleanup: cleanupUnusedBuffers,
   };
 
   return store;

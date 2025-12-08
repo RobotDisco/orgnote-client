@@ -1,5 +1,9 @@
 <template>
-  <simple-editor v-if="buffer" v-model="buffer.content"></simple-editor>
+  <simple-editor
+    v-if="buffer"
+    v-model="buffer.content"
+    :readonly="buffer.guard?.readonly"
+  />
   <loading-dots v-else />
 </template>
 

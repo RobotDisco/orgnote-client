@@ -57,6 +57,7 @@ import { useQueueStore } from 'src/stores/queue';
 import { useCronStore } from 'src/stores/cron';
 import { useGitStore } from 'src/stores/git';
 import { useExtensionRegistryStore } from 'src/stores/extension-registry';
+import { useFileGuardStore } from 'src/stores/file-guard';
 import { parseToml, stringifyToml } from 'orgnote-api/utils';
 
 let api: OrgNoteApi;
@@ -88,6 +89,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useCron: useCronStore,
       useGit: useGitStore,
       useExtensionRegistry: useExtensionRegistryStore,
+      useFileGuard: useFileGuardStore,
       app,
     },
     utils: {

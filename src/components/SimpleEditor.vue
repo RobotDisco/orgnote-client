@@ -1,7 +1,8 @@
 <template>
   <textarea
     v-model="model"
-    class="simple-editor"
+    :readonly="readonly"
+    :class="['simple-editor', { 'simple-editor--readonly': readonly }]"
     placeholder="Start writing your note..."
     role="textbox"
     aria-label="Note editor"
@@ -10,6 +11,10 @@
 </template>
 
 <script lang="ts" setup>
+defineProps<{
+  readonly?: boolean;
+}>();
+
 const model = defineModel<string>();
 </script>
 
