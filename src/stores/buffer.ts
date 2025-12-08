@@ -3,9 +3,11 @@ import { computed, reactive, ref, watch } from 'vue';
 import { debounce } from 'src/utils/debounce';
 import {
   isOrgGpgFile,
+  i18n,
   type BufferStore,
   type Buffer as OrgBuffer,
   type BufferGuard,
+  type FileSystemChange,
 } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import { to } from 'src/utils/to-error';
@@ -13,8 +15,10 @@ import { reporter } from 'src/boot/report';
 import type { ResultAsync } from 'neverthrow';
 import { errAsync, okAsync } from 'neverthrow';
 import { useFileGuardStore } from './file-guard';
-import { logger } from 'src/boot/logger';
+import { useFileWatcherStore } from './file-watcher';
 import { DEFAULT_SAVE_DELAY_MS, DEFAULT_VALIDATION_DELAY_MS } from 'src/constants/config';
+
+const SAVE_IGNORE_WINDOW_MS = 300;
 
 class EncryptionConfigRequiredError extends Error {
   constructor() {
@@ -37,9 +41,21 @@ const initValidationLastContent = (buffer: OrgBuffer): void => {
   buffer.guard.validation.lastValidContent = buffer.content;
 };
 
+const isRecentlySaved = (buffer: OrgBuffer): boolean => {
+  const lastSavedAt = buffer.metadata.lastSavedAt as number | undefined;
+  if (!lastSavedAt) {
+    return false;
+  }
+  return Date.now() - lastSavedAt < SAVE_IGNORE_WINDOW_MS;
+};
+
+const shouldIgnoreExternalChange = (buffer: OrgBuffer): boolean =>
+  buffer.isSaving || isRecentlySaved(buffer);
+
 export const useBufferStore = defineStore<string, BufferStore>('buffers', (): BufferStore => {
   const buffers = ref<Map<string, OrgBuffer>>(new Map());
   const debouncedSavers = new Map<string, () => void>();
+  const bufferUnwatchers = new Map<string, () => void>();
 
   const fm = api.core.useFileSystemManager();
   const encryption = api.core.useEncryption();
@@ -105,9 +121,17 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     }
   };
 
+  const isBufferDirty = (buffer: OrgBuffer): boolean =>
+    buffer.content !== (buffer.metadata.originalContent || '');
+
   const saveBuffer = async (buffer: OrgBuffer): Promise<void> => {
+    if (!isBufferDirty(buffer)) {
+      return;
+    }
+
     buffer.isSaving = true;
     await writeBufferFile(buffer);
+    buffer.metadata.lastSavedAt = Date.now();
     buffer.isSaving = false;
   };
 
@@ -216,7 +240,6 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
 
   const setupAutoSave = (buffer: OrgBuffer): void => {
     if (buffer.guard?.readonly) {
-      logger.info(`[FileGuard] Buffer "${buffer.path}" opened as readonly: ${buffer.guard.reason}`);
       return;
     }
 
@@ -226,6 +249,27 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     }
 
     setupRegularAutoSave(buffer);
+  };
+
+  const handleExternalChange = async (
+    buffer: OrgBuffer,
+    change: FileSystemChange,
+  ): Promise<void> => {
+    if (shouldIgnoreExternalChange(buffer)) {
+      return;
+    }
+
+    if (change.type === 'delete') {
+      buffer.errors.push(i18n.FILE_DELETED_EXTERNALLY);
+      return;
+    }
+
+    await loadBufferContent(buffer);
+  };
+
+  const setupFileWatcher = (buffer: OrgBuffer): (() => void) => {
+    const fileWatcher = useFileWatcherStore();
+    return fileWatcher.watch(buffer.path, (change) => void handleExternalChange(buffer, change));
   };
 
   const allBuffers = computed(() => Array.from(buffers.value.values()));
@@ -242,6 +286,9 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     await loadBufferContent(buffer);
     initValidationLastContent(buffer);
     setupAutoSave(buffer);
+
+    const unwatch = setupFileWatcher(buffer);
+    bufferUnwatchers.set(path, unwatch);
 
     return buffer;
   };
@@ -264,9 +311,6 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     await saveBuffer(buffer);
   };
 
-  const isBufferDirty = (buffer: OrgBuffer): boolean =>
-    buffer.content !== (buffer.metadata.originalContent || '');
-
   const closeBuffer = async (path: string, force = false): Promise<boolean> => {
     const buffer = getBufferByPath(path);
     if (!buffer) {
@@ -278,7 +322,13 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     await saveBufferByPath(path);
     buffers.value.delete(path);
     debouncedSavers.delete(path);
+    stopWatch(path);
     return true;
+  };
+
+  const stopWatch = (path: string): void => {
+    bufferUnwatchers.get(path)?.();
+    bufferUnwatchers.delete(path);
   };
 
   const saveAllBuffers = async (): Promise<void> => {

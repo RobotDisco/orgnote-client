@@ -59,6 +59,7 @@ import { useGitStore } from 'src/stores/git';
 import { useExtensionRegistryStore } from 'src/stores/extension-registry';
 import { useFileGuardStore } from 'src/stores/file-guard';
 import { parseToml, stringifyToml } from 'orgnote-api/utils';
+import { useFileWatcherStore } from 'src/stores/file-watcher';
 
 let api: OrgNoteApi;
 async function initApi(app: App, router: Router): Promise<void> {
@@ -71,6 +72,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useCommandsGroup: useCommandsGroupStore,
       useExtensions: useExtensionsStore,
       useFileSystem: useFileSystemStore,
+      useFileWatcher: useFileWatcherStore,
       useEncryption: useEncryptionStore,
       useSettings: useSettingsStore,
       useCompletion: useCompletionStore,
