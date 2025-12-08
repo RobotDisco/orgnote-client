@@ -34,6 +34,7 @@ export default defineConfig((ctx) => {
       { path: 'default-cron-tasks', server: false },
       { path: 'extensions', server: false },
       { path: 'file-guards', server: false },
+      { path: 'files-watchers', server: false },
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css

@@ -1,14 +1,13 @@
 import { defineStore } from 'pinia';
 import type { FileSystemStore, DiskFile } from 'orgnote-api';
 import { ErrorFileNotFound, isOrgGpgFile, join } from 'orgnote-api';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { Platform } from 'quasar';
 import { removeRelativePath } from 'src/utils/remove-relative-path';
 import { mobileOnly } from 'src/utils/platform-specific';
 import { getFileDirPath } from 'src/utils/get-file-dir-path';
 import { storeToRefs } from 'pinia';
 import { useFileSystemManagerStore } from './file-system-manager';
-import { watch } from 'vue';
 import { useSettingsStore } from './settings';
 import { reporter } from 'src/boot/report';
 import { to } from 'src/utils/to-error';
