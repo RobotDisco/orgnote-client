@@ -13,6 +13,7 @@ import {
   serverOnly,
   desktopOnly,
 } from 'src/utils/platform-specific';
+import { platform, platformMatch } from 'src/utils/platform-detection';
 import { useEncryptionStore } from 'src/stores/encryption';
 import { useSplashScreen } from 'src/composables/use-splash-screen';
 import { useQuasar } from 'quasar';
@@ -60,6 +61,7 @@ import { useExtensionRegistryStore } from 'src/stores/extension-registry';
 import { useFileGuardStore } from 'src/stores/file-guard';
 import { parseToml, stringifyToml } from 'orgnote-api/utils';
 import { useFileWatcherStore } from 'src/stores/file-watcher';
+import { buildOrgNoteUrl } from 'src/utils/build-orgnote-url';
 
 let api: OrgNoteApi;
 async function initApi(app: App, router: Router): Promise<void> {
@@ -95,6 +97,8 @@ async function initApi(app: App, router: Router): Promise<void> {
       app,
     },
     utils: {
+      platform,
+      platformMatch,
       mobileOnly,
       clientOnly,
       androidOnly,
