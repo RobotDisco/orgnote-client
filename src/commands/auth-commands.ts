@@ -12,10 +12,12 @@ export const createAuthCommands = (router: Router): Command[] => {
     icon: 'logout',
     hide: () => {
       const authStore = useAuthStore();
-      return authStore.user?.isAnonymous ?? true;
+      return !authStore.user;
     },
-    handler: async () => {
+    handler: async (api) => {
       const authStore = useAuthStore();
+      const commands = api.core.useCommands();
+      await commands.execute(DefaultCommands.DELETE_ALL_DATA, { force: true });
       await authStore.logout();
     },
   };
@@ -28,7 +30,7 @@ export const createAuthCommands = (router: Router): Command[] => {
     icon: 'login',
     hide: () => {
       const authStore = useAuthStore();
-      return !authStore.user?.isAnonymous;
+      return !!authStore.user;
     },
     handler: () => {
       router.push({ name: RouteNames.AuthPage, params: { initialProvider: 'github' } });
@@ -43,7 +45,7 @@ export const createAuthCommands = (router: Router): Command[] => {
     icon: 'person_remove',
     hide: () => {
       const authStore = useAuthStore();
-      return authStore.user?.isAnonymous ?? true;
+      return !authStore.user;
     },
     handler: async () => {
       const authStore = useAuthStore();

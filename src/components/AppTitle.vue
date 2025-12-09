@@ -42,7 +42,6 @@ const sizeClass = computed(() => {
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-sm);
   color: var(--fg);
-  margin-bottom: var(--margin-md);
 
   &.no-margin {
     margin-bottom: 0;

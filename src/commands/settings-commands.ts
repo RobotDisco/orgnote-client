@@ -1,4 +1,4 @@
-import type { Command } from 'orgnote-api';
+import type { Command, CommandHandlerParams } from 'orgnote-api';
 import { DefaultCommands, RouteNames, I18N } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import { reporter } from 'src/boot/report';
@@ -174,14 +174,26 @@ export function getSettingsCommands(): Command[] {
       },
     },
     {
+      command: DefaultCommands.AUTHENTICATION_SETTINGS,
+      group: 'settings',
+      icon: 'sym_o_person',
+      handler: () => openSettingsRoute(RouteNames.AuthenticationSettings),
+      isActive: () => isActiveRoute(RouteNames.AuthenticationSettings),
+      context: {
+        narrow: true,
+      },
+    },
+    {
       command: DefaultCommands.DELETE_ALL_DATA,
       icon: 'sym_o_delete',
       group: 'settings',
-      handler: async (api) => {
-        const confirm = await confirmationModal.confirm({
-          title: I18N.CLEAR_ALL_LOCAL_DATA,
-          message: I18N.CONFIRM_DELETE_ALL_DATA,
-        });
+      handler: async (api, params: CommandHandlerParams<{ force?: boolean }>) => {
+        const confirm =
+          params.data?.force ||
+          (await confirmationModal.confirm({
+            title: I18N.CLEAR_ALL_LOCAL_DATA,
+            message: I18N.CONFIRM_DELETE_ALL_DATA,
+          }));
 
         if (!confirm) {
           return;

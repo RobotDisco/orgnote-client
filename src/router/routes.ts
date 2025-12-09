@@ -1,4 +1,4 @@
-import { RouteNames } from 'orgnote-api';
+import { RouteNames, RoutePaths } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import type { RouteRecordRaw } from 'vue-router';
 
@@ -26,17 +26,9 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/auth/login/:initialProvider?',
+    path: `/${RoutePaths.AUTH_LOGIN}/:initialProvider?`,
     name: RouteNames.AuthPage,
     component: () => import('pages/AuthPage.vue'),
-    meta: {
-      programmaticalNavigation: false,
-    },
-  },
-  {
-    path: '/auth/activate',
-    name: RouteNames.ActivationPage,
-    component: () => import('pages/ActivationPage.vue'),
     meta: {
       programmaticalNavigation: false,
     },

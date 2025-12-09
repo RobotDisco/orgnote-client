@@ -6,6 +6,7 @@ import { ref } from 'vue';
 export const useSettingsUiStore = defineStore('settings-ui', () => {
   const settingsMenu = ref({
     main: [
+      DefaultCommands.AUTHENTICATION_SETTINGS,
       DefaultCommands.SYSTEM_SETTINGS,
       DefaultCommands.STORAGE_SETTINGS,
       DefaultCommands.LANGUAGE_SETTINGS,

@@ -1,22 +1,16 @@
 <template>
   <card-wrapper :type="type">
     <app-flex column start align-start gap="md" class="card-inner">
-      <app-flex
-        v-if="slots.cardTitle || shouldShowIcon"
-        class="card-header"
-        row
-        start
-        align-center
-        gap="sm"
-      >
+      <app-flex v-if="hasTitle" class="card-header" row start align-center gap="sm">
         <app-icon v-if="shouldShowIcon" size="sm" :name="computedIcon" :color="background" />
-        <h5 v-if="slots.cardTitle" class="card-title text-bold" :style="{ color: bg }">
-          <slot name="cardTitle" />
+        <h5 class="card-title text-bold" :style="{ color: bg }">
+          <slot name="cardTitle">{{ title }}</slot>
         </h5>
       </app-flex>
-      <div class="card-content" :style="{ color: bg }">
+      <app-flex class="card-content" row start align-start gap="md" :style="{ color: bg }">
+        <app-icon v-if="shouldShowIcon && !hasTitle" size="sm" :name="computedIcon" :color="background" />
         <slot />
-      </div>
+      </app-flex>
     </app-flex>
   </card-wrapper>
 </template>
@@ -66,6 +60,8 @@ const shouldShowIcon = computed(() => {
 });
 
 const bg = computed(() => background.value && getCssVariableName(background.value));
+
+const hasTitle = computed(() => !!slots.cardTitle || !!props.title);
 </script>
 
 <style lang="scss" scoped>

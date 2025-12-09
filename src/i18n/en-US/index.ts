@@ -32,6 +32,7 @@ const eng: Record<string, string> = {
   [I18N.SELECT_THEME_MODE_PLACEHOLDER]: 'Select theme mode',
 
   [I18N.AUTH_IDENTIFYING]: 'Wait a second, we are trying to identify you',
+  [I18N.AUTH_INVALID_CALLBACK_PARAMS]: 'Invalid authentication callback parameters',
   [I18N.AUTH_RETURN_TO_MOBILE]: 'Return to mobile app',
   [I18N.AUTH_LOGIN_REQUIRED]: 'To activate the license key you need to log in',
   [I18N.AUTH_ACTIVATING]: 'Wait a second, we are trying to activate your account',

@@ -62,6 +62,7 @@ import { useFileGuardStore } from 'src/stores/file-guard';
 import { parseToml, stringifyToml } from 'orgnote-api/utils';
 import { useFileWatcherStore } from 'src/stores/file-watcher';
 import { buildOrgNoteUrl } from 'src/utils/build-orgnote-url';
+import { useAuthStore } from 'src/stores/auth';
 
 let api: OrgNoteApi;
 async function initApi(app: App, router: Router): Promise<void> {
@@ -94,6 +95,7 @@ async function initApi(app: App, router: Router): Promise<void> {
       useGit: useGitStore,
       useExtensionRegistry: useExtensionRegistryStore,
       useFileGuard: useFileGuardStore,
+      useAuth: useAuthStore,
       app,
     },
     utils: {

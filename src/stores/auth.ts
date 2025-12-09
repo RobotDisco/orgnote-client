@@ -1,8 +1,14 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { RouteNames, type AuthStore, type PersonalInfo, type OAuthProvider } from 'orgnote-api';
-import { createAnonymousUser } from 'src/utils/create-anonymous-user';
+import {
+  RouteNames,
+  RoutePaths,
+  type AuthStore,
+  type PersonalInfo,
+  type OAuthProvider,
+} from 'orgnote-api';
+
 import { encodeAuthState, type AuthState } from 'src/utils/decode-auth-state';
 import { sdk } from 'src/boot/axios';
 import { to } from 'src/utils/to-error';
@@ -21,13 +27,13 @@ export const useAuthStore = defineStore<'auth', AuthStore>(
   'auth',
   (): AuthStore => {
     const token = ref<string>('');
-    const user = ref<PersonalInfo>(createAnonymousUser());
+    const user = ref<PersonalInfo | null>(null);
     const provider = ref<OAuthProvider>('github');
 
     const router = useRouter();
 
     const resetAuthInfo = () => {
-      user.value = createAnonymousUser();
+      user.value = null;
       token.value = '';
     };
 
@@ -41,7 +47,7 @@ export const useAuthStore = defineStore<'auth', AuthStore>(
     const getAuthUrl = (authProvider: string, state: AuthState): string => {
       const strState = encodeURIComponent(encodeAuthState(state));
       const baseUrl = import.meta.env.VITE_AUTH_URL || '';
-      return `${baseUrl}/auth/login/${authProvider}?state=${strState}`;
+      return `${baseUrl}/${RoutePaths.AUTH_LOGIN}/${authProvider}?state=${strState}`;
     };
 
     const authViaNativeMobile = (authUrl: string): void => {
@@ -85,7 +91,6 @@ export const useAuthStore = defineStore<'auth', AuthStore>(
     const authViaGithub = async (redirectUrl: string): Promise<void> => {
       await to(() => auth({ provider: provider.value ?? 'github', redirectUrl }))();
     };
-
     const isAuthError = (error: unknown): boolean => {
       const axiosError = error as { response?: { status: number } };
       const status = axiosError.response?.status;
@@ -106,7 +111,7 @@ export const useAuthStore = defineStore<'auth', AuthStore>(
     };
 
     const shouldSkipVerification = (): boolean => {
-      return !process.env.CLIENT || !token.value || !!user.value?.isAnonymous;
+      return !process.env.CLIENT || !token.value;
     };
 
     const verifyUser = async (): Promise<void> => {
@@ -142,7 +147,7 @@ export const useAuthStore = defineStore<'auth', AuthStore>(
     };
 
     const removeUserAccount = async (): Promise<void> => {
-      if (user.value && !user.value.isAnonymous) {
+      if (user.value) {
         await sdk.auth.authAccountDelete();
       }
       localStorage.clear();

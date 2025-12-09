@@ -16,6 +16,11 @@ export function createSettingsRouter() {
     routes: [
       redirectRoute,
       {
+        name: RouteNames.AuthenticationSettings,
+        path: '/settings/authentication',
+        component: () => import('./AuthenticationSettings.vue'),
+      },
+      {
         name: RouteNames.SystemSettings,
         path: '/settings/system',
         component: () => import('./SystemSettings.vue'),
