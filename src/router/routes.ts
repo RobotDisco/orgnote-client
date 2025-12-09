@@ -26,6 +26,22 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/auth/login/:initialProvider?',
+    name: RouteNames.AuthPage,
+    component: () => import('pages/AuthPage.vue'),
+    meta: {
+      programmaticalNavigation: false,
+    },
+  },
+  {
+    path: '/auth/activate',
+    name: RouteNames.ActivationPage,
+    component: () => import('pages/ActivationPage.vue'),
+    meta: {
+      programmaticalNavigation: false,
+    },
+  },
+  {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     beforeEnter: () => {

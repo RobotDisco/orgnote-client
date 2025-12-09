@@ -124,6 +124,8 @@ async function initApi(app: App, router: Router): Promise<void> {
 
       parseToml,
       stringifyToml,
+
+      buildOrgNoteUrl,
     },
     ui: {
       useSplashScreen,
