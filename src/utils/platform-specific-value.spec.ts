@@ -84,6 +84,13 @@ test('returns platform-specific value for nativeMobile when Platform.is.nativeMo
   expect(result).toBe('nativeMobile');
 });
 
+test('returns platform-specific value for electron when Platform.is.electron is true', () => {
+  process.env.CLIENT = 'true';
+  vi.spyOn(Platform, 'is', 'get').mockReturnValue(createPlatformMock({ electron: true }));
+  const result = platformSpecificValue({ data: 'default', electron: 'electron' });
+  expect(result).toBe('electron');
+});
+
 test('returns platform-specific value for mobile when Platform.is.mobile is true', () => {
   process.env.CLIENT = 'true';
   vi.spyOn(Platform, 'is', 'get').mockReturnValue(createPlatformMock({ mobile: true }));

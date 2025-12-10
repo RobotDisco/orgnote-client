@@ -1,4 +1,4 @@
-import { RouteNames } from 'orgnote-api';
+import { RouteNames, RoutePaths } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import type { RouteRecordRaw } from 'vue-router';
 
@@ -23,6 +23,14 @@ const routes: RouteRecordRaw[] = [
         return { name: RouteNames.Home };
       }
       return true;
+    },
+  },
+  {
+    path: `/${RoutePaths.AUTH_LOGIN}/:initialProvider?`,
+    name: RouteNames.AuthPage,
+    component: () => import('pages/AuthPage.vue'),
+    meta: {
+      programmaticalNavigation: false,
     },
   },
   {

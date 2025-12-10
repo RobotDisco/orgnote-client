@@ -29,6 +29,7 @@ const config: StorybookConfig = {
       config.resolve.alias = {
         ...config.resolve.alias,
         src: path.resolve(__dirname, '../src'),
+        '#q-app/wrappers': path.resolve(__dirname, './mocks/q-app-wrappers.ts'),
       };
     }
 

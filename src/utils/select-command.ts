@@ -21,6 +21,30 @@ const getValueByPath = (obj: CompletionCandidate<Command>, path: string | string
   return Fuse.config.getFn(obj, path) as string;
 };
 
+const isCommandVisible = (command: Command, api: OrgNoteApi): boolean => {
+  if (command.system) {
+    return false;
+  }
+  if (!command.hide) {
+    return true;
+  }
+  return !command.hide(api);
+};
+
+const commandToCandidate = (
+  command: Command,
+  api: OrgNoteApi,
+): CompletionCandidate<Command> => ({
+  data: command,
+  group: command.group,
+  icon: command.icon,
+  title: command.title ?? command.command,
+  description: command.description,
+  commandHandler: (cmd) => {
+    api.core.useCompletion().close(cmd);
+  },
+});
+
 export async function selectCommand(
   api: OrgNoteApi,
   placeholder?: string,
@@ -28,16 +52,8 @@ export async function selectCommand(
   const commands = api.core.useCommands().commands;
   const threshold = api.core.useConfig().config.completion.fuseThreshold;
 
-  const candidates: CompletionCandidate<Command>[] = commands.map((c) => ({
-    data: c,
-    group: c.group,
-    icon: c.icon,
-    title: c.title ?? c.command,
-    description: c.description,
-    commandHandler: (cmd) => {
-      api.core.useCompletion().close(cmd);
-    },
-  }));
+  const visibleCommands = commands.filter((c) => isCommandVisible(c, api));
+  const candidates = visibleCommands.map((c) => commandToCandidate(c, api));
 
   const fuse = new Fuse(candidates, {
     threshold,

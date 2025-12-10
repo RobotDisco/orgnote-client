@@ -22,8 +22,12 @@ vi.mock('src/boot/api', () => ({
         encrypt: vi.fn((content) => content),
       })),
       useConfig: vi.fn(() => ({
-        autoSave: false,
-        autoSaveDelay: 1000,
+        config: {
+          editor: {
+            saveDelayMs: 1000,
+            validationDelayMs: 500,
+          },
+        },
       })),
     },
   },

@@ -30,11 +30,16 @@ import MainSidebar from 'src/containers/MainSidebar.vue';
 import ModalWindow from 'src/containers/ModalWindow.vue';
 import AppNotifications from 'src/components/AppNotifications.vue';
 import { api } from 'src/boot/api';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { mobileOnly } from 'src/utils/platform-specific';
 import VisibilityWrapper from 'src/components/VisibilityWrapper.vue';
 import SafeArea from 'src/components/SafeArea.vue';
 import AppFlex from 'src/components/AppFlex.vue';
+import { useRoute, useRouter } from 'vue-router';
+import { reporter } from 'src/boot/report';
+
+const route = useRoute();
+const router = useRouter();
 
 const sidebar = api.ui.useSidebar();
 const sidebarRef = ref(null);
@@ -49,6 +54,19 @@ const closeMainSidebar = () => {
     sidebar.close();
   }
 };
+
+const handleErrorFromQuery = (): void => {
+  const errorMessage = route.query.error;
+  if (!errorMessage || typeof errorMessage !== 'string') {
+    return;
+  }
+  reporter.reportError(new Error(errorMessage));
+  router.replace({ query: { ...route.query, error: undefined } });
+};
+
+onMounted(() => {
+  handleErrorFromQuery();
+});
 </script>
 
 <style lang="scss" scoped>

@@ -140,6 +140,18 @@ export default defineConfig((ctx) => {
       open: {
         app: { name: 'arc' },
       },
+      proxy: {
+        '/v1': {
+          target: process.env.API_URL || 'http://localhost:8000',
+          changeOrigin: true,
+        },
+        '/media': {
+          target: process.env.API_URL || 'http://localhost:8000',
+        },
+      },
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework

@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 # TODO: feat/stable-beta uncomment
 # ./deploy/sync-capaticor-version.sh
 bun install --package-lock-only --no-scripts && git add bun.lock

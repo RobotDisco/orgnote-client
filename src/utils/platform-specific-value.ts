@@ -1,27 +1,31 @@
 import { Platform } from 'quasar';
 
-export function platformSpecificValue<TData = unknown>(datasource: {
-  data?: TData;
-  nativeMobile?: TData;
-  server?: TData;
-  mobile?: TData;
-  desktop?: TData;
-}): TData | undefined {
+type PlatformResult<T extends { data?: unknown }> = T extends { data: infer D } ? D : T['data'];
+
+export function platformSpecificValue<T extends { data?: unknown }>(
+  datasource: T & {
+    nativeMobile?: T['data'];
+    electron?: T['data'];
+    server?: T['data'];
+    mobile?: T['data'];
+    desktop?: T['data'];
+  }
+): PlatformResult<T> {
   if (process.env.SERVER) {
-    return datasource.server ?? datasource.data;
+    return (datasource.server ?? datasource.data) as PlatformResult<T>;
   }
 
   if (!process.env.CLIENT) {
-    return datasource.data;
+    return datasource.data as PlatformResult<T>;
   }
 
-  const datasourceKeys = ['desktop', 'nativeMobile', 'mobile'] as const;
+  const datasourceKeys = ['nativeMobile', 'electron', 'desktop', 'mobile'] as const;
 
   for (const platform of datasourceKeys) {
     if (Platform.is[platform]) {
-      return datasource[platform] ?? datasource.data;
+      return (datasource[platform] ?? datasource.data) as PlatformResult<T>;
     }
   }
 
-  return datasource.data;
+  return datasource.data as PlatformResult<T>;
 }

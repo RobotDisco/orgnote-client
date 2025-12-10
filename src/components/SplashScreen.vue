@@ -5,8 +5,8 @@
         <img alt="orgnote icon" src="/icons/modern-unicorn-round.png" />
         <div class="gloss"></div>
       </div>
-      <h5 class="title text-capitalize color-white">
-        {{ loadingMessages.currentMessage }}
+      <h5 class="title color-white">
+        {{ displayMessage }}
       </h5>
       <linear-progress />
     </app-flex>
@@ -17,8 +17,15 @@
 import LinearProgress from 'src/components/LinearProgress.vue';
 import { useLoadingMessages } from 'src/composables/use-loading-messages';
 import AppFlex from 'src/components/AppFlex.vue';
+import { computed } from 'vue';
+
+const props = defineProps<{
+  message?: string;
+}>();
 
 const loadingMessages = useLoadingMessages();
+
+const displayMessage = computed(() => props.message ?? loadingMessages.currentMessage.value);
 </script>
 
 <style lang="scss" scoped>

@@ -6,13 +6,13 @@ import { useBackgroundSettings } from './background';
 
 export const useSplashScreen: UseSplashScreen = () => {
   const bg = useBackgroundSettings();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   const show = async (config?: SplashScreenConfig) => {
     await bg.setStatusBarBackground('violet');
     await bg.setBottomBarBackground('violet');
 
     Loading.show({
-      spinner: h(SplashScreen, { message: 'Preparing your data...' }),
+      spinner: h(SplashScreen, { message: config?.preparationText }),
       backgroundColor: 'red',
     });
   };
