@@ -19,7 +19,7 @@
           :color="flat ? color : inverseIconColors ? color : background"
           :rounded="true"
         ></app-icon>
-        <div class="content capitalize" :style="{ color: getCssVariableName(color) }">
+        <div :class="['content', { capitalize }]" :style="{ color: getCssVariableName(color) }">
           <slot />
         </div>
       </app-flex>
@@ -62,6 +62,7 @@ const props = withDefaults(
     inverseIconColors?: boolean;
     prefer?: 'left' | 'right';
     flat?: boolean;
+    capitalize?: boolean;
   }>(),
   {
     type: 'plain',
@@ -69,6 +70,7 @@ const props = withDefaults(
     prefer: 'left',
     size: 'auto',
     flat: false,
+    capitalize: true,
   },
 );
 

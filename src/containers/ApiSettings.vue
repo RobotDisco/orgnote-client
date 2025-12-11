@@ -1,16 +1,12 @@
 <template>
   <app-flex class="api-settings" column start align-start gap="md">
-    <app-description padded>
-      <div class="capitalize">{{ t(I18N.AVAILABLE_FOR_SUBSCRIPTION) }}</div>
-    </app-description>
-
-    <card-wrapper>
-      <menu-item v-for="(token, i) of tokens" type="plain" :key="i">
-        {{ token.token }}
+    <card-wrapper v-if="tokens.length">
+      <menu-item v-for="token of tokens" :key="token.id" type="plain" :capitalize="false">
+        <span class="token-text">{{ token.token }}</span>
         <template #right>
           <app-flex class="actions" row start align-center gap="sm">
             <action-button
-              @click="api.utils.copyToClipboard(token.token ?? '')"
+              @click="copyToken(token)"
               icon="content_copy"
               color="fg-muted"
               fire-icon="done"
@@ -18,14 +14,22 @@
               fire-color="green"
               outline
               border
-            ></action-button>
-            <action-button color="fg-muted" icon="delete" size="sm" outline border></action-button>
+            />
+            <action-button
+              @click="removeToken(token)"
+              color="red"
+              icon="delete"
+              size="sm"
+              outline
+              border
+            />
           </app-flex>
         </template>
       </menu-item>
     </card-wrapper>
+
     <card-wrapper>
-      <menu-item @click="addToken" type="info">
+      <menu-item @click="createToken" type="info" :disabled="!canCreateToken">
         <div class="capitalize">{{ t(I18N.CREATE_NEW_TOKEN) }}</div>
       </menu-item>
     </card-wrapper>
@@ -33,8 +37,8 @@
 </template>
 
 <script lang="ts" setup>
+import type { ModelsAPIToken } from 'orgnote-api/remote-api';
 import { I18N } from 'orgnote-api';
-import AppDescription from 'src/components/AppDescription.vue';
 import { useI18n } from 'vue-i18n';
 import MenuItem from './MenuItem.vue';
 import CardWrapper from 'src/components/CardWrapper.vue';
@@ -42,15 +46,31 @@ import { storeToRefs } from 'pinia';
 import { api } from 'src/boot/api';
 import ActionButton from 'src/components/ActionButton.vue';
 import AppFlex from 'src/components/AppFlex.vue';
+import { computed } from 'vue';
 
-const { tokens } = storeToRefs(api.core.useSettings());
+const settingsStore = api.core.useSettings();
+const authStore = api.core.useAuth();
+const { tokens } = storeToRefs(settingsStore);
+const { user } = storeToRefs(authStore);
+
+const canCreateToken = computed(() => !!user.value);
 
 const { t } = useI18n({
   useScope: 'global',
   inheritLocale: true,
 });
 
-const addToken = () => {};
+const copyToken = (token: ModelsAPIToken) => {
+  api.utils.copyToClipboard(token.token ?? '');
+};
+
+const removeToken = (token: ModelsAPIToken) => {
+  settingsStore.removeApiToken(token);
+};
+
+const createToken = () => {
+  settingsStore.createApiToken();
+};
 </script>
 
 <style lang="scss" scoped>
@@ -59,6 +79,12 @@ const addToken = () => {};
     width: 100%;
   }
 }
+
+.token-text {
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
 .actions {
   & {
     opacity: 0;

@@ -29,7 +29,7 @@ export const DEFAULT_CONFIG: OrgNoteConfig = {
     fuseThreshold: DEFAULT_FUST_THRESHOLD,
   },
   synchronization: {
-    type: 'api',
+    type: 'none',
   },
   ui: {
     showUserProfiles: true,

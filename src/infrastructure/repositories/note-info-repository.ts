@@ -1,9 +1,8 @@
-import type { NoteInfo } from 'orgnote-api';
+import type { NoteInfo, EncryptionType } from 'orgnote-api';
 import { join } from 'orgnote-api';
 import { migrator } from './migrator';
 import type Dexie from 'dexie';
 import type { FilePathInfo, NoteInfoRepository } from 'orgnote-api';
-import type { ModelsPublicNoteEncryptionTypeEnum } from 'orgnote-api/remote-api';
 import { isNullable } from 'src/utils/nullable-guards';
 
 export const NOTE_REPOSITORY_NAME = 'notes';
@@ -18,7 +17,7 @@ export const NOTE_MIGRATIONS = migrator<NoteInfo>()
   .v(6)
   .indexes('++id, meta.title, meta.description, createdAt, updatedAt, *meta.fileTags, touchedAt')
   .upgrade((n) => {
-    n.encryptionType = n.encrypted as unknown as ModelsPublicNoteEncryptionTypeEnum;
+    n.encryptionType = n.encrypted as unknown as EncryptionType;
   })
   .v(7)
   .indexes(
@@ -111,7 +110,7 @@ export const createNoteInfoRepository = (db: Dexie): NoteInfoRepository => {
       searchText && note.meta.title?.toLowerCase().includes(searchText.toLowerCase());
     const descriptionMatched =
       searchText && note.meta.description?.toLowerCase().includes(searchText.toLowerCase());
-    const tagMatched = !tags?.length || note.meta.fileTags?.some((tag) => tags.includes(tag));
+    const tagMatched = !tags?.length || note.meta.fileTags?.some((tag: string) => tags.includes(tag));
     const bookmarkedMatched = isNullable(bookmarked) || note.bookmarked === bookmarked;
 
     return (titleMatched || descriptionMatched || !searchText) && !!tagMatched && bookmarkedMatched;
@@ -160,7 +159,7 @@ export const createNoteInfoRepository = (db: Dexie): NoteInfoRepository => {
     await store
       .filter((n) => !n.deletedAt)
       .each((n) => {
-        n.meta.fileTags?.forEach((t) => {
+        n.meta.fileTags?.forEach((t: string) => {
           const tag = tags.find((tag) => tag.tag === t);
           if (tag) {
             tag.count++;
