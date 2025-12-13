@@ -8,7 +8,7 @@
   "private": false,
   "scripts": {
     "dev": "env-cmd -f ./.env quasar dev",
-    "dev:clear-cache": "rm -rf node_modules && bun install",
+    "dev:no-cache": "rm -rf node_modules && bun install && bun run dev",
     "dev:remote": "env-cmd -f ./.env.prod quasar dev",
     "dev:android": " env-cmd -f ./.env.prod quasar dev -m capacitor -T android",
     "dev:ssr": "env-cmd -f ./.env.ssr quasar dev -m ssr",

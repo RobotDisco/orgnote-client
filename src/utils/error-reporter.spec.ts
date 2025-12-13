@@ -396,3 +396,23 @@ test('reportCritical onClick executes SHOW_LOGS command', () => {
 
   expect(mockExecuteCommand).toHaveBeenCalledWith('show logs');
 });
+
+test('report extracts message from Axios-like error', () => {
+  const axiosError = {
+    message: 'Request failed',
+    response: {
+      data: {
+        message: 'Validation failed',
+      },
+    },
+  };
+
+  errorReporter.report(axiosError);
+
+  expect(mockNotifications.notify).toHaveBeenCalledWith(
+    expect.objectContaining({
+      message: 'Request failed<br />Validation failed',
+      level: 'danger',
+    }),
+  );
+});

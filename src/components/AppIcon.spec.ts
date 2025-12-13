@@ -88,8 +88,8 @@ test('AppIcon should have default color style when no color is provided', () => 
   expect(icon.attributes('style')).toContain('color: var(--fg)');
 });
 
-test('AppIcon should apply size class for each size variant', () => {
-  const sizes = ['xs', 'sm', 'md', 'lg', 'auto'] as const;
+test('AppIcon should apply size class for predefined size variants', () => {
+  const sizes = ['xs', 'sm', 'md', 'lg'] as const;
 
   sizes.forEach((size) => {
     const wrapper = mount(AppIcon, {

@@ -1,12 +1,20 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { api } from 'src/boot/api';
-import { I18N } from 'orgnote-api';
+import { I18N, type LogLevel, type LogRecord } from 'orgnote-api';
 import { computedAsync } from '@vueuse/core';
+
+interface BufferError {
+  timestamp: number;
+  message: string;
+  stack?: string;
+  type: string;
+  meta?: Record<string, unknown>;
+}
 
 interface ErrorBuffer {
   exportAsText: () => string;
-  getAll: () => unknown[];
+  getAll: () => BufferError[];
 }
 
 type WindowWithErrorBuffer = Window & { __errorBuffer?: ErrorBuffer };
@@ -27,6 +35,26 @@ const NO_ERRORS_MARKER = 'No errors recorded';
 const getErrorBuffer = (): ErrorBuffer | undefined => {
   if (typeof window === 'undefined') return undefined;
   return (window as WindowWithErrorBuffer).__errorBuffer;
+};
+
+const mapBufferTypeToLevel = (type: string): LogLevel => {
+  if (type === 'rejection') return 'error';
+  return (type as LogLevel) ?? 'error';
+};
+
+const bufferErrorToLogRecord = (error: BufferError): LogRecord => ({
+  ts: new Date(error.timestamp),
+  level: mapBufferTypeToLevel(error.type),
+  message: error.message,
+  context: {
+    ...(error.stack && { stack: error.stack }),
+    ...(error.meta && { ...error.meta }),
+  },
+});
+
+const extractBufferLogs = (buffer: ErrorBuffer | undefined): LogRecord[] => {
+  if (!buffer) return [];
+  return buffer.getAll().map(bufferErrorToLogRecord);
 };
 
 const extractBufferErrors = (buffer: ErrorBuffer | undefined): string => {
@@ -63,15 +91,16 @@ export const useAppLogs = () => {
 
   const systemInfoText = computedAsync(() => systemInfo.getTextSystemInfo(), '');
 
-  const fallbackErrors = computed(() => extractBufferErrors(getErrorBuffer()));
-  const hasFallbackErrors = computed(() => fallbackErrors.value.length > 0);
+  const fallbackErrorsText = computed(() => extractBufferErrors(getErrorBuffer()));
+  const fallbackLogs = computed(() => extractBufferLogs(getErrorBuffer()));
+  const hasFallbackErrors = computed(() => fallbackLogs.value.length > 0);
 
   const storeLogs = computed(() => logStore.logs);
   const hasStoreLogs = computed(() => storeLogs.value.length > 0);
 
   const errorLogText = computed(() => {
     const sections: LogSections = {
-      bootErrors: fallbackErrors.value,
+      bootErrors: fallbackErrorsText.value,
       appErrors: logStore.exportAsText(),
     };
 
@@ -90,7 +119,7 @@ export const useAppLogs = () => {
   };
 
   return {
-    fallbackErrors,
+    fallbackLogs,
     hasFallbackErrors,
     storeLogs,
     hasStoreLogs,

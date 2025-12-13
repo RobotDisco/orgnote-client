@@ -14,6 +14,7 @@ import { sdk } from 'src/boot/axios';
 import { to } from 'src/utils/to-error';
 import { platformSpecificValue } from 'src/utils/platform-specific-value';
 import { platformMatch } from 'src/utils/platform-detection';
+import { reporter } from 'src/boot/report';
 
 declare const electron: { auth: (url: string) => Promise<{ redirectUrl: string }> } | undefined;
 
@@ -142,7 +143,11 @@ export const useAuthStore = defineStore<'auth', AuthStore>(
     };
 
     const subscribe = async (subscriptionToken: string, email?: string): Promise<void> => {
-      await sdk.auth.authSubscribePost({ token: subscriptionToken, email });
+      const sub = await to(sdk.auth.authSubscribePost)({ token: subscriptionToken, email });
+      if (sub.isErr()) {
+        reporter.reportError(sub.error);
+        return;
+      }
       await verifyUser();
     };
 

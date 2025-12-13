@@ -1,11 +1,13 @@
 import type { Command } from 'orgnote-api';
-import { DefaultCommands, I18N } from 'orgnote-api';
+import { DefaultCommands, i18n, I18N } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import { GITHUB_LINK, PATREON_LINK, WIKI_LINK } from 'src/constants/external-link';
 import { ISSUE_PAGE } from 'src/constants/issue-page';
 import { clientOnly } from 'src/utils/platform-specific';
 import type { Router } from 'vue-router';
 import LogsContainer from 'src/containers/LogsContainer.vue';
+import { to } from 'src/utils/to-error';
+import { reporter } from 'src/boot/report';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getGlobalCommands({ router }: { router?: Router } = {}): Command[] {
@@ -74,9 +76,18 @@ export function getGlobalCommands({ router }: { router?: Router } = {}): Command
       command: DefaultCommands.SYNC_FILES,
       icon: 'sync',
       group: 'global',
-      handler: () => {
-        // notesStore.syncWithFs();
-        // fileManagerStore.updateFileManager();
+      handler: async (api) => {
+        const ok = await api.ui.useConfirmationModal().confirm({
+          title: i18n.SYNC_FILES,
+          message: i18n.SYNC_FILES_DESCRIPTION,
+        });
+        if (!ok) {
+          return;
+        }
+        const res = await to(api.core.useSync().sync)();
+        if (res.isErr()) {
+          reporter.reportError(res.error);
+        }
       },
     },
     {
