@@ -83,21 +83,25 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     return to(encryption.decrypt)(content);
   };
 
-  const writeBufferFile = async (buffer: OrgBuffer): Promise<void> => {
+  const writeBufferFile = async (buffer: OrgBuffer): Promise<boolean> => {
     if (!fm.currentFs) {
       reporter.reportError(new Error('No file system selected'));
-      return;
+      return false;
     }
 
-    const result = await encryptContent(buffer.path, buffer.content)
+    const contentToWrite = buffer.content;
+    const result = await encryptContent(buffer.path, contentToWrite)
       .andThen((content) => to(fm.currentFs!.writeFile)(buffer.path, content))
       .map(() => {
-        buffer.metadata.originalContent = buffer.content;
+        buffer.metadata.originalContent = contentToWrite;
       });
 
     if (result.isErr()) {
       reporter.reportError(new Error(`Failed to save: ${buffer.path}`, { cause: result.error }));
+      return false;
     }
+
+    return true;
   };
 
   const readBufferFile = async (buffer: OrgBuffer): Promise<void> => {
@@ -121,8 +125,16 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     }
   };
 
-  const isBufferDirty = (buffer: OrgBuffer): boolean =>
-    buffer.content !== (buffer.metadata.originalContent || '');
+  const isBufferDirty = (buffer: OrgBuffer): boolean => {
+    const original = buffer.metadata.originalContent;
+    const current = buffer.content;
+
+    if (original === undefined) {
+      return current !== '';
+    }
+
+    return current !== original;
+  };
 
   const saveBuffer = async (buffer: OrgBuffer): Promise<void> => {
     if (!isBufferDirty(buffer)) {
@@ -130,8 +142,12 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     }
 
     buffer.isSaving = true;
-    await writeBufferFile(buffer);
-    buffer.metadata.lastSavedAt = Date.now();
+    const success = await writeBufferFile(buffer);
+
+    if (success) {
+      buffer.metadata.lastSavedAt = Date.now();
+    }
+
     buffer.isSaving = false;
   };
 
@@ -256,6 +272,10 @@ export const useBufferStore = defineStore<string, BufferStore>('buffers', (): Bu
     change: FileSystemChange,
   ): Promise<void> => {
     if (shouldIgnoreExternalChange(buffer)) {
+      return;
+    }
+
+    if (isBufferDirty(buffer)) {
       return;
     }
 
