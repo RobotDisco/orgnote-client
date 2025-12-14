@@ -140,7 +140,7 @@ test('should modify notes based on callback', async () => {
   const note = createMockNote();
   await repository.putNote(note);
 
-  await repository.modify((n) => {
+  await repository.modify((n: NoteInfo) => {
     n.meta.title = 'Modified title';
   });
 
@@ -161,14 +161,14 @@ test('should retrieve IDs of notes based on filter callback', async () => {
   if (!fileTags) throw new Error('firstNote.meta.fileTags is undefined');
   const firstTag = fileTags[0];
   if (!firstTag) throw new Error('firstTag is undefined');
-  const ids = await repository.getIds((n) => n.meta.fileTags?.includes(firstTag) ?? false);
+  const ids = await repository.getIds((n: NoteInfo) => n.meta.fileTags?.includes(firstTag) ?? false);
   expect(ids).toContain(firstNote.id);
 });
 
 test('should not modify non-existing note', async () => {
   const nonExistentId = faker.string.uuid();
 
-  await repository.modify((n) => {
+  await repository.modify((n: NoteInfo) => {
     if (n.id === nonExistentId) {
       n.meta.title = 'Non-existent';
     }

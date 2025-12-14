@@ -1,8 +1,15 @@
 import Dexie from 'dexie';
 import type { DiskFile, FileSystem } from 'orgnote-api';
-import { ErrorDirectoryNotFound, ErrorFileNotFound, getFileName, splitPath } from 'orgnote-api';
+import {
+  ErrorDirectoryNotFound,
+  ErrorFileNotFound,
+  getFileName,
+  splitPath,
+  toAbsolutePath,
+} from 'orgnote-api';
 import { extractFileNameFromPath } from 'src/utils/extract-file-name-from-path';
 import { getFileDirPath } from 'src/utils/get-file-dir-path';
+import { isNullable } from 'src/utils/nullable-guards';
 import { desktopOnly } from 'src/utils/platform-specific';
 
 type File = DiskFile & { content?: string | Uint8Array };
@@ -23,25 +30,35 @@ export const useSimpleFs = (): FileSystem => {
   });
   const fs = db.table<File, string>(storeName);
 
-  const normalizePath = (path: string): string => `${path}`;
-
   const readFile: FileSystem['readFile'] = async <
     T extends 'utf8' | 'binary' = 'utf8',
     R = T extends 'utf8' ? string : Uint8Array,
   >(
     path: string,
+    encoding: T = 'utf8' as T,
   ): Promise<R> => {
-    path = normalizePath(path);
+    path = toAbsolutePath(path);
     if (!(await isFileExist(path))) {
       throw new ErrorFileNotFound(path);
     }
     const file = await fs.get(path);
-    if (!file) {
+    if (file?.content === undefined || isNullable(file?.content)) {
       throw new ErrorFileNotFound(path);
     }
-    const content = file.content as R;
     await fs.update(path, { atime: Date.now() });
-    return content;
+
+    return decodeContent(file.content, encoding) as R;
+  };
+
+  const decodeContent = (
+    raw: string | Uint8Array,
+    encoding: 'utf8' | 'binary',
+  ): string | Uint8Array => {
+    if (encoding === 'utf8' && typeof raw === 'string') return raw;
+    if (encoding === 'utf8' && raw instanceof Uint8Array) return new TextDecoder().decode(raw);
+    if (encoding === 'binary' && raw instanceof Uint8Array) return raw;
+    if (encoding === 'binary' && typeof raw === 'string') return new TextEncoder().encode(raw);
+    return raw;
   };
 
   const writeFile: FileSystem['writeFile'] = async (
@@ -50,7 +67,7 @@ export const useSimpleFs = (): FileSystem => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _encoding,
   ) => {
-    path = normalizePath(path);
+    path = toAbsolutePath(path);
     const existingFile = await fileInfo(path);
     await recursiveMkdir(path);
 
@@ -80,8 +97,8 @@ export const useSimpleFs = (): FileSystem => {
   };
 
   const rename: FileSystem['rename'] = async (oldPath: string, newPath: string) => {
-    oldPath = normalizePath(oldPath);
-    newPath = normalizePath(newPath);
+    oldPath = toAbsolutePath(oldPath);
+    newPath = toAbsolutePath(newPath);
 
     const filesToRename = await getFilesToRename(oldPath);
     await updateFilePaths(filesToRename, oldPath, newPath);
@@ -114,22 +131,23 @@ export const useSimpleFs = (): FileSystem => {
   };
 
   const deleteFile: FileSystem['deleteFile'] = async (path: string) => {
-    path = normalizePath(path);
+    path = toAbsolutePath(path);
     await fs.delete(path);
   };
 
   const readDir: FileSystem['readDir'] = async (path: string) => {
-    path = normalizePath(path);
+    path = toAbsolutePath(path);
 
     const fileInfos: DiskFile[] = [];
+    const prefix = path === '/' ? '' : path;
+    const pattern = new RegExp(`^${prefix}/[^/]+$`);
 
     await fs.each((f) => {
-      const isFirstLevelFile = new RegExp(`^${path}/[^/]+$`).test(f.path);
-      if (!isFirstLevelFile) {
+      if (!pattern.test(f.path)) {
         return;
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { content, ...fileInfo } = f;
+      const { content: _, ...fileInfo } = f;
+      void _;
       fileInfos.push(fileInfo);
     });
 
@@ -153,7 +171,7 @@ export const useSimpleFs = (): FileSystem => {
   };
 
   const mkdir: FileSystem['mkdir'] = async (path: string) => {
-    path = normalizePath(path);
+    path = toAbsolutePath(path);
     if (await isDirExist(path)) {
       throw new ErrorDirectoryAlreadyExist(path);
     }
@@ -170,12 +188,12 @@ export const useSimpleFs = (): FileSystem => {
   };
 
   const isDirExist: FileSystem['isDirExist'] = async (path: string) => {
-    path = normalizePath(path);
+    path = toAbsolutePath(path);
     return !!(await fs.get(path));
   };
 
   const isFileExist: FileSystem['isFileExist'] = async (path: string) => {
-    path = normalizePath(path);
+    path = toAbsolutePath(path);
     return !!(await fs.get(path));
   };
 
@@ -184,7 +202,7 @@ export const useSimpleFs = (): FileSystem => {
     atime?: string | number | Date,
     mtime?: string | number | Date,
   ) => {
-    path = normalizePath(path);
+    path = toAbsolutePath(path);
 
     await fs.update(path, {
       atime: atime ? new Date(atime).getTime() : undefined,
@@ -193,7 +211,7 @@ export const useSimpleFs = (): FileSystem => {
   };
 
   const fileInfo: FileSystem['fileInfo'] = async (path: string): Promise<DiskFile | undefined> => {
-    path = normalizePath(path);
+    path = toAbsolutePath(path);
     const file = await fs.get(path);
     return file;
   };

@@ -11,7 +11,14 @@
     <app-card class="error-log-card">
       <div v-if="hasFallbackErrors" class="fallback-errors">
         <h3 class="section-title">{{ $t(I18N.BOOT_ERRORS) }}</h3>
-        <pre class="fallback-text">{{ fallbackErrors }}</pre>
+        <div class="log-list">
+          <log-entry
+            v-for="(log, index) in fallbackLogs"
+            :key="index"
+            :log="log"
+            :position="fallbackLogs.length - index"
+          />
+        </div>
       </div>
 
       <div v-if="hasStoreLogs" class="store-errors">
@@ -50,7 +57,7 @@ interface LogLevelOption {
   value: LogLevel;
 }
 
-const { fallbackErrors, hasFallbackErrors, storeLogs, hasStoreLogs, errorLogText } = useAppLogs();
+const { fallbackLogs, hasFallbackErrors, storeLogs, hasStoreLogs, errorLogText } = useAppLogs();
 
 const logLevelOptions: LogLevelOption[] = [
   { label: 'All levels', value: null as unknown as LogLevel },
@@ -142,17 +149,6 @@ defineExpose({
     margin: 0 0 var(--margin-md) 0;
     padding-bottom: var(--padding-xs);
     border-bottom: 2px solid var(--border-default);
-  }
-}
-
-.fallback-text {
-  @include fontify(var(--font-size-sm), var(--font-weight-normal));
-
-  & {
-    margin: 0;
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-family: ui-monospace, monospace;
   }
 }
 

@@ -35,6 +35,7 @@ export default defineConfig((ctx) => {
       { path: 'extensions', server: false },
       { path: 'file-guards', server: false },
       { path: 'files-watchers', server: false },
+      { path: 'auth', server: false },
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css

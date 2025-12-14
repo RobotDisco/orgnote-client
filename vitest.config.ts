@@ -37,6 +37,7 @@ export default defineConfig({
       images: path.resolve(__dirname, './images'),
       icons: path.resolve(__dirname, './public/icons'),
       test: path.resolve(__dirname, './test'),
+      '#q-app/wrappers': path.resolve(__dirname, './test/mocks/q-app-wrappers.ts'),
     },
   },
   assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.svg'],

@@ -11,7 +11,7 @@ export default defineBoot(async () => {
     '\\.org(\\.gpg)?$': async (path: string) => {
       commands.execute(DefaultCommands.OPEN_NOTE, { path });
     },
-    '\\.toml$': async (path: string) => {
+    '\\.(toml|md)$': async (path: string) => {
       commands.execute(DefaultCommands.OPEN_CODE_EDITOR, { path });
     },
   });

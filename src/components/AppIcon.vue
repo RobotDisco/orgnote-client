@@ -2,7 +2,7 @@
   <app-flex
     class="icon"
     :style="iconStyle"
-    :class="[{ rounded, bordered }, size, $attrs.class]"
+    :class="[{ rounded, bordered }, sizeClass, $attrs.class]"
     center
     align-center
   >
@@ -23,7 +23,7 @@ import AppFlex from 'src/components/AppFlex.vue';
 interface Props {
   color?: ThemeVariable;
   background?: string;
-  size?: StyleSize;
+  size?: StyleSize | (string & {});
   rounded?: boolean;
   bordered?: boolean;
 }
@@ -35,14 +35,6 @@ const props = withDefaults(defineProps<QIconProps & Props>(), {
 
 const bgColor = computed(() => props.background && getCssVariableName(props.background));
 const color = computed(() => (props.color ? getCssVariableName(props.color) : undefined));
-const size = computed(() => `icon-${props.size}`);
-
-const iconStyle = computed(() => {
-  const style: Record<string, string> = {};
-  if (bgColor.value) style.backgroundColor = bgColor.value;
-  if (color.value) style.color = color.value;
-  return Object.keys(style).length > 0 ? style : undefined;
-});
 
 const iconSizeMap: { [key in StyleSize]?: string } = {
   xs: '1em',
@@ -50,7 +42,37 @@ const iconSizeMap: { [key in StyleSize]?: string } = {
   md: '1.6em',
   lg: '3em',
 };
-const iconSize = computed(() => iconSizeMap[props.size]);
+
+const predefinedSizes = ['xs', 'sm', 'md', 'lg'];
+
+const sizeClass = computed(() => {
+  if (predefinedSizes.includes(props.size)) {
+    return `icon-${props.size}`;
+  }
+  return '';
+});
+
+const iconSize = computed(() => {
+  if (props.size in iconSizeMap) {
+    return iconSizeMap[props.size as StyleSize];
+  }
+  return props.size;
+});
+
+const iconStyle = computed(() => {
+  const style: Record<string, string> = {};
+  if (bgColor.value) style.backgroundColor = bgColor.value;
+  if (color.value) style.color = color.value;
+
+  if (!predefinedSizes.includes(props.size) && props.size !== 'xl') {
+    style.width = props.size;
+    style.height = props.size;
+    style.minWidth = props.size;
+    style.minHeight = props.size;
+  }
+
+  return Object.keys(style).length > 0 ? style : undefined;
+});
 </script>
 
 <style lang="scss">

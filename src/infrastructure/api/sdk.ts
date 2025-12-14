@@ -1,12 +1,12 @@
 import type { AxiosInstance } from 'axios';
-import { AuthApiFactory, NotesApiFactory } from 'orgnote-api/remote-api';
+import { AuthApiFactory, SyncApiFactory } from 'orgnote-api/remote-api';
 
 export interface Sdk {
   auth: ReturnType<typeof AuthApiFactory>;
-  notes: ReturnType<typeof NotesApiFactory>;
+  sync: ReturnType<typeof SyncApiFactory>;
 }
 
 export const createSdk = (axiosInstance: AxiosInstance): Sdk => ({
   auth: AuthApiFactory(undefined, '', axiosInstance),
-  notes: NotesApiFactory(undefined, '', axiosInstance),
+  sync: SyncApiFactory(undefined, '', axiosInstance),
 });

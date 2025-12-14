@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import type { FileSystemStore, DiskFile } from 'orgnote-api';
-import { ErrorFileNotFound, isOrgGpgFile, join } from 'orgnote-api';
+import { ErrorFileNotFound, isOrgGpgFile, join, toRelativePath, toAbsolutePath } from 'orgnote-api';
 import { computed, watch } from 'vue';
 import { Platform } from 'quasar';
 import { removeRelativePath } from 'src/utils/remove-relative-path';
@@ -60,16 +60,12 @@ export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
 
     const removeStartSlash = (path: string | string[]): string | string[] => {
       if (typeof path === 'string') {
-        return path.startsWith('/') ? path.slice(1) : path;
+        return toRelativePath(path);
       }
-
-      return path.map((p) => (p.startsWith('/') ? p.slice(1) : p));
+      return path.map(toRelativePath);
     };
 
-    const getUserFilePath = (path: string): string => {
-      path = path ? `/${path}` : '';
-      return path;
-    };
+    const getUserFilePath = (path: string): string => (path ? toAbsolutePath(path) : '');
 
     const readFile = async <T extends 'utf8' | 'binary'>(
       path: string | string[],
@@ -184,15 +180,15 @@ export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
         if (!currentFs.value || !path) {
           return defaultValue;
         }
-        try {
-          return await fn(path, ...args);
-        } catch (e) {
-          if (!(e instanceof ErrorFileNotFound)) {
-            throw e;
-          }
-          await initFolderForFile(path, isDir);
-          return await fn(path, ...args);
+        const res = await to(fn)(path, ...args);
+        if (res.isOk()) {
+          return res.value;
         }
+        if (!(res.error instanceof ErrorFileNotFound)) {
+          throw res.error;
+        }
+        await initFolderForFile(path, isDir);
+        return await fn(path, ...args);
       };
     }
 

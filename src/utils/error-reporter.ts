@@ -27,7 +27,27 @@ interface ResultWithError<E> {
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && isPresent(v);
 const isError = (v: unknown): v is Error => v instanceof Error;
+interface AxiosLikeError {
+  message?: string;
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
+const hasResponseDataMessage = (v: unknown): v is AxiosLikeError =>
+  isRecord(v) &&
+  isRecord((v as AxiosLikeError).response) &&
+  isRecord((v as AxiosLikeError).response?.data) &&
+  typeof (v as AxiosLikeError).response?.data?.message === 'string';
+
 const pickMessage = (v: unknown, fallback: string): string => {
+  if (hasResponseDataMessage(v)) {
+    const mainMessage = v.message ?? fallback;
+    const innerMessage = v.response?.data?.message;
+    return `${mainMessage}<br />${innerMessage}`;
+  }
   if (isError(v)) return v.message;
   if (typeof v === 'string') return v;
   if (isRecord(v) && typeof (v as { message?: unknown }).message === 'string')

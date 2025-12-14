@@ -200,20 +200,21 @@ test('AppCard should not show card header when no cardTitle and shouldShowIcon i
   expect(wrapper.find('.card-header').exists()).toBe(false);
 });
 
-test('AppCard should show card header when shouldShowIcon is true', () => {
-  const types = ['info', 'warning', 'danger'] as const;
+  test('AppCard should not show card header when shouldShowIcon is true but no title is provided', () => {
+    const types = ['info', 'warning', 'danger'] as const;
 
-  types.forEach((type) => {
-    const wrapper = mount(AppCard, {
-      props: { type },
-      slots: {
-        default: 'Content',
-      },
+    types.forEach((type) => {
+      const wrapper = mount(AppCard, {
+        props: { type },
+        slots: {
+          default: 'Content',
+        },
+      });
+
+      expect(wrapper.find('.card-header').exists()).toBe(false);
+      expect(wrapper.findComponent({ name: 'AppIcon' }).exists()).toBe(true);
     });
-
-    expect(wrapper.find('.card-header').exists()).toBe(true);
   });
-});
 
 test('AppCard should show card header when cardTitle is provided', () => {
   const wrapper = mount(AppCard, {
@@ -227,7 +228,7 @@ test('AppCard should show card header when cardTitle is provided', () => {
   expect(wrapper.find('.card-header').exists()).toBe(true);
 });
 
-test('AppCard should show card header when custom icon is provided', () => {
+test('AppCard should not show card header when custom icon is provided but no title', () => {
   const wrapper = mount(AppCard, {
     props: {
       type: 'plain',
@@ -238,5 +239,6 @@ test('AppCard should show card header when custom icon is provided', () => {
     },
   });
 
-  expect(wrapper.find('.card-header').exists()).toBe(true);
+  expect(wrapper.find('.card-header').exists()).toBe(false);
+  expect(wrapper.findComponent({ name: 'AppIcon' }).exists()).toBe(true);
 });

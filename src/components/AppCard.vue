@@ -8,7 +8,12 @@
         </h5>
       </app-flex>
       <app-flex class="card-content" row start align-start gap="md" :style="{ color: bg }">
-        <app-icon v-if="shouldShowIcon && !hasTitle" size="sm" :name="computedIcon" :color="background" />
+        <app-icon
+          v-if="shouldShowIcon && !hasTitle"
+          size="sm"
+          :name="computedIcon"
+          :color="background"
+        />
         <slot />
       </app-flex>
     </app-flex>
