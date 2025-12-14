@@ -2,10 +2,7 @@
   <div v-if="layout.type === 'pane'" :data-testid="`pane-${layout.paneId}`" class="layout-pane">
     <slot :pane-id="layout.paneId" />
   </div>
-  <div
-    v-if="layout.type === 'split'"
-    :class="['layout-split', layout.orientation]"
-  >
+  <div v-if="layout.type === 'split'" :class="['layout-split', layout.orientation]">
     <template v-for="(child, index) in layout.children" :key="child.id">
       <div class="layout-split-child" :style="getChildStyle(index)">
         <LayoutRenderer :layout="child">
@@ -91,7 +88,9 @@ const handleResize = (newSizes: number[]): void => {
 .layout-split {
   @include fit;
 
-  display: flex;
+  & {
+    display: flex;
+  }
 
   &.horizontal {
     flex-direction: row;

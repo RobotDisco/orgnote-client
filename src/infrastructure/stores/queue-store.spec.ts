@@ -18,21 +18,61 @@ const createMockRepository = (): QueueRepository => ({
 
 const createQueueTask = (overrides: Partial<QueueTask> = {}): QueueTask => ({
   id: 'task-1',
-  task: { data: 'test' },
+  payload: { data: 'test' },
   queueId: 'default',
-  priority: 0,
   added: Date.now(),
   ...overrides,
 });
 
-test('QueueStore connect calls callback with success', () => {
+test('QueueStore connect returns only pending task count', async () => {
   const repo = createMockRepository();
-  const store = new QueueStore(repo, 'test-queue');
+  const tasks = [
+    createQueueTask({ id: 'task-1', status: 'pending' }),
+    createQueueTask({ id: 'task-2', status: 'pending' }),
+    createQueueTask({ id: 'task-3', status: 'processing' }),
+    createQueueTask({ id: 'task-4', status: 'completed' }),
+  ];
+  vi.mocked(repo.getAll).mockResolvedValue(tasks);
 
+  const store = new QueueStore(repo, 'test-queue');
   const cb = vi.fn();
   store.connect(cb);
 
-  expect(cb).toHaveBeenCalledWith(null, 0);
+  await vi.waitFor(() => {
+    expect(repo.getAll).toHaveBeenCalledWith('test-queue');
+    expect(cb).toHaveBeenCalledWith(null, 2);
+  });
+});
+
+test('QueueStore connect returns 0 when no pending tasks', async () => {
+  const repo = createMockRepository();
+  const tasks = [
+    createQueueTask({ id: 'task-1', status: 'processing' }),
+    createQueueTask({ id: 'task-2', status: 'completed' }),
+  ];
+  vi.mocked(repo.getAll).mockResolvedValue(tasks);
+
+  const store = new QueueStore(repo, 'test-queue');
+  const cb = vi.fn();
+  store.connect(cb);
+
+  await vi.waitFor(() => {
+    expect(cb).toHaveBeenCalledWith(null, 0);
+  });
+});
+
+test('QueueStore connect calls callback with error on failure', async () => {
+  const repo = createMockRepository();
+  const error = new Error('DB error');
+  vi.mocked(repo.getAll).mockRejectedValue(error);
+
+  const store = new QueueStore(repo, 'test-queue');
+  const cb = vi.fn();
+  store.connect(cb);
+
+  await vi.waitFor(() => {
+    expect(cb).toHaveBeenCalledWith(error, 0);
+  });
 });
 
 test('QueueStore getTask returns undefined when task not found', async () => {
@@ -47,9 +87,9 @@ test('QueueStore getTask returns undefined when task not found', async () => {
   });
 });
 
-test('QueueStore getTask restores id into payload when task exists', async () => {
+test('QueueStore getTask returns full task from repository', async () => {
   const repo = createMockRepository();
-  const task = createQueueTask({ id: 'task-1', task: { data: 'test' } });
+  const task = createQueueTask({ id: 'task-1', payload: { data: 'test' } });
   vi.mocked(repo.get).mockResolvedValue(task);
 
   const store = new QueueStore(repo, 'test-queue');
@@ -57,21 +97,7 @@ test('QueueStore getTask restores id into payload when task exists', async () =>
   store.getTask('task-1', cb);
 
   await vi.waitFor(() => {
-    expect(cb).toHaveBeenCalledWith(null, { data: 'test', id: 'task-1' });
-  });
-});
-
-test('QueueStore getTask returns primitive task as-is', async () => {
-  const repo = createMockRepository();
-  const task = createQueueTask({ id: 'task-1', task: 'primitive-value' });
-  vi.mocked(repo.get).mockResolvedValue(task);
-
-  const store = new QueueStore(repo, 'test-queue');
-  const cb = vi.fn();
-  store.getTask('task-1', cb);
-
-  await vi.waitFor(() => {
-    expect(cb).toHaveBeenCalledWith(null, 'primitive-value');
+    expect(cb).toHaveBeenCalledWith(null, task);
   });
 });
 
@@ -118,19 +144,18 @@ test('QueueStore getAll calls callback with empty array on error', async () => {
   });
 });
 
-test('QueueStore putTask adds task with normalized priority', async () => {
+test('QueueStore putTask adds task with correct fields', async () => {
   const repo = createMockRepository();
   const store = new QueueStore(repo, 'test-queue');
 
   const cb = vi.fn();
-  store.putTask('task-1', { data: 'test', id: 'task-1' }, 5, cb);
+  store.putTask('task-1', { payload: { data: 'test' } }, 5, cb);
 
   await vi.waitFor(() => {
     expect(repo.add).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'task-1',
-        task: { data: 'test' },
-        priority: 5,
+        payload: { data: 'test' },
         queueId: 'test-queue',
       }),
     );
@@ -138,33 +163,17 @@ test('QueueStore putTask adds task with normalized priority', async () => {
   });
 });
 
-test('QueueStore putTask normalizes invalid priority to 0', async () => {
+test('QueueStore putTask extracts payload from task object', async () => {
   const repo = createMockRepository();
   const store = new QueueStore(repo, 'test-queue');
 
   const cb = vi.fn();
-  store.putTask('task-1', { data: 'test' }, NaN, cb);
+  store.putTask('task-1', { payload: { data: 'test' } }, 0, cb);
 
   await vi.waitFor(() => {
     expect(repo.add).toHaveBeenCalledWith(
       expect.objectContaining({
-        priority: 0,
-      }),
-    );
-  });
-});
-
-test('QueueStore putTask removes id from payload before storing', async () => {
-  const repo = createMockRepository();
-  const store = new QueueStore(repo, 'test-queue');
-
-  const cb = vi.fn();
-  store.putTask('task-1', { data: 'test', id: 'should-be-removed' }, 0, cb);
-
-  await vi.waitFor(() => {
-    expect(repo.add).toHaveBeenCalledWith(
-      expect.objectContaining({
-        task: { data: 'test' },
+        payload: { data: 'test' },
       }),
     );
   });
@@ -177,7 +186,7 @@ test('QueueStore putTask calls callback with error on failure', async () => {
 
   const store = new QueueStore(repo, 'test-queue');
   const cb = vi.fn();
-  store.putTask('task-1', { data: 'test' }, 0, cb);
+  store.putTask('task-1', { payload: { data: 'test' } }, 0, cb);
 
   await vi.waitFor(() => {
     expect(cb).toHaveBeenCalledWith(error);
@@ -238,11 +247,11 @@ test('QueueStore getLock returns empty object when no tasks locked', async () =>
   });
 });
 
-test('QueueStore getLock returns payloads with restored ids', async () => {
+test('QueueStore getLock returns full tasks from repository', async () => {
   const repo = createMockRepository();
   const tasks = {
-    'task-1': createQueueTask({ id: 'task-1', task: { data: 'one' } }),
-    'task-2': createQueueTask({ id: 'task-2', task: { data: 'two' } }),
+    'task-1': createQueueTask({ id: 'task-1', payload: { data: 'one' } }),
+    'task-2': createQueueTask({ id: 'task-2', payload: { data: 'two' } }),
   };
   vi.mocked(repo.getLock).mockResolvedValue(tasks);
 
@@ -251,10 +260,7 @@ test('QueueStore getLock returns payloads with restored ids', async () => {
   store.getLock('lock-123', cb);
 
   await vi.waitFor(() => {
-    expect(cb).toHaveBeenCalledWith(null, {
-      'task-1': { data: 'one', id: 'task-1' },
-      'task-2': { data: 'two', id: 'task-2' },
-    });
+    expect(cb).toHaveBeenCalledWith(null, tasks);
   });
 });
 
@@ -363,10 +369,10 @@ test('QueueStore releaseLock calls callback with error on release failure', asyn
   });
 });
 
-test('QueueStore getRunningTasks returns tasks with restored ids', async () => {
+test('QueueStore getRunningTasks returns tasks from repository', async () => {
   const repo = createMockRepository();
   const tasks = {
-    'task-1': createQueueTask({ id: 'task-1', task: { data: 'one' } }),
+    'task-1': createQueueTask({ id: 'task-1', payload: { data: 'one' } }),
   };
   vi.mocked(repo.getRunningTasks).mockResolvedValue(tasks);
 
@@ -376,11 +382,7 @@ test('QueueStore getRunningTasks returns tasks with restored ids', async () => {
 
   await vi.waitFor(() => {
     expect(repo.getRunningTasks).toHaveBeenCalledWith('test-queue');
-    expect(cb).toHaveBeenCalledWith(null, {
-      'task-1': expect.objectContaining({
-        task: { data: 'one', id: 'task-1' },
-      }),
-    });
+    expect(cb).toHaveBeenCalledWith(null, tasks);
   });
 });
 
@@ -418,26 +420,3 @@ test('QueueStore uses default queue name when not provided', () => {
   expect(repo.getAll).toHaveBeenCalledWith('default');
 });
 
-test('QueueStore putTask handles non-cloneable objects gracefully', async () => {
-  const repo = createMockRepository();
-  const store = new QueueStore(repo, 'test-queue');
-
-  const taskWithFunction = {
-    data: 'test',
-    id: 'should-be-removed',
-    callback: () => 'non-cloneable',
-  };
-
-  const cb = vi.fn();
-  store.putTask('task-1', taskWithFunction, 0, cb);
-
-  await vi.waitFor(() => {
-    expect(repo.add).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'task-1',
-        task: expect.objectContaining({ data: 'test' }),
-      }),
-    );
-    expect(cb).toHaveBeenCalledWith(null);
-  });
-});

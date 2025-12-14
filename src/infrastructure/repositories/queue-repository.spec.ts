@@ -13,9 +13,8 @@ import { createDatabase } from './create-database';
 
 const createMockTask = (overrides: Partial<QueueTask> = {}): QueueTask => ({
   id: faker.string.uuid(),
-  task: { data: faker.lorem.word() },
+  payload: { data: faker.lorem.word() },
   queueId: 'test-queue',
-  priority: faker.number.int({ min: 0, max: 10 }),
   added: Date.now(),
   status: 'pending',
   ...overrides,
@@ -39,24 +38,14 @@ afterEach(async () => {
 });
 
 test('createQueueRepository add saves task with normalized values', async () => {
-  const task = createMockTask({ priority: undefined as unknown as number });
+  const task = createMockTask();
   await repository.add(task);
 
   const result = await repository.get(task.id);
 
   expect(result).toBeDefined();
-  expect(result?.priority).toBe(0);
   expect(result?.status).toBe('pending');
   expect(result?.deletedAt).toBeUndefined();
-});
-
-test('createQueueRepository add preserves valid priority', async () => {
-  const task = createMockTask({ priority: 5 });
-  await repository.add(task);
-
-  const result = await repository.get(task.id);
-
-  expect(result?.priority).toBe(5);
 });
 
 test('createQueueRepository get returns undefined for non-existent task', async () => {
@@ -191,14 +180,14 @@ test('createQueueRepository release does nothing for non-existent task', async (
   await expect(repository.release('non-existent-id')).resolves.not.toThrow();
 });
 
-test('createQueueRepository takeFirstN locks N highest priority pending tasks', async () => {
-  const lowPriority = createMockTask({ priority: 1, queueId: 'test' });
-  const highPriority = createMockTask({ priority: 10, queueId: 'test' });
-  const medPriority = createMockTask({ priority: 5, queueId: 'test' });
+test('createQueueRepository takeFirstN locks N oldest pending tasks (FIFO order)', async () => {
+  const firstTask = createMockTask({ queueId: 'test', added: 1000 });
+  const secondTask = createMockTask({ queueId: 'test', added: 2000 });
+  const thirdTask = createMockTask({ queueId: 'test', added: 3000 });
 
-  await repository.add(lowPriority);
-  await repository.add(highPriority);
-  await repository.add(medPriority);
+  await repository.add(thirdTask);
+  await repository.add(firstTask);
+  await repository.add(secondTask);
 
   const lockId = await repository.takeFirstN(2, 'test');
 
@@ -207,9 +196,9 @@ test('createQueueRepository takeFirstN locks N highest priority pending tasks', 
   const locked = await repository.getLock(lockId);
   expect(locked).toBeDefined();
   expect(Object.keys(locked!)).toHaveLength(2);
-  expect(locked![highPriority.id]).toBeDefined();
-  expect(locked![medPriority.id]).toBeDefined();
-  expect(locked![lowPriority.id]).toBeUndefined();
+  expect(locked![firstTask.id]).toBeDefined();
+  expect(locked![secondTask.id]).toBeDefined();
+  expect(locked![thirdTask.id]).toBeUndefined();
 });
 
 test('createQueueRepository takeFirstN returns empty string when no tasks available', async () => {
@@ -347,7 +336,7 @@ test('createQueueRepository handles concurrent operations', async () => {
 });
 
 test('createQueueRepository takeFirstN sets correct task properties', async () => {
-  const task = createMockTask({ queueId: 'test', priority: 5 });
+  const task = createMockTask({ queueId: 'test' });
   await repository.add(task);
   const beforeTake = Date.now();
 

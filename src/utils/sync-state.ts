@@ -20,14 +20,6 @@ export const createSyncState = (stateData: Ref<SyncStateData | null>): SyncState
     stateData.value = { ...stateData.value, files: rest };
   },
 
-  setLastSyncTime: async (time: string) => {
-    stateData.value = {
-      ...stateData.value,
-      files: stateData.value?.files ?? {},
-      lastSyncTime: time,
-    };
-  },
-
   clear: async () => {
     stateData.value = { files: {} };
   },

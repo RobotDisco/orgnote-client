@@ -1,31 +1,23 @@
 import type { QueueRepository, QueueTask } from 'orgnote-api';
 import type { Store } from 'better-queue';
+import { isNullable } from 'src/utils/nullable-guards';
 import { to } from 'src/utils/to-error';
 
-const restoreIdToPayload = (task: QueueTask): unknown => {
-  if (!task.task || typeof task.task !== 'object') return task.task;
-  return { ...(task.task as object), id: task.id };
-};
+interface IncomingTask {
+  payload: unknown;
+}
 
-const removeId = (obj: object): object => {
-  if ('id' in obj) {
-    delete (obj as { id?: unknown }).id;
-  }
-  return obj;
-};
+const safeClone = (value: unknown): unknown => {
+  if (isNullable(value)) return value;
+  if (typeof value !== 'object') return value;
 
-const cloneAndRemoveId = (task: unknown): unknown => {
-  if (!task || typeof task !== 'object') return task;
+  const structuredResult = to(() => structuredClone(value))();
+  if (structuredResult.isOk()) return structuredResult.value;
 
-  const structuredResult = to(() => structuredClone(task))();
-  if (structuredResult.isOk()) return removeId(structuredResult.value);
+  const jsonResult = to(() => JSON.parse(JSON.stringify(value)) as unknown)();
+  if (jsonResult.isOk()) return jsonResult.value;
 
-  const jsonResult = to(() => JSON.parse(JSON.stringify(task)) as object)();
-  if (jsonResult.isOk()) return removeId(jsonResult.value);
-
-  const { id: _id, ...rest } = task as { id?: unknown };
-  void _id;
-  return rest;
+  return value;
 };
 
 export class QueueStore implements Store<unknown> {
@@ -38,7 +30,13 @@ export class QueueStore implements Store<unknown> {
   }
 
   connect(cb: (err: unknown, length: number) => void) {
-    cb(null, 0);
+    this.repo
+      .getAll(this.queueName)
+      .then((tasks) => {
+        const pendingCount = tasks.filter((t) => t.status === 'pending').length;
+        cb(null, pendingCount);
+      })
+      .catch((err) => cb(err, 0));
   }
 
   getTask(taskId: string, cb: (err: unknown, task?: unknown) => void) {
@@ -49,7 +47,7 @@ export class QueueStore implements Store<unknown> {
           cb(null, undefined);
           return;
         }
-        cb(null, restoreIdToPayload(task));
+        cb(null, task);
       })
       .catch((err) => cb(err));
   }
@@ -61,14 +59,12 @@ export class QueueStore implements Store<unknown> {
       .catch((err) => cb(err, []));
   }
 
-  putTask(taskId: string, task: unknown, priority: number, cb: (err: unknown) => void) {
-    const normalizedPriority = Number.isFinite(priority) ? priority : 0;
-    const safeTask = cloneAndRemoveId(task);
+  putTask(taskId: string, task: IncomingTask, _priority: number, cb: (err: unknown) => void) {
+    const payload = safeClone(task.payload);
 
     const queueTask: QueueTask = {
       id: taskId,
-      task: safeTask,
-      priority: normalizedPriority,
+      payload,
       added: Date.now(),
       queueId: this.queueName,
     };
@@ -95,14 +91,7 @@ export class QueueStore implements Store<unknown> {
           return;
         }
 
-        const payloads = Object.entries(tasks).reduce<{ [id: string]: unknown }>(
-          (acc, [id, task]) => {
-            acc[id] = restoreIdToPayload(task);
-            return acc;
-          },
-          {},
-        );
-        cb(null, payloads);
+        cb(null, tasks);
       })
       .catch((err) => cb(err, {}));
   }
@@ -133,14 +122,7 @@ export class QueueStore implements Store<unknown> {
     this.repo
       .getRunningTasks(this.queueName)
       .then((tasks) => {
-        const tasksWithIds = Object.entries(tasks).reduce<{ [id: string]: QueueTask }>(
-          (acc, [id, t]) => {
-            acc[id] = { ...t, task: restoreIdToPayload(t) };
-            return acc;
-          },
-          {},
-        );
-        cb(null, tasksWithIds);
+        cb(null, tasks);
       })
       .catch((err) => cb(err, {}));
   }

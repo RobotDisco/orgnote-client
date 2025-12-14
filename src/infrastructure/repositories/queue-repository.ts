@@ -11,6 +11,8 @@ export const QUEUE_MIGRATIONS = migrator<QueueTask>()
   .indexes('id, priority, added, started')
   .v(2)
   .indexes('id, priority, added, started, lockId')
+  .v(3)
+  .indexes('id, added, started, lockId')
   .build();
 
 export const FINAL_STATUSES = ['completed', 'failed', 'canceled'] as const;
@@ -26,7 +28,6 @@ export const createQueueRepository = (db: Dexie): QueueRepository => {
   const add = async (task: QueueTask): Promise<void> => {
     const normalized: QueueTask = {
       ...task,
-      priority: Number.isFinite(task.priority) ? task.priority : 0,
       deletedAt: undefined,
       status: 'pending',
     };
@@ -99,8 +100,7 @@ export const createQueueRepository = (db: Dexie): QueueRepository => {
 
     await db.transaction('rw', store, async () => {
       const tasks = await store
-        .orderBy('priority')
-        .reverse()
+        .orderBy('added')
         .filter(
           (task) =>
             !task.lockId &&

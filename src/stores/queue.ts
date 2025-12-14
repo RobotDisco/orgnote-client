@@ -81,8 +81,7 @@ export const useQueueStore = defineStore<'queue', QueueStore>('queue', () => {
   ): Promise<string> => {
     const queue = ensureQueue(queueId);
     const id = crypto.randomUUID();
-    const normalizedPayload = payload && typeof payload === 'object' ? payload : { value: payload };
-    const task = { ...normalizedPayload, ...options, id };
+    const task = { id, payload, ...options };
     queue.push(task);
     return Promise.resolve(id);
   };

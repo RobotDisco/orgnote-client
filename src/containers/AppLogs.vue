@@ -9,29 +9,29 @@
     </app-dropdown>
 
     <app-card class="error-log-card">
-      <div v-if="hasFallbackErrors" class="fallback-errors">
-        <h3 class="section-title">{{ $t(I18N.BOOT_ERRORS) }}</h3>
+      <div class="store-errors">
         <div class="log-list">
-          <log-entry
-            v-for="(log, index) in fallbackLogs"
-            :key="index"
-            :log="log"
-            :position="fallbackLogs.length - index"
-          />
-        </div>
-      </div>
+          <template v-if="hasFallbackErrors">
+            <app-title :level="5">{{ $t(I18N.BOOT_ERRORS) }}</app-title>
+            <log-entry
+              v-for="(log, index) in fallbackLogs"
+              :key="index"
+              :log="log"
+              :position="fallbackLogs.length - index"
+            />
+          </template>
 
-      <div v-if="hasStoreLogs" class="store-errors">
-        <div class="log-list">
-          <log-entry
-            v-for="(log, index) in filteredLogs"
-            :key="index"
-            :log="log"
-            :position="getLogPosition(index)"
-          />
+          <template v-if="hasStoreLogs">
+            <log-entry
+              v-for="(log, index) in filteredLogs"
+              :key="index"
+              :log="log"
+              :position="getLogPosition(index)"
+            />
+          </template>
         </div>
 
-        <p v-if="filteredLogs.length === 0" class="no-filtered-logs">
+        <p v-if="hasStoreLogs && filteredLogs.length === 0" class="no-filtered-logs">
           {{ $t(I18N.NO_LOGS_MATCH_BY_FILTER) }}
         </p>
       </div>
@@ -51,6 +51,7 @@ import LogEntry from 'src/components/LogEntry.vue';
 import { useAppLogs } from 'src/composables/useAppLogs';
 import { I18N, type LogLevel } from 'orgnote-api';
 import AppFlex from 'src/components/AppFlex.vue';
+import AppTitle from 'src/components/AppTitle.vue';
 
 interface LogLevelOption {
   label: string;
@@ -110,9 +111,13 @@ defineExpose({
   & {
     overflow-y: auto;
   }
+
+  :deep(.card-content) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
-.fallback-errors,
 .store-errors {
   margin-bottom: var(--margin-lg);
 
@@ -124,12 +129,6 @@ defineExpose({
 .store-errors-header {
   & {
     margin-bottom: var(--margin-md);
-  }
-
-  .section-title {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
   }
 
   @include mobile {

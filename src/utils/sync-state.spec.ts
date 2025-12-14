@@ -24,13 +24,12 @@ test('get returns empty files when stateData is null', async () => {
 
 test('get returns current stateData when present', async () => {
   const file = createMockFile();
-  stateData.value = { files: { '/test.org': file }, lastSyncTime: '2024-01-01' };
+  stateData.value = { files: { '/test.org': file } };
 
   const state = createSyncState(stateData);
   const result = await state.get();
 
   expect(result.files['/test.org']).toEqual(file);
-  expect(result.lastSyncTime).toBe('2024-01-01');
 });
 
 test('getFile returns null when stateData is null', async () => {
@@ -119,28 +118,9 @@ test('removeFile preserves other files', async () => {
   expect(stateData.value?.files['/file2.org']).toEqual(file2);
 });
 
-test('setLastSyncTime sets time on null state', async () => {
-  const state = createSyncState(stateData);
-  await state.setLastSyncTime('2024-01-01T00:00:00Z');
-
-  expect(stateData.value?.lastSyncTime).toBe('2024-01-01T00:00:00Z');
-  expect(stateData.value?.files).toEqual({});
-});
-
-test('setLastSyncTime preserves existing files', async () => {
-  const file = createMockFile();
-  stateData.value = { files: { '/test.org': file } };
-
-  const state = createSyncState(stateData);
-  await state.setLastSyncTime('2024-01-01T00:00:00Z');
-
-  expect(stateData.value?.lastSyncTime).toBe('2024-01-01T00:00:00Z');
-  expect(stateData.value?.files['/test.org']).toEqual(file);
-});
-
 test('clear resets state to empty files', async () => {
   const file = createMockFile();
-  stateData.value = { files: { '/test.org': file }, lastSyncTime: '2024-01-01' };
+  stateData.value = { files: { '/test.org': file } };
 
   const state = createSyncState(stateData);
   await state.clear();

@@ -76,9 +76,8 @@ import type { QueueTask } from 'orgnote-api';
 
 const createMockTask = (overrides: Partial<QueueTask> = {}): QueueTask => ({
   id: 'task-1',
-  task: { data: 'test' },
+  payload: { data: 'test' },
   queueId: 'default',
-  priority: 0,
   added: Date.now(),
   ...overrides,
 });

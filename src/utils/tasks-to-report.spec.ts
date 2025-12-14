@@ -4,9 +4,8 @@ import type { QueueTask } from 'orgnote-api';
 
 const createTask = (overrides: Partial<QueueTask> = {}): QueueTask => ({
   id: 'task-1',
-  task: { data: 'test' },
+  payload: { data: 'test' },
   queueId: 'default',
-  priority: 0,
   added: 1700000000000,
   ...overrides,
 });
@@ -30,7 +29,6 @@ test('tasksToReport includes all task fields', () => {
   const task = createTask({
     id: 'test-id',
     status: 'pending',
-    priority: 5,
     queueId: 'my-queue',
     started: 1700000001000,
     retries: 3,
@@ -42,7 +40,6 @@ test('tasksToReport includes all task fields', () => {
   expect(parsed[0]).toMatchObject({
     id: 'test-id',
     status: 'pending',
-    priority: 5,
     queueId: 'my-queue',
     started: 1700000001000,
     retries: 3,
@@ -63,7 +60,7 @@ test('tasksToReport handles multiple tasks', () => {
 test('tasksToReport returns empty array on serialization error', () => {
   const circular: Record<string, unknown> = { a: 1 };
   circular.self = circular;
-  const task = createTask({ task: circular });
+  const task = createTask({ payload: circular });
 
   const result = tasksToReport([task]);
 

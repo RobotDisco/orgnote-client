@@ -32,6 +32,7 @@ export default defineConfig((ctx) => {
       'viewport-patch',
       'default-file-readers',
       { path: 'default-cron-tasks', server: false },
+      { path: 'default-queues', server: false },
       { path: 'extensions', server: false },
       { path: 'file-guards', server: false },
       { path: 'files-watchers', server: false },
