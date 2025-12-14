@@ -1,6 +1,5 @@
 import type Dexie from 'dexie';
 import { migrator } from './migrator';
-import { v4 } from 'uuid';
 import type { LayoutSnapshot, LayoutSnapshotRepository, StoredLayoutSnapshot } from 'orgnote-api';
 
 export const PANE_SNAPSHOT_REPOSITORY_NAME = 'paneSnapshots';
@@ -9,29 +8,35 @@ export const PANE_SNAPSHOT_MIGRATIONS = migrator<StoredLayoutSnapshot>()
   .indexes('&id,createdAt')
   .build();
 
+const AUTOSAVE_ID = '__autosave__';
+
+const isUserSnapshot = (snapshot: StoredLayoutSnapshot): boolean => snapshot.id !== AUTOSAVE_ID;
+
 export const createLayoutSnapshotRepository = (db: Dexie): LayoutSnapshotRepository => {
   const store = db.table<StoredLayoutSnapshot, string>(PANE_SNAPSHOT_REPOSITORY_NAME);
 
   const list = async (limit?: number): Promise<StoredLayoutSnapshot[]> => {
-    const collection = store.orderBy('createdAt').reverse();
-    if (!limit || limit <= 0) return collection.toArray();
-    return collection.limit(limit).toArray();
+    const all = await store.orderBy('createdAt').reverse().toArray();
+    const userSnapshots = all.filter(isUserSnapshot);
+    if (!limit || limit <= 0) return userSnapshots;
+    return userSnapshots.slice(0, limit);
   };
 
-  const save = async (snapshot: LayoutSnapshot): Promise<void> => {
+  const save = async (snapshot: LayoutSnapshot, id?: string): Promise<void> => {
     const record: StoredLayoutSnapshot = {
-      id: v4(),
+      id: id ?? AUTOSAVE_ID,
       createdAt: new Date().toISOString(),
       snapshot,
     };
     await store.put(record);
   };
 
+  const get = async (id: string): Promise<StoredLayoutSnapshot | undefined> => {
+    return store.get(id);
+  };
+
   const getLatest = async (): Promise<StoredLayoutSnapshot | undefined> => {
-    const snapshots = await list(1);
-    const [latest] = snapshots;
-    if (!latest) return;
-    return latest;
+    return store.get(AUTOSAVE_ID);
   };
 
   const remove = async (id: string): Promise<void> => {
@@ -44,6 +49,7 @@ export const createLayoutSnapshotRepository = (db: Dexie): LayoutSnapshotReposit
 
   return {
     save,
+    get,
     getLatest,
     list,
     delete: remove,
