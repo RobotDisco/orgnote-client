@@ -89,12 +89,23 @@ export const useLayoutStore = defineStore<'layout', LayoutStore>('layout', () =>
     paneIds.forEach((id) => paneStore.closePane(id));
   };
 
+  const safeInitLayout = async (): Promise<void> => {
+    const result = await to(initLayout)();
+    if (result.isErr()) {
+      logger.error('Layout initialization failed', { error: result.error });
+    }
+  };
+
   const restoreLayout = async (): Promise<void> => {
+    if (!shouldPersistPanes()) {
+      await safeInitLayout();
+      return;
+    }
+
     const repository = repositories.layoutSnapshotRepository;
     const stored = await repository.getLatest();
-
-    if (!shouldPersistPanes() || !stored) {
-      initLayout();
+    if (!stored) {
+      await safeInitLayout();
       return;
     }
 
@@ -324,7 +335,6 @@ export const useLayoutStore = defineStore<'layout', LayoutStore>('layout', () =>
   const shouldCleanupAfterAction = (actionName: string): boolean =>
     actionName === 'deletePane' || actionName === 'closePane' || actionName === 'closeTab';
 
-  // TODO: feat/stable-beta check this method works
   paneStore.$onAction(({ name, after, args }) => {
     after(() => {
       if (name === 'closePane' && args && args[0]) {
