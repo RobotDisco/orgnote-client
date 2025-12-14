@@ -8,6 +8,7 @@ import type { Router } from 'vue-router';
 import LogsContainer from 'src/containers/LogsContainer.vue';
 import { to } from 'src/utils/to-error';
 import { reporter } from 'src/boot/report';
+import { isNotActiveUser } from './command-guards';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getGlobalCommands({ router }: { router?: Router } = {}): Command[] {
@@ -76,6 +77,8 @@ export function getGlobalCommands({ router }: { router?: Router } = {}): Command
       command: DefaultCommands.SYNC_FILES,
       icon: 'sync',
       group: 'global',
+      hide: isNotActiveUser,
+      disabled: isNotActiveUser,
       handler: async (api) => {
         const ok = await api.ui.useConfirmationModal().confirm({
           title: i18n.SYNC_FILES,

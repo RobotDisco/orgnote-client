@@ -2,6 +2,7 @@ import type { Command } from 'orgnote-api';
 import { DefaultCommands, RouteNames, i18n } from 'orgnote-api';
 import type { Router } from 'vue-router';
 import { useAuthStore } from 'src/stores/auth';
+import { isAuthenticated, isNotAuthenticated } from './command-guards';
 
 export const createAuthCommands = (router: Router): Command[] => {
   const logoutCommand: Command = {
@@ -10,10 +11,8 @@ export const createAuthCommands = (router: Router): Command[] => {
     description: i18n.AUTH_LOGOUT_DESCRIPTION,
     group: i18n.AUTH_GROUP,
     icon: 'logout',
-    hide: () => {
-      const authStore = useAuthStore();
-      return !authStore.user;
-    },
+    hide: isNotAuthenticated,
+    disabled: isNotAuthenticated,
     handler: async (api) => {
       const authStore = useAuthStore();
       const commands = api.core.useCommands();
@@ -28,10 +27,8 @@ export const createAuthCommands = (router: Router): Command[] => {
     description: i18n.AUTH_LOGIN_DESCRIPTION,
     group: i18n.AUTH_GROUP,
     icon: 'login',
-    hide: () => {
-      const authStore = useAuthStore();
-      return !!authStore.user;
-    },
+    hide: isAuthenticated,
+    disabled: isAuthenticated,
     handler: () => {
       router.push({ name: RouteNames.AuthPage, params: { initialProvider: 'github' } });
     },
@@ -43,10 +40,8 @@ export const createAuthCommands = (router: Router): Command[] => {
     description: i18n.AUTH_REMOVE_ACCOUNT_DESCRIPTION,
     group: i18n.AUTH_GROUP,
     icon: 'person_remove',
-    hide: () => {
-      const authStore = useAuthStore();
-      return !authStore.user;
-    },
+    hide: isNotAuthenticated,
+    disabled: isNotAuthenticated,
     handler: async () => {
       const authStore = useAuthStore();
       await authStore.removeUserAccount();
