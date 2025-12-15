@@ -152,3 +152,89 @@ test('sync quarantines invalid config.toml', async () => {
   expect(files.get('/.orgnote/config.toml')?.content).toBe(stringifyToml(clone()(DEFAULT_CONFIG)));
   expect(reporter.reportError).toHaveBeenCalled();
 });
+
+test('sync loads config.toml into store', async () => {
+  const diskConfig = clone()(DEFAULT_CONFIG);
+  diskConfig.system.language = 'ru-RU';
+
+  const { fs } = createMockFs(stringifyToml(diskConfig));
+
+  const fsInfo: FileSystemInfo = {
+    name: 'mock-fs',
+    fs: () => fs,
+    type: 'web',
+    initialVault: '/',
+  };
+
+  const settingsStore = useSettingsStore();
+  settingsStore.settings.vault = '/';
+
+  const fsManager = useFileSystemManagerStore();
+  fsManager.register(fsInfo);
+  fsManager.currentFsName = 'mock-fs';
+
+  const store = useConfigStore();
+  await store.sync();
+
+  expect(store.config.system.language).toBe('ru-RU');
+});
+
+test('sync is a no-op when no filesystem selected', async () => {
+  const store = useConfigStore();
+
+  await expect(store.sync()).resolves.toBeUndefined();
+  expect(reporter.reportError).not.toHaveBeenCalled();
+});
+
+test('sync with pickFolder fs but empty vault skips disk sync', async () => {
+  const { fs } = createMockFs(stringifyToml(clone()(DEFAULT_CONFIG)));
+  const fileInfoSpy = vi.spyOn(fs, 'fileInfo');
+  const writeFileSpy = vi.spyOn(fs, 'writeFile');
+
+  const fsInfo: FileSystemInfo = {
+    name: 'mock-fs',
+    fs: () => ({
+      ...fs,
+      pickFolder: vi.fn(async () => '/picked'),
+    }),
+    type: 'web',
+  };
+
+  const settingsStore = useSettingsStore();
+  settingsStore.settings.vault = '';
+
+  const fsManager = useFileSystemManagerStore();
+  fsManager.register(fsInfo);
+  fsManager.currentFsName = 'mock-fs';
+
+  const store = useConfigStore();
+  await store.sync();
+
+  expect(fileInfoSpy).not.toHaveBeenCalled();
+  expect(writeFileSpy).not.toHaveBeenCalled();
+  expect(reporter.reportError).not.toHaveBeenCalled();
+});
+
+test('sync sets configErrors for schema-invalid config.toml', async () => {
+  const { fs, files } = createMockFs('system = { language = 123 }');
+
+  const fsInfo: FileSystemInfo = {
+    name: 'mock-fs',
+    fs: () => fs,
+    type: 'web',
+    initialVault: '/',
+  };
+
+  const settingsStore = useSettingsStore();
+  settingsStore.settings.vault = '/';
+
+  const fsManager = useFileSystemManagerStore();
+  fsManager.register(fsInfo);
+  fsManager.currentFsName = 'mock-fs';
+
+  const store = useConfigStore();
+  await store.sync();
+
+  expect(files.has('/.orgnote/config-broken-1.toml')).toBe(true);
+  expect(store.configErrors.length).toBeGreaterThan(0);
+});

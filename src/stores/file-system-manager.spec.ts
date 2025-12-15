@@ -1,7 +1,9 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { useFileSystemManagerStore } from './file-system-manager';
 import { expect, test, vi, beforeEach } from 'vitest';
-import type { FileSystemInfo } from 'orgnote-api';
+import type { FileSystem, FileSystemInfo } from 'orgnote-api';
+import { useSettingsStore } from './settings';
+import { toRaw } from 'vue';
 
 const mockFileSystemInstance = {
   readFile: vi.fn(),
@@ -127,4 +129,132 @@ test('setting currentFsName to an empty string results in undefined currentFs', 
 
   expect(store.currentFsName).toBe('');
   expect(store.currentFs).toBeUndefined();
+});
+
+test('useFs with non-existent fsName does nothing', async () => {
+  const store = useFileSystemManagerStore();
+  const initSpy = vi.fn(async () => undefined);
+
+  const fsInfo: FileSystemInfo = {
+    name: 'existing-fs',
+    fs: () => ({
+      readFile: createReadFile(),
+      writeFile: vi.fn(async () => undefined),
+      readDir: vi.fn(async () => []),
+      fileInfo: vi.fn(async () => undefined),
+      rename: vi.fn(async () => undefined),
+      deleteFile: vi.fn(async () => undefined),
+      rmdir: vi.fn(async () => undefined),
+      mkdir: vi.fn(async () => undefined),
+      isDirExist: vi.fn(async () => true),
+      isFileExist: vi.fn(async () => true),
+      utimeSync: vi.fn(async () => undefined),
+      init: initSpy,
+      mount: vi.fn(async () => true),
+    }),
+    type: 'web',
+  };
+
+  store.register(fsInfo);
+
+  const settingsStore = useSettingsStore();
+  settingsStore.settings.vault = '/';
+
+  await store.useFs('missing-fs');
+
+  expect(initSpy).not.toHaveBeenCalled();
+  expect(store.currentFsName).toBe('');
+  expect(store.currentFs).toBeUndefined();
+  expect(settingsStore.settings.vault).toBe('/');
+});
+
+const createDeferred = <T>() => {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
+
+const createReadFile = (): FileSystem['readFile'] => {
+  const readFile: FileSystem['readFile'] = async (_path, encoding) => {
+    if (encoding === 'binary') {
+      return new Uint8Array() as never;
+    }
+    return '' as never;
+  };
+  return readFile;
+};
+
+const createMinimalFs = (initPromise: Promise<{ root: string }>): FileSystem => ({
+  readFile: createReadFile(),
+  writeFile: vi.fn(async () => undefined),
+  readDir: vi.fn(async () => []),
+  fileInfo: vi.fn(async () => undefined),
+  rename: vi.fn(async () => undefined),
+  deleteFile: vi.fn(async () => undefined),
+  rmdir: vi.fn(async () => undefined),
+  mkdir: vi.fn(async () => undefined),
+  isDirExist: vi.fn(async () => true),
+  isFileExist: vi.fn(async () => true),
+  utimeSync: vi.fn(async () => undefined),
+  init: vi.fn(async () => await initPromise),
+  mount: vi.fn(async () => true),
+});
+
+test('useFs sets currentFsName only after init resolves', async () => {
+  const initGate = createDeferred<{ root: string }>();
+  const created: FileSystem[] = [];
+
+  const fsInfo: FileSystemInfo = {
+    name: 'gated-fs',
+    fs: () => {
+      const fs = createMinimalFs(initGate.promise);
+      created.push(fs);
+      return fs;
+    },
+    type: 'web',
+  };
+
+  const store = useFileSystemManagerStore();
+  store.register(fsInfo);
+
+  const settingsStore = useSettingsStore();
+  settingsStore.settings.vault = '';
+
+  const pending = store.useFs('gated-fs');
+
+  await Promise.resolve();
+  expect(store.currentFsName).toBe('');
+
+  initGate.resolve({ root: '/picked' });
+  await pending;
+
+  expect(store.currentFsName).toBe('gated-fs');
+});
+
+test('currentFs uses the same initialized FS instance', async () => {
+  const initGate = createDeferred<{ root: string }>();
+  const created: FileSystem[] = [];
+
+  const fsInfo: FileSystemInfo = {
+    name: 'unstable-fs-factory',
+    fs: () => {
+      const fs = createMinimalFs(initGate.promise);
+      created.push(fs);
+      return fs;
+    },
+    type: 'web',
+  };
+
+  const store = useFileSystemManagerStore();
+  store.register(fsInfo);
+
+  initGate.resolve({ root: '/picked' });
+  await store.useFs('unstable-fs-factory');
+
+  expect(created.length).toBe(1);
+  expect(toRaw(store.currentFs)).toBe(created[0]);
 });

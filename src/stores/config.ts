@@ -1,29 +1,29 @@
 import {
-  ORG_NOTE_CONFIG_SCHEMA,
   type OrgNoteConfig,
   type ConfigStore,
-  type DiskFile,
 } from 'orgnote-api';
 import { defineStore, storeToRefs } from 'pinia';
 import { DEFAULT_CONFIG } from 'src/constants/config';
 import { computed, reactive, ref, watch } from 'vue';
 import clone from 'rfdc';
 import { useFileSystemStore } from './file-system';
-import { parse } from 'valibot';
-import { formatValidationErrors } from 'src/utils/format-validation-errors';
 import { debounce } from 'src/utils/debounce';
 import { useSettingsStore } from './settings';
 import { useFileSystemManagerStore } from './file-system-manager';
 import { to } from 'src/utils/to-error';
 import { reporter } from 'src/boot/report';
 import type { Result } from 'neverthrow';
-import { parseToml, stringifyToml } from 'orgnote-api/utils';
+import { stringifyToml } from 'orgnote-api/utils';
 import { toAbsolutePath, type FileSystemChange } from 'orgnote-api';
 import { useFileWatcherStore } from './file-watcher';
 import { ORGNOTE_CONFIG_FILE_PATH } from 'src/constants/system-file-paths';
 import { ROOT_SYSTEM_FILE_PATH } from 'src/constants/root-system-file-path';
-import { isPresent } from 'src/utils/nullable-guards';
 import { withDeferredFlagReset, withFlag } from 'src/utils/with-flag';
+import { getNextBrokenConfigIndex } from 'src/utils/get-next-broken-config-index';
+import {
+  InvalidOrgNoteConfigSchemaError,
+  parseOrgNoteConfigToml,
+} from 'src/utils/parse-orgnote-config-toml';
 
 export const useConfigStore = defineStore<'config', ConfigStore>('config', () => {
   const fileSystem = useFileSystemStore();
@@ -41,25 +41,19 @@ export const useConfigStore = defineStore<'config', ConfigStore>('config', () =>
 
   const configErrors = ref<string[]>([]);
 
-  const createInvalidConfigError = (cause: unknown): Error => {
-    const errorMsg = formatValidationErrors(cause);
-    configErrors.value = errorMsg;
-    return new TypeError(errorMsg.join('\n'), { cause });
-  };
+  const { currentFsInfo, currentFs } = storeToRefs(useFileSystemManagerStore());
 
-  const parseRawConfig = (rawConfigContent: string): Result<OrgNoteConfig, Error> => {
-    const safeTomlParse = to(
-      parseToml,
-      (e) => new SyntaxError('Invalid TOML format', { cause: e }),
-    );
-    const safeValidate = to(parse, createInvalidConfigError);
+  const isVaultRequired = computed(() => Boolean(currentFs.value?.pickFolder));
 
-    return safeTomlParse(rawConfigContent)
-      .andThen((obj) => safeValidate(ORG_NOTE_CONFIG_SCHEMA, obj))
-      .map((validated) => clone()(validated));
-  };
-
-  const { currentFsInfo } = storeToRefs(useFileSystemManagerStore());
+  const isReadyForDiskSync = computed(() => {
+    if (!currentFsInfo.value) {
+      return false;
+    }
+    if (!isVaultRequired.value) {
+      return true;
+    }
+    return !!vault.value;
+  });
 
   const getConfigFileMtime = async (): Promise<number> => {
     const safeInfo = to(fileSystem.fileInfo, 'Failed to read config.toml metadata');
@@ -99,27 +93,15 @@ export const useConfigStore = defineStore<'config', ConfigStore>('config', () =>
   const applyConfigFromDisk = (rawConfigContent: string): Result<void, Error> => {
     configErrors.value = [];
     return withDeferredFlagReset(isApplyingDiskConfig, () =>
-      parseRawConfig(rawConfigContent).map((validated) => {
-        Object.assign(config, validated);
-      }),
+      parseOrgNoteConfigToml(rawConfigContent)
+        .map((validated) => {
+          Object.assign(config, validated);
+        })
+        .mapErr((error) => {
+          configErrors.value = error instanceof InvalidOrgNoteConfigSchemaError ? [...error.errors] : [];
+          return error;
+        }),
     );
-  };
-
-  const BROKEN_CONFIG_PATTERN = /^config-broken-(\d+)\.toml$/;
-
-  const extractBrokenConfigIndex = (name: string): number | null => {
-    const match = BROKEN_CONFIG_PATTERN.exec(name);
-    if (!match) return null;
-    const value = Number(match[1]);
-    return Number.isInteger(value) && value >= 1 ? value : null;
-  };
-
-  const getNextBrokenConfigIndex = (files: DiskFile[]): number => {
-    const maxIndex = files
-      .map((f) => extractBrokenConfigIndex(f.name))
-      .filter((v): v is number => isPresent(v))
-      .reduce((acc, v) => Math.max(acc, v), 0);
-    return maxIndex + 1;
   };
 
   const getNextBrokenConfigPath = async (): Promise<string> => {
@@ -195,7 +177,6 @@ export const useConfigStore = defineStore<'config', ConfigStore>('config', () =>
     const result = applyConfigFromDisk(content);
     if (result.isErr()) {
       await quarantineBrokenConfig(result.error, content);
-      configErrors.value = [];
       lastSyncedMtime.value = await getConfigFileMtime();
       return;
     }
@@ -263,7 +244,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>('config', () =>
       return;
     }
 
-    if (!currentFsInfo.value) {
+    if (!isReadyForDiskSync.value) {
       return;
     }
 
@@ -276,7 +257,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>('config', () =>
   watch(
     [vault, currentFsInfo],
     async () => {
-      if (!currentFsInfo.value) {
+      if (!isReadyForDiskSync.value) {
         return;
       }
 

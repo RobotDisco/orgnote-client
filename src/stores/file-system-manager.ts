@@ -1,4 +1,4 @@
-import { type FileSystemInfo, type FileSystemManagerStore } from 'orgnote-api';
+import { type FileSystem, type FileSystemInfo, type FileSystemManagerStore } from 'orgnote-api';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { useSettingsStore } from './settings';
@@ -10,7 +10,27 @@ export const useFileSystemManagerStore = defineStore<string, FileSystemManagerSt
     const currentFsName = ref<string>('');
     const registeredFileSystems = ref<Record<string, FileSystemInfo>>({});
     const currentFsInfo = computed(() => registeredFileSystems.value[currentFsName?.value]);
-    const currentFs = computed(() => currentFsInfo.value?.fs());
+    const fsInstances = ref<Record<string, FileSystem>>({});
+
+    const getOrCreateFs = (info: FileSystemInfo): FileSystem => {
+      const existing = fsInstances.value[info.name];
+      if (existing) {
+        return existing;
+      }
+      const created = info.fs();
+      fsInstances.value = {
+        ...fsInstances.value,
+        [info.name]: created,
+      };
+      return created;
+    };
+
+    const currentFs = computed(() => {
+      if (!currentFsInfo.value) {
+        return;
+      }
+      return getOrCreateFs(currentFsInfo.value);
+    });
     const settings = useSettingsStore();
     const fsMounted = ref(false);
 
@@ -24,22 +44,28 @@ export const useFileSystemManagerStore = defineStore<string, FileSystemManagerSt
     };
 
     const useFs = async (fsName: string): Promise<void> => {
-      currentFsName.value = fsName;
-      const params = await currentFs.value?.init?.({
-        root: settings.settings.vault,
-      });
+      const info = registeredFileSystems.value[fsName];
+      if (!info) {
+        return;
+      }
+
+      const fs = getOrCreateFs(info);
+      const params = await fs.init?.({ root: settings.settings.vault || undefined });
       if (params && 'root' in params) {
         settings.settings.vault = params.root;
       }
+      currentFsName.value = fsName;
+      fsMounted.value = false;
     };
 
     watch(
       () => currentFs.value,
-      (fs) => {
+      async (fs) => {
         if (!fs || fsMounted.value) {
           return;
         }
-        fs.mount?.({ root: settings.settings.vault });
+        const mounted = await fs.mount?.({ root: settings.settings.vault || undefined });
+        fsMounted.value = mounted ?? false;
       },
     );
 
