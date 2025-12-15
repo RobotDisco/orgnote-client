@@ -1,4 +1,4 @@
-import type { OrgNoteApi } from 'orgnote-api';
+import type { Repositories } from 'orgnote-api';
 import { createDatabase } from './create-database';
 import { NOTE_REPOSITORY_NAME, NOTE_MIGRATIONS } from './note-info-repository';
 import { FILE_REPOSITORY_NAME, FILE_MIGRATIONS } from './file-repository';
@@ -26,7 +26,7 @@ let database: Dexie | undefined;
 
 export const getDatabase = (): Dexie | undefined => database;
 
-export async function initRepositories(): Promise<OrgNoteApi['infrastructure']> {
+export async function initRepositories(): Promise<Repositories> {
   const { db } = createDatabase([
     { storeName: NOTE_REPOSITORY_NAME, migrations: NOTE_MIGRATIONS },
     { storeName: FILE_REPOSITORY_NAME, migrations: FILE_MIGRATIONS },

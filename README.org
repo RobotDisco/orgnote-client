@@ -67,6 +67,7 @@ bun run dev
 #+END_SRC
 ** Environment variables
 ~API_URL~ - url to api server
+~VITE_WS_URL~ - url to websocket events channel
 
 * 🍩 Contribute guide
 

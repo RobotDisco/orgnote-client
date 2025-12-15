@@ -23,7 +23,8 @@ interface PathSubscription {
   recursive: boolean;
 }
 
-const DEFAULT_INTERVAL = 5000;
+// TODO: feat/sockets move to config
+const DEFAULT_INTERVAL = 3000;
 
 const createChange = (
   path: string,
@@ -63,11 +64,7 @@ const applyPathFilter = (files: DiskFile[], filter?: PathFilter): DiskFile[] =>
 const getDirectories = (files: DiskFile[]): DiskFile[] =>
   files.filter((f) => f.type === 'directory');
 
-const addFilesToSnapshot = (
-  snapshot: Snapshot,
-  files: DiskFile[],
-  filter?: PathFilter,
-): void => {
+const addFilesToSnapshot = (snapshot: Snapshot, files: DiskFile[], filter?: PathFilter): void => {
   applyPathFilter(files, filter).forEach((file) => {
     const [path, mtime] = fileToSnapshotEntry(file);
     snapshot.set(path, mtime);
