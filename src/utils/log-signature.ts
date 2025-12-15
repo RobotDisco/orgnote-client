@@ -1,5 +1,5 @@
 import type { LogRecord } from 'orgnote-api';
-import { isNullable } from './nullable-guards';
+import { isNullable } from 'orgnote-api/utils';
 
 const SECRET_PLACEHOLDER = '***';
 const EMAIL_REGEX = /([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/gi;

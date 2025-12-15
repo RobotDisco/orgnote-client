@@ -1,7 +1,7 @@
 import { createGlobalState } from '@vueuse/core';
 import { api } from 'src/boot/api';
 import { debounce } from 'src/utils/debounce';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import type { Router } from 'vue-router';
 import type { Tab } from 'orgnote-api';
 import { ref } from 'vue';

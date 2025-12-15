@@ -9,7 +9,7 @@
 import { useI18n } from 'vue-i18n';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { I18N } from 'orgnote-api';
-import { isNullable } from 'src/utils/nullable-guards';
+import { isNullable } from 'orgnote-api/utils';
 
 const props = defineProps<{
   messageKey?: I18N;

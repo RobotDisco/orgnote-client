@@ -6,8 +6,8 @@ import { createFolderCompletion } from 'src/composables/create-folder-completion
 import { deleteFileCompletion } from 'src/composables/delete-file-completion';
 import { useFileRenameCompletion } from 'src/composables/file-rename-completion';
 import { getFileDirPath } from 'src/utils/get-file-dir-path';
-import { to } from 'src/utils/to-error';
-import { isNullable } from 'src/utils/nullable-guards';
+import { to } from 'orgnote-api/utils';
+import { isNullable } from 'orgnote-api/utils';
 import { defineAsyncComponent } from 'vue';
 
 const group = 'file manager';

@@ -6,7 +6,7 @@ import { ISSUE_PAGE } from 'src/constants/issue-page';
 import { clientOnly } from 'src/utils/platform-specific';
 import type { Router } from 'vue-router';
 import LogsContainer from 'src/containers/LogsContainer.vue';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import { reporter } from 'src/boot/report';
 import { isNotActiveUser } from './command-guards';
 

@@ -4,7 +4,7 @@ import { defineStore } from 'pinia';
 import { reactive, ref } from 'vue';
 import type { ModelsAPIToken } from 'orgnote-api/remote-api';
 import { sdk } from 'src/boot/axios';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 
 export const useSettingsStore = defineStore<'settings', SettingsStore>(
   'settings',

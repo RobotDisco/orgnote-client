@@ -1,5 +1,5 @@
 import { I18N } from 'orgnote-api';
-import { isPresent } from 'src/utils/nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 

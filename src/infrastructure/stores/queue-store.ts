@@ -1,7 +1,7 @@
 import type { QueueRepository, QueueTask } from 'orgnote-api';
 import type { Store } from 'better-queue';
-import { isNullable } from 'src/utils/nullable-guards';
-import { to } from 'src/utils/to-error';
+import { isNullable } from 'orgnote-api/utils';
+import { to } from 'orgnote-api/utils';
 
 interface IncomingTask {
   payload: unknown;

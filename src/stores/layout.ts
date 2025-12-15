@@ -9,7 +9,7 @@ import { defineStore, storeToRefs } from 'pinia';
 import { v4 } from 'uuid';
 import { shallowRef } from 'vue';
 import { debounce } from 'src/utils/debounce';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import { DEFAULT_PANE_PERSISTENCE_SAVE_DELAY } from 'src/constants/config';
 import { usePaneStore } from './pane';
 import { useConfigStore } from './config';

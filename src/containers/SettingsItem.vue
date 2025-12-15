@@ -91,7 +91,7 @@ import { useI18n } from 'vue-i18n';
 import type { ValibotScheme } from 'src/models/valibot-scheme';
 import AppTextArea from './AppTextArea.vue';
 import AppDescription from 'src/components/AppDescription.vue';
-import { isPresent } from 'src/utils/nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 
 const props = defineProps<{
   path: keyof OrgNoteConfig;

@@ -9,7 +9,7 @@ import { debounce } from 'src/utils/debounce';
 import { DEFAULT_INPUT_DEBOUNCE } from 'src/constants/default-input-debounce';
 import { createPromise } from 'src/utils/create-promise';
 import { useConfigStore } from './config';
-import { isNullable } from 'src/utils/nullable-guards';
+import { isNullable } from 'orgnote-api/utils';
 
 export const useCompletionStore = defineStore<'completion-store', CompletionStore>(
   'completion-store',

@@ -16,7 +16,7 @@ import { computed, shallowRef, ref } from 'vue';
 import type { RouteLocationRaw, Router } from 'vue-router';
 import { createPaneRouter } from 'src/utils/pane-router';
 import { useLayoutStore } from './layout';
-import { isPresent } from 'src/utils/nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 
 export const usePaneStore = defineStore<'panes', PaneStore>('panes', () => {
   // TODO: feat/stable-beta replace by reactive object

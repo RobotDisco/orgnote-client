@@ -2,7 +2,7 @@ import { expect, test, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { usePaneStore } from 'src/stores/pane';
 import { useLayoutStore } from 'src/stores/layout';
-import { isPresent } from 'src/utils/nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 
 vi.mock('src/utils/pane-router', () => ({
   createPaneRouter: vi.fn(() =>

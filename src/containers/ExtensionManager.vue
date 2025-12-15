@@ -75,7 +75,7 @@ import LoadingDots from 'src/components/LoadingDots.vue';
 import FileUploader from 'src/components/FileUploader.vue';
 import type { FileSystemFileEntry } from 'src/utils/file-traversal';
 import { readFile } from 'src/utils/file-traversal';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import { reporter } from 'src/boot/report';
 
 interface TabOption {

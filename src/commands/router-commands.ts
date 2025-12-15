@@ -1,7 +1,7 @@
 import type { Command } from 'orgnote-api';
 import { camelCaseToWords } from 'src/utils/camel-case-to-words';
 import { convertRouterNameToCommand } from 'src/utils/route-name-to-command';
-import { isPresent } from 'src/utils/nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 import { type Router, type RouteRecordNormalized, useRouter } from 'vue-router';
 
 const hasRouteName = (

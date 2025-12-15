@@ -3,7 +3,7 @@ import { join } from 'orgnote-api';
 import { migrator } from './migrator';
 import type Dexie from 'dexie';
 import type { FilePathInfo, NoteInfoRepository } from 'orgnote-api';
-import { isNullable } from 'src/utils/nullable-guards';
+import { isNullable } from 'orgnote-api/utils';
 
 export const NOTE_REPOSITORY_NAME = 'notes';
 export const NOTE_MIGRATIONS = migrator<NoteInfo>()

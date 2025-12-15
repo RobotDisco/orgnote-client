@@ -5,7 +5,7 @@ import {
   ExtensionInvalidManifestError,
 } from 'orgnote-api';
 import { validateManifest } from './validate-manifest';
-import { to } from './to-error';
+import { to } from 'orgnote-api/utils';
 
 export interface CompiledExtension {
   module: Extension;

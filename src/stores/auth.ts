@@ -11,7 +11,7 @@ import {
 
 import { encodeAuthState, type AuthState } from 'src/utils/decode-auth-state';
 import { sdk } from 'src/boot/axios';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import { platformSpecificValue } from 'src/utils/platform-specific-value';
 import { platformMatch } from 'src/utils/platform-detection';
 import { reporter } from 'src/boot/report';

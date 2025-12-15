@@ -1,7 +1,7 @@
 import { I18N } from 'orgnote-api';
 import { api } from 'src/boot/api';
 import { copyToClipboard } from 'src/utils/clipboard';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import { useI18n } from 'vue-i18n';
 
 export const useInteractiveClipboard = () => {

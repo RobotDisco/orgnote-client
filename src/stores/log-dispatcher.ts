@@ -1,5 +1,5 @@
 import type { LogRecord, LoggerRepository } from 'orgnote-api';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import { MAX_LOGS } from './log';
 import type { UseLogStore } from './log';
 

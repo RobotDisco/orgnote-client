@@ -1,4 +1,4 @@
-import { isPresent } from './nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 
 const isBaseTitleAvailable = (existingTitles: string[], titlePrefix: string): boolean => {
   return !existingTitles.includes(titlePrefix);

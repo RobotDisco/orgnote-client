@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { LogRecord, LogLevel, LogStore } from 'orgnote-api';
-import { isPresent } from 'src/utils/nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 import { createLogSignature } from 'src/utils/log-signature';
 
 export const MAX_LOGS = 500;

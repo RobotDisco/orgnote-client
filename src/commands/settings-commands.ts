@@ -6,7 +6,7 @@ import { useRouteActive } from 'src/composables/use-route-active';
 import { SETTINGS_ROUTER_PROVIDER_TOKEN } from 'src/constants/app-providers';
 import TheSettings from 'src/containers/TheSettings.vue';
 import { getDatabase } from 'src/infrastructure/repositories';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import { defineAsyncComponent } from 'vue';
 
 export function getSettingsCommands(): Command[] {

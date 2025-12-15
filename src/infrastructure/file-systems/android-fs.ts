@@ -1,7 +1,7 @@
 import { splitPath, type DiskFile, type FileSystem, type FileSystemParams } from 'orgnote-api';
 import { AndroidSaf } from 'src/plugins/saf.plugin';
-import { isPresent } from 'src/utils/nullable-guards';
-import { to } from 'src/utils/to-error';
+import { isPresent } from 'orgnote-api/utils';
+import { to } from 'orgnote-api/utils';
 
 export const ANDROID_SAF_FS_NAME = 'SAF android file system';
 

@@ -16,7 +16,7 @@ import { api } from 'src/boot/api';
 import { compileExtension, parseExtensionFromFile } from 'src/utils/read-extension';
 import { validateManifest } from 'src/utils/validate-manifest';
 import { reporter } from 'src/boot/report';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import { useFileSystemStore } from './file-system';
 import { parseToml, stringifyToml } from 'orgnote-api/utils';
 import { useGitStore } from './git';

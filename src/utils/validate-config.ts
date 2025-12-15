@@ -1,7 +1,7 @@
 import { parseToml } from 'orgnote-api/utils';
 import { safeParse, type BaseIssue } from 'valibot';
 import { ORG_NOTE_CONFIG_SCHEMA, type ValidationError } from 'orgnote-api';
-import { to } from './to-error';
+import { to } from 'orgnote-api/utils';
 
 const toTextContent = (content: string | Uint8Array): string =>
   typeof content === 'string' ? content : new TextDecoder().decode(content);

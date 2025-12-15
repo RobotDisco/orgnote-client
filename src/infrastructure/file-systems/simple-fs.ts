@@ -9,7 +9,7 @@ import {
 } from 'orgnote-api';
 import { extractFileNameFromPath } from 'src/utils/extract-file-name-from-path';
 import { getFileDirPath } from 'src/utils/get-file-dir-path';
-import { isNullable } from 'src/utils/nullable-guards';
+import { isNullable } from 'orgnote-api/utils';
 import { desktopOnly } from 'src/utils/platform-specific';
 
 type File = DiskFile & { content?: string | Uint8Array };

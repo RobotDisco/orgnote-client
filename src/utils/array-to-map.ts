@@ -1,4 +1,4 @@
-import { isNullable } from 'src/utils/nullable-guards';
+import { isNullable } from 'orgnote-api/utils';
 
 export function arrayToMap<T extends Record<string, unknown>, K extends keyof T = keyof T>(
   array: T[],

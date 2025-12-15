@@ -2,7 +2,7 @@ import { test, expect, vi } from 'vitest';
 import { getFileManagerCommands } from './file-manager';
 import { DefaultCommands } from 'orgnote-api';
 import type { OrgNoteApi } from 'orgnote-api';
-import { isNullable } from 'src/utils/nullable-guards';
+import { isNullable } from 'orgnote-api/utils';
 
 vi.mock('src/composables/create-file-completion', () => ({
   createFileCompletion: vi.fn(),

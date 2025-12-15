@@ -1,5 +1,4 @@
-import { DefaultCommands, type OrgNoteApi } from 'orgnote-api';
-import { isPresent } from './nullable-guards';
+import { DefaultCommands, isPresent, type OrgNoteApi } from 'orgnote-api';
 
 type LogLevel = 'error' | 'warn' | 'info';
 type Logger = OrgNoteApi['utils']['logger'];

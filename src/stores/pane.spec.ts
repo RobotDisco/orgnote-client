@@ -2,7 +2,7 @@ import { expect, test, vi } from 'vitest';
 import { usePaneStore } from './pane';
 import { createPinia, setActivePinia } from 'pinia';
 import type { PaneSnapshot } from 'orgnote-api';
-import { isNullable } from 'src/utils/nullable-guards';
+import { isNullable } from 'orgnote-api/utils';
 
 const mockRouter = {
   push: vi.fn(),

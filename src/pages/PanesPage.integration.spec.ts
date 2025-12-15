@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { usePaneStore } from 'src/stores/pane';
 import { useLayoutStore } from 'src/stores/layout';
-import { isPresent } from 'src/utils/nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 
 test('initNewPane followed by setting activePaneId should populate layout with correct paneId', async () => {
   setActivePinia(createPinia());

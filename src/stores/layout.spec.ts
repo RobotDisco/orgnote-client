@@ -3,7 +3,7 @@ import { setActivePinia, createPinia } from 'pinia';
 import { useLayoutStore } from './layout';
 import { usePaneStore } from './pane';
 import type { LayoutSnapshot } from 'orgnote-api';
-import { isPresent } from 'src/utils/nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 
 vi.mock('src/boot/repositories', () => ({
   repositories: {

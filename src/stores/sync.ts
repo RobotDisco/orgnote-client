@@ -12,7 +12,7 @@ import {
 import { reporter } from 'src/boot/report';
 import { sdk } from 'src/boot/axios';
 import { createSyncState } from 'src/utils/sync-state';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import { enqueuePlanOperations, isPlanEmpty } from 'src/infrastructure/sync';
 import { useFileSystemManagerStore } from './file-system-manager';
 

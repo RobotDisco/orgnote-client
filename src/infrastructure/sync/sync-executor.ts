@@ -8,7 +8,7 @@ import type {
 import type { VersionConflictResponse } from 'orgnote-api/remote-api';
 import { sdk } from 'src/boot/axios';
 import axios, { type AxiosError } from 'axios';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 
 const isConflictError = (error: unknown): error is AxiosError<VersionConflictResponse> =>
   axios.isAxiosError(error) && error.response?.status === 409;

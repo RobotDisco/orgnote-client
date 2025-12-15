@@ -2,7 +2,7 @@ import { watch, type WatchStopHandle, type Ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { api } from 'src/boot/api';
 import { reporter } from 'src/boot/report';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 
 type User = { active?: string } | null | undefined;
 

@@ -50,7 +50,7 @@
 
 <script setup lang="ts" generic="T = unknown">
 import { computed, ref, useSlots } from 'vue';
-import { isPresent } from 'src/utils/nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 // @ts-expect-error - vue-select beta doesn't have types yet
 import VSelect from 'vue-select';
 import AppIcon from 'src/components/AppIcon.vue';

@@ -2,7 +2,7 @@ import type { OrgNoteApi, LogLevel, LogRecord } from 'orgnote-api';
 import { SpectralLoggerWeb } from 'spectrallogs/web';
 import createRedact from '@pinojs/redact';
 import { submitLogRecord } from 'src/stores/log-dispatcher';
-import { isPresent, isNullable } from './nullable-guards';
+import { isPresent, isNullable } from 'orgnote-api/utils';
 
 type Logger = OrgNoteApi['utils']['logger'];
 type Bindings = Record<string, unknown>;

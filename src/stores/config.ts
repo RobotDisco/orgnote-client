@@ -10,7 +10,7 @@ import { useFileSystemStore } from './file-system';
 import { debounce } from 'src/utils/debounce';
 import { useSettingsStore } from './settings';
 import { useFileSystemManagerStore } from './file-system-manager';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import { reporter } from 'src/boot/report';
 import type { Result } from 'neverthrow';
 import { stringifyToml } from 'orgnote-api/utils';

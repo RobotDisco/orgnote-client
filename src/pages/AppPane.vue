@@ -101,7 +101,7 @@ import type { Router } from 'vue-router';
 
 import ScopedRouterView from 'src/components/ScopedRouterView.vue';
 import { TAB_ROUTER_KEY } from 'src/constants/context-providers';
-import { isPresent } from 'src/utils/nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 
 const props = defineProps<{
   paneId: string;

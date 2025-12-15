@@ -5,8 +5,8 @@ import type { PluginListenerHandle } from '@capacitor/core';
 import { api } from 'src/boot/api';
 import { nativeMobileOnly } from 'src/utils/platform-specific';
 import { ORGNOTE_SCHEME } from 'src/constants/orgnote-scheme';
-import { to } from 'src/utils/to-error';
-import { isPresent } from 'src/utils/nullable-guards';
+import { to } from 'orgnote-api/utils';
+import { isPresent } from 'orgnote-api/utils';
 import { reporter } from 'src/boot/report';
 
 const EXECUTE_PARAM = 'execute';

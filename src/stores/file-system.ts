@@ -10,8 +10,8 @@ import { storeToRefs } from 'pinia';
 import { useFileSystemManagerStore } from './file-system-manager';
 import { useSettingsStore } from './settings';
 import { reporter } from 'src/boot/report';
-import { to } from 'src/utils/to-error';
-import { isNullable } from 'src/utils/nullable-guards';
+import { to } from 'orgnote-api/utils';
+import { isNullable } from 'orgnote-api/utils';
 
 export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
   'file-system',

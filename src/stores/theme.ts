@@ -7,7 +7,7 @@ import { useExtensionsStore } from './extension';
 import { Dark } from 'quasar';
 import { resetCSSVariables } from 'src/utils/css-utils';
 import { useBackgroundSettings } from 'src/composables/background';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 
 export const useThemeStore = defineStore<'theme', ThemeStore>('theme', () => {
   const { config } = storeToRefs(useConfigStore());

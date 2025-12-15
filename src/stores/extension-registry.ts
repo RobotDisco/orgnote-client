@@ -16,8 +16,8 @@ import {
   RECIPES_FOLDER,
   EXTENSION_REGISTRY_MAX_CONCURRENT,
 } from 'src/constants/extension-registry';
-import { isPresent } from 'src/utils/nullable-guards';
-import { to } from 'src/utils/to-error';
+import { isPresent } from 'orgnote-api/utils';
+import { to } from 'orgnote-api/utils';
 import { parseConfig, isSupportedConfigFile } from 'src/utils/config-parsers';
 
 const isRecipeFile = (entry: GitFile): boolean =>

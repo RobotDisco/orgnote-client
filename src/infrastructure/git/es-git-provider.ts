@@ -19,7 +19,7 @@ import {
   I18N,
 } from 'orgnote-api';
 import { DEFAULT_CONFIG } from 'src/constants/config';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 
 type EsGitRepo = MemoryRepo & IObjectRepo & IWalkersRepo & ILoadAsRepo & IFetchRepo;
 

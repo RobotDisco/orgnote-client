@@ -10,7 +10,7 @@ import {
   type FileSystemChange,
 } from 'orgnote-api';
 import { api } from 'src/boot/api';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import { reporter } from 'src/boot/report';
 import type { ResultAsync } from 'neverthrow';
 import { errAsync, okAsync } from 'neverthrow';

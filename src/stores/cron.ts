@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { ToadScheduler, SimpleIntervalJob, AsyncTask, CronJob } from 'toad-scheduler';
 import { Cron } from 'croner';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 import { Platform } from 'quasar';
 import type {
   CronStore,

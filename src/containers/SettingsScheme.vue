@@ -46,7 +46,7 @@ import { api } from 'src/boot/api';
 import { type OrgNoteConfig } from 'orgnote-api';
 import { storeToRefs } from 'pinia';
 import { camelCaseToWords } from 'src/utils/camel-case-to-words';
-import { isPresent } from 'src/utils/nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 import AppFlex from 'src/components/AppFlex.vue';
 
 const props = defineProps<{

@@ -4,7 +4,7 @@ import type { Result } from 'neverthrow';
 import clone from 'rfdc';
 import { parse } from 'valibot';
 import { formatValidationErrors } from 'src/utils/format-validation-errors';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 
 const cloneConfig = clone();
 

@@ -1,5 +1,5 @@
 import type { DiskFile } from 'orgnote-api';
-import { isPresent } from 'src/utils/nullable-guards';
+import { isPresent } from 'orgnote-api/utils';
 
 const BROKEN_CONFIG_PATTERN = /^config-broken-(\d+)\.toml$/;
 

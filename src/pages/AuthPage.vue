@@ -16,7 +16,7 @@ import { platform } from 'src/utils/platform-detection';
 import { useI18n } from 'vue-i18n';
 import { buildOrgNoteUrl } from 'src/utils/build-orgnote-url';
 import { useAuthStore } from 'src/stores/auth';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 
 const route = useRoute();
 const router = useRouter();

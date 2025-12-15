@@ -21,7 +21,7 @@ import MenuItem from 'src/containers/MenuItem.vue';
 import { useCommandsStore } from 'src/stores/command';
 import { camelCaseToWords } from 'src/utils/camel-case-to-words';
 import { useNotificationsStore } from 'src/stores/notifications';
-import { to } from 'src/utils/to-error';
+import { to } from 'orgnote-api/utils';
 
 const props = defineProps<{
   actions: MenuAction[];

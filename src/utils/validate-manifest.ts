@@ -1,7 +1,7 @@
 import { type ExtensionManifest, EXTENSION_MANIFEST_SCHEMA } from 'orgnote-api';
 import { parse } from 'valibot';
 import { formatValidationErrors } from './format-validation-errors';
-import { to } from './to-error';
+import { to } from 'orgnote-api/utils';
 
 export function validateManifest(manifest: ExtensionManifest): void {
   const res = to(parse)(EXTENSION_MANIFEST_SCHEMA, manifest);
