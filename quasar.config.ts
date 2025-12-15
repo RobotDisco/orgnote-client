@@ -22,12 +22,13 @@ export default defineConfig((ctx) => {
       { server: false, path: 'error-handler' },
       'default-file-systems',
       'i18n',
+      'axios',
+      'infrastructure',
       'api',
       {
         server: false,
         path: 'pane-snapshot',
       },
-      'axios',
       'default-commands',
       'viewport-patch',
       'default-file-readers',
@@ -146,9 +147,15 @@ export default defineConfig((ctx) => {
         '/v1': {
           target: process.env.API_URL || 'http://localhost:8000',
           changeOrigin: true,
+          ws: true,
         },
         '/media': {
           target: process.env.API_URL || 'http://localhost:8000',
+        },
+        '/ws': {
+          target: process.env.API_URL || 'http://localhost:8000',
+          changeOrigin: true,
+          ws: true,
         },
       },
       headers: {

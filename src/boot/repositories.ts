@@ -4,11 +4,11 @@ import {
   LOGS_REPOSITORY_PROVIDER_TOKEN,
   REPOSITORIES_PROVIDER_TOKEN,
 } from 'src/constants/app-providers';
-import type { OrgNoteApi } from 'orgnote-api';
+import type { Repositories } from 'orgnote-api';
 
-let repositories: OrgNoteApi['infrastructure'];
+let repositories: Repositories;
 
-const initRepositories = async (): Promise<OrgNoteApi['infrastructure']> => {
+const initRepositories = async (): Promise<Repositories> => {
   repositories = await _initRepositories();
   return repositories;
 };

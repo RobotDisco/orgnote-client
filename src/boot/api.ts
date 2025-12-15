@@ -64,12 +64,14 @@ import { useFileWatcherStore } from 'src/stores/file-watcher';
 import { buildOrgNoteUrl } from 'src/utils/build-orgnote-url';
 import { useAuthStore } from 'src/stores/auth';
 import { useSyncStore } from 'src/stores/sync';
+import { wsClient } from 'src/infrastructure/websocket-client';
 
 let api: OrgNoteApi;
 async function initApi(app: App, router: Router): Promise<void> {
   api = {
     infrastructure: {
       ...repositories,
+      websocket: wsClient,
     },
     core: {
       useCommands: useCommandsStore,
@@ -161,6 +163,7 @@ export default defineBoot(async ({ app, store, router }) => {
   await initApi(app, router);
   logger.info('API initialized');
   store.use(() => ({ api: api as OrgNoteApi }));
+
   app.provide(ORGNOTE_API_PROVIDER_TOKEN, api);
   logger.info('Start synchronizing configurations');
   await syncConfigurations(api);
