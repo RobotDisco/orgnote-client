@@ -1,217 +1,144 @@
-// import { createPinia, setActivePinia } from 'pinia';
-// import { useFileSystemStore } from 'src/stores/file-system';
-import { test } from 'vitest';
-// import { Platform } from 'quasar';
-// import { ErrorFileNotFound, type FileSystem } from 'orgnote-api';
+import { beforeEach, expect, test, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
+import type { DiskFile, FileSystem, FileSystemInfo } from 'orgnote-api';
+import { useFileSystemManagerStore } from './file-system-manager';
+import { useFileSystemStore } from './file-system';
+import { useSettingsStore } from './settings';
 
-// vi.mock('quasar', () => ({
-//   Platform: {
-//     is: {
-//       nativeMobile: false,
-//       android: false,
-//       mobile: false,
-//     },
-//   },
-// }));
+const createDiskFile = (path: string, mtime: number): DiskFile => ({
+  path,
+  mtime,
+  name: path.split('/').pop() ?? '',
+  type: 'file',
+  size: 0,
+});
 
-// const mockSettingsStore = {
-//   config: {
-//     vault: {
-//       path: '/mock/vault/path',
-//     },
-//     encryption: {
-//       method: 'aes-256-cbc',
-//       key: 'mock-key',
-//       iv: 'mock-iv',
-//     },
-//   },
-// };
+const createReadFile = (utf8Content: string): FileSystem['readFile'] => {
+  const readFile: FileSystem['readFile'] = async (path, encoding) => {
+    void path;
+    if (encoding === 'binary') {
+      return new TextEncoder().encode(utf8Content) as never;
+    }
+    return utf8Content as never;
+  };
+  return readFile;
+};
 
-// vi.mock('src/stores/settings', () => ({
-//   useSettingsStore: () => mockSettingsStore,
-// }));
+beforeEach(() => {
+  setActivePinia(createPinia());
+});
 
-// vi.mock('./encryption', () => ({
-//   useEncryptionStore: () => ({
-//     decrypt: vi.fn((content) => `decrypted-${content}`),
-//     encrypt: vi.fn((content) => `encrypted-${content}`),
-//   }),
-// }));
+test('syncFile returns disk content when disk is newer', async () => {
+  const mockFs: FileSystem = {
+    readFile: createReadFile('disk-content'),
+    writeFile: vi.fn(async () => undefined),
+    readDir: vi.fn(async () => []),
+    fileInfo: vi.fn(async (path: string) => createDiskFile(path, 200)),
+    rename: vi.fn(async () => undefined),
+    deleteFile: vi.fn(async () => undefined),
+    rmdir: vi.fn(async () => undefined),
+    mkdir: vi.fn(async () => undefined),
+    isDirExist: vi.fn(async () => true),
+    isFileExist: vi.fn(async () => true),
+    utimeSync: vi.fn(async () => undefined),
+  };
+  const readFileSpy = vi.spyOn(mockFs, 'readFile');
 
-// vi.mock('src/boot/api', () => ({
-//   api: {},
-// }));
+  const fsInfo: FileSystemInfo = {
+    name: 'mock-fs',
+    fs: () => mockFs,
+    type: 'web',
+    initialVault: '/',
+  };
 
-// const mockFileSystem = {
-//   readFile: vi.fn(),
-//   writeFile: vi.fn(),
-//   fileInfo: vi.fn(),
-//   readDir: vi.fn(),
-//   mkdir: vi.fn(),
-//   rmdir: vi.fn(),
-//   deleteFile: vi.fn(),
-//   rename: vi.fn(),
-//   isDirExist: vi.fn(),
-//   isFileExist: vi.fn(),
-//   utimeSync: vi.fn(),
-// };
+  const settingsStore = useSettingsStore();
+  settingsStore.settings.vault = '/';
 
-// setActivePinia(createPinia());
+  const fsManager = useFileSystemManagerStore();
+  fsManager.register(fsInfo);
+  fsManager.currentFsName = 'mock-fs';
 
-// beforeEach(() => {
-//   vi.clearAllMocks();
-//   Platform.is.mobile = false;
-//   Platform.is.android = false;
-//   Platform.is.nativeMobile = false;
-//   mockSettingsStore.config.vault.path = '/mock/vault/path';
-//   mockSettingsStore.config.encryption = {
-//     method: 'aes-256-cbc',
-//     key: 'mock-key',
-//     iv: 'mock-iv',
-//   };
-// });
+  const store = useFileSystemStore();
 
-// test('readTextFile should read and decrypt gpg files', async () => {
-//   const store = useFileSystemStore();
-//   await store.registerFileSystem('test-fs', mockFileSystem);
-//   await store.pickFileSystem('test-fs');
+  const result = await store.syncFile('test.txt', 'store-content', 100);
 
-//   mockFileSystem.readFile.mockResolvedValue('test-content');
+  expect(result).toBe('disk-content');
+  expect(readFileSpy).toHaveBeenCalledWith('/test.txt', 'utf8');
+  expect(mockFs.writeFile).not.toHaveBeenCalled();
+});
 
-//   const content = await store.readTextFile('test.org');
-//   expect(content).toBe('test-content');
-//   expect(mockFileSystem.readFile).toHaveBeenCalled();
-// });
+test('syncFile writes when disk is missing', async () => {
+  const mockFs: FileSystem = {
+    readFile: createReadFile('disk-content'),
+    writeFile: vi.fn(async () => undefined),
+    readDir: vi.fn(async () => []),
+    fileInfo: vi.fn(async () => undefined),
+    rename: vi.fn(async () => undefined),
+    deleteFile: vi.fn(async () => undefined),
+    rmdir: vi.fn(async () => undefined),
+    mkdir: vi.fn(async () => undefined),
+    isDirExist: vi.fn(async () => true),
+    isFileExist: vi.fn(async () => false),
+    utimeSync: vi.fn(async () => undefined),
+  };
 
-// test('writeFile should write and encrypt gpg files', async () => {
-//   const store = useFileSystemStore();
-//   await store.registerFileSystem('test-fs', mockFileSystem);
-//   await store.pickFileSystem('test-fs');
+  const fsInfo: FileSystemInfo = {
+    name: 'mock-fs',
+    fs: () => mockFs,
+    type: 'web',
+    initialVault: '/',
+  };
 
-//   await store.writeFile('test.org.gpg', 'test-content');
-//   expect(mockFileSystem.writeFile).toHaveBeenCalled();
-// });
+  const settingsStore = useSettingsStore();
+  settingsStore.settings.vault = '/';
 
-// test('readDir should return empty array when no vault provided on mobile', async () => {
-//   mockSettingsStore.config.vault.path = '';
-//   Platform.is.mobile = true;
-//   Platform.is.android = true;
+  const fsManager = useFileSystemManagerStore();
+  fsManager.register(fsInfo);
+  fsManager.currentFsName = 'mock-fs';
 
-//   const store = useFileSystemStore();
+  const store = useFileSystemStore();
 
-//   const result = await store.readDir();
-//   expect(result).toEqual([]);
-// });
+  const result = await store.syncFile('test.txt', 'store-content', 100);
 
-// test('mkdir should create directory', async () => {
-//   const store = useFileSystemStore();
-//   await store.registerFileSystem('test-fs', mockFileSystem);
-//   await store.pickFileSystem('test-fs');
+  expect(result).toBeUndefined();
+  expect(mockFs.writeFile).toHaveBeenCalledWith('/test.txt', 'store-content', 'utf8');
+});
 
-//   await store.mkdir('test-dir');
-//   expect(mockFileSystem.mkdir).toHaveBeenCalled();
-// });
+test('syncFile does nothing when disk mtime equals time', async () => {
+  const mockFs: FileSystem = {
+    readFile: createReadFile('disk-content'),
+    writeFile: vi.fn(async () => undefined),
+    readDir: vi.fn(async () => []),
+    fileInfo: vi.fn(async (path: string) => createDiskFile(path, 100)),
+    rename: vi.fn(async () => undefined),
+    deleteFile: vi.fn(async () => undefined),
+    rmdir: vi.fn(async () => undefined),
+    mkdir: vi.fn(async () => undefined),
+    isDirExist: vi.fn(async () => true),
+    isFileExist: vi.fn(async () => true),
+    utimeSync: vi.fn(async () => undefined),
+  };
+  const readFileSpy = vi.spyOn(mockFs, 'readFile');
 
-// test('rmdir should remove directory', async () => {
-//   const store = useFileSystemStore();
-//   await store.registerFileSystem('test-fs', mockFileSystem);
-//   await store.pickFileSystem('test-fs');
+  const fsInfo: FileSystemInfo = {
+    name: 'mock-fs',
+    fs: () => mockFs,
+    type: 'web',
+    initialVault: '/',
+  };
 
-//   await store.rmdir('test-dir');
-//   expect(mockFileSystem.rmdir).toHaveBeenCalled();
-// });
+  const settingsStore = useSettingsStore();
+  settingsStore.settings.vault = '/';
 
-// test('fileInfo should return file information', async () => {
-//   const store = useFileSystemStore();
-//   await store.registerFileSystem('test-fs', mockFileSystem);
-//   await store.pickFileSystem('test-fs');
+  const fsManager = useFileSystemManagerStore();
+  fsManager.register(fsInfo);
+  fsManager.currentFsName = 'mock-fs';
 
-//   mockFileSystem.fileInfo.mockResolvedValue({ path: 'test.org', mtime: 123 });
+  const store = useFileSystemStore();
 
-//   const info = await store.fileInfo('test.org');
-//   expect(info.path).toBe('test.org');
-//   expect(info.mtime).toBe(123);
-// });
+  const result = await store.syncFile('test.txt', 'store-content', 100);
 
-// test('deleteFile should remove file', async () => {
-//   const store = useFileSystemStore();
-//   await store.registerFileSystem('test-fs', mockFileSystem);
-//   await store.pickFileSystem('test-fs');
-
-//   await store.deleteFile('test.org');
-//   expect(mockFileSystem.deleteFile).toHaveBeenCalled();
-// });
-
-// test('readTextFile should throw ErrorFileNotFound when file does not exist', async () => {
-//   mockFileSystem.readFile.mockRejectedValue(new ErrorFileNotFound('File not found'));
-
-//   const store = useFileSystemStore();
-//   await store.registerFileSystem('test-fs', mockFileSystem);
-//   await store.pickFileSystem('test-fs');
-
-//   await expect(store.readTextFile('nonexistent.org.gpg')).rejects.toThrow(ErrorFileNotFound);
-// });
-
-// test('rename should throw error when newPath already exists', async () => {
-//   mockFileSystem.rename.mockImplementation((oldPath, newPath) => {
-//     if (newPath === '/mock/vault/path/existing.org.gpg') {
-//       throw new Error('File already exists');
-//     }
-//     return Promise.resolve();
-//   });
-
-//   const store = useFileSystemStore();
-//   await store.registerFileSystem('test-fs', mockFileSystem);
-//   await store.pickFileSystem('test-fs');
-
-//   await expect(store.rename('old.org.gpg', 'existing.org.gpg')).rejects.toThrow(
-//     'File already exists',
-//   );
-// });
-
-// test('deleteFile should throw ErrorFileNotFound when file does not exist', async () => {
-//   mockFileSystem.deleteFile.mockRejectedValue(new ErrorFileNotFound('File not found'));
-
-//   const store = useFileSystemStore();
-//   await store.registerFileSystem('test-fs', mockFileSystem);
-//   await store.pickFileSystem('test-fs');
-
-//   await expect(store.deleteFile('nonexistent.org.gpg')).rejects.toThrow(ErrorFileNotFound);
-// });
-
-// test('mkdir should throw error when directory already exists', async () => {
-//   mockFileSystem.mkdir.mockImplementation((path) => {
-//     if (path === '/mock/vault/path/existing-dir') {
-//       throw new Error('Directory already exists');
-//     }
-//     return Promise.resolve();
-//   });
-
-//   const store = useFileSystemStore();
-//   await store.registerFileSystem('test-fs', mockFileSystem);
-//   await store.pickFileSystem('test-fs');
-
-//   await expect(store.mkdir('existing-dir')).rejects.toThrow('Directory already exists');
-// });
-
-// test('syncFile should not update file if existing file is newer', async () => {
-//   mockFileSystem.fileInfo.mockResolvedValue({ path: '/mock/vault/path/test.org.gpg', mtime: 200 });
-//   mockFileSystem.readFile.mockResolvedValue('test-content');
-
-//   const store = useFileSystemStore();
-//   await store.registerFileSystem('test-fs', mockFileSystem);
-//   await store.pickFileSystem('test-fs');
-
-//   const content = await store.syncFile('test.org.gpg', 'new-content', 100);
-//   expect(content).toBe('decrypted-test-content');
-//   expect(mockFileSystem.writeFile).not.toHaveBeenCalled();
-// });
-
-// // TODO: add fs validator.
-// test.skip('registerFileSystem should throw error when fs is invalid', async () => {
-//   const invalidFs = {};
-//   const store = useFileSystemStore();
-//   await expect(store.registerFileSystem('invalid-fs', invalidFs as FileSystem)).rejects.toThrow();
-// });
-
-test('fake', () => {});
+  expect(result).toBeUndefined();
+  expect(readFileSpy).not.toHaveBeenCalled();
+  expect(mockFs.writeFile).not.toHaveBeenCalled();
+});

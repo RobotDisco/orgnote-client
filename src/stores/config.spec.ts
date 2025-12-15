@@ -1,10 +1,22 @@
-import { test, expect, beforeEach } from 'vitest';
+import { test, expect, beforeEach, vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import clone from 'rfdc';
 import { useConfigStore } from './config';
 import { DEFAULT_CONFIG } from 'src/constants/config';
+import type { DiskFile, FileSystem, FileSystemInfo } from 'orgnote-api';
+import { useFileSystemManagerStore } from './file-system-manager';
+import { useSettingsStore } from './settings';
+import { stringifyToml } from 'orgnote-api/utils';
+import { reporter } from 'src/boot/report';
+
+vi.mock('src/boot/report', () => ({
+  reporter: {
+    reportError: vi.fn(),
+  },
+}));
 
 beforeEach(() => {
+  vi.clearAllMocks();
   setActivePinia(createPinia());
 });
 
@@ -67,4 +79,76 @@ test('configErrors should be reactive array', () => {
 
   expect(store.configErrors).toContain('Test error');
   expect(store.configErrors.length).toBe(1);
+});
+
+const createDiskFile = (path: string, mtime: number, size = 0): DiskFile => ({
+  name: path.split('/').pop() ?? '',
+  path,
+  type: 'file',
+  size,
+  mtime,
+});
+
+const createMockFs = (configToml: string): { fs: FileSystem; files: Map<string, DiskFile & { content: string }> } => {
+  const files = new Map<string, DiskFile & { content: string }>();
+  let nextMtime = 300;
+
+  const configPath = '/.orgnote/config.toml';
+  files.set(configPath, { ...createDiskFile(configPath, 200, configToml.length), content: configToml });
+
+  const fs: FileSystem = {
+    readFile: async (path) => {
+      const file = files.get(path);
+      if (!file) throw new Error(`Missing file: ${path}`);
+      return file.content as never;
+    },
+    writeFile: async (path, content) => {
+      const text = typeof content === 'string' ? content : new TextDecoder().decode(content);
+      files.set(path, { ...createDiskFile(path, nextMtime++, text.length), content: text });
+    },
+    readDir: async (path) => {
+      if (path !== '/.orgnote') return [];
+      return [...files.values()].filter((f) => f.path.startsWith('/.orgnote/') && f.path.split('/').length === 3);
+    },
+    fileInfo: async (path) => files.get(path),
+    rename: async (path, newPath) => {
+      const file = files.get(path);
+      if (!file) throw new Error(`Missing file: ${path}`);
+      files.delete(path);
+      files.set(newPath, { ...file, path: newPath, name: newPath.split('/').pop() ?? '', mtime: nextMtime++ });
+    },
+    deleteFile: async (path) => void files.delete(path),
+    rmdir: async () => undefined,
+    mkdir: async () => undefined,
+    isDirExist: async () => true,
+    isFileExist: async (path) => files.has(path),
+    utimeSync: async () => undefined,
+  };
+
+  return { fs, files };
+};
+
+test('sync quarantines invalid config.toml', async () => {
+  const { fs, files } = createMockFs('invalid = [toml');
+
+  const fsInfo: FileSystemInfo = {
+    name: 'mock-fs',
+    fs: () => fs,
+    type: 'web',
+    initialVault: '/',
+  };
+
+  const settingsStore = useSettingsStore();
+  settingsStore.settings.vault = '/';
+
+  const fsManager = useFileSystemManagerStore();
+  fsManager.register(fsInfo);
+  fsManager.currentFsName = 'mock-fs';
+
+  const store = useConfigStore();
+  await store.sync();
+
+  expect(files.has('/.orgnote/config-broken-1.toml')).toBe(true);
+  expect(files.get('/.orgnote/config.toml')?.content).toBe(stringifyToml(clone()(DEFAULT_CONFIG)));
+  expect(reporter.reportError).toHaveBeenCalled();
 });

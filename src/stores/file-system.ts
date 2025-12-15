@@ -89,9 +89,15 @@ export const useFileSystemStore = defineStore<'file-system', FileSystemStore>(
     ): Promise<T | undefined> => {
       const realPath = normalizePath(path);
       const previousFileInfo = await safeFs.value.fileInfo(realPath);
-      const needToUpdate = !previousFileInfo || previousFileInfo?.mtime < time;
+      const hasLocalChanges = Boolean(previousFileInfo && previousFileInfo.mtime > time);
 
-      if (!needToUpdate) {
+      if (hasLocalChanges) {
+        const format = content instanceof Uint8Array ? 'binary' : 'utf8';
+        return (await safeFs.value.readFile(realPath, format)) as T;
+      }
+
+      const isUpToDate = Boolean(previousFileInfo && previousFileInfo.mtime === time);
+      if (isUpToDate) {
         return;
       }
 

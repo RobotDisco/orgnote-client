@@ -18,13 +18,13 @@ import { validateManifest } from 'src/utils/validate-manifest';
 import { reporter } from 'src/boot/report';
 import { to } from 'src/utils/to-error';
 import { useFileSystemStore } from './file-system';
-import { getSystemFilesPath } from 'src/utils/get-system-files-path';
 import { parseToml, stringifyToml } from 'orgnote-api/utils';
 import { useGitStore } from './git';
 import { resetCSSVariables } from 'src/utils/css-utils';
 import { THEME_VARIABLES } from 'orgnote-api';
 import { useConfigStore } from './config';
 import { Dark } from 'quasar';
+import { ORGNOTE_EXTENSIONS_FILE_PATH } from 'src/constants/system-file-paths';
 
 interface ActiveExtension extends ExtensionMeta {
   module: Extension;
@@ -42,7 +42,7 @@ interface FetchedExtension {
 
 type SourceFetcher = (source: ExtensionSourceInfo) => Promise<FetchedExtension>;
 
-const extensionsFilePath = getSystemFilesPath('extensions.toml');
+const extensionsFilePath = ORGNOTE_EXTENSIONS_FILE_PATH;
 const distFolder = 'dist';
 
 export const useExtensionsStore = defineStore<'extension', ExtensionStore>('extension', () => {
