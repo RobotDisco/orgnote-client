@@ -1,4 +1,1 @@
-# TODO: feat/stable-beta uncomment
-# ./deploy/sync-capaticor-version.sh
-bun install --package-lock-only --no-scripts && git add bun.lock
-# git add quasar.config.ts src-capacitor/android/app/build.gradle
+bun scripts/swap-orgnote-api.ts to-npm
