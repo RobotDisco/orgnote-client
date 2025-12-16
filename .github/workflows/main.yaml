@@ -78,7 +78,10 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
@@ -87,8 +90,14 @@ jobs:
           path: '**/node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/bun.lockb') }}
 
+      - name: Create dummy certs for Quasar config
+        run: |
+          mkdir -p .certs
+          openssl req -x509 -newkey rsa:2048 -keyout .certs/key.pem -out .certs/cert.pem -days 1 -nodes -subj "/CN=localhost"
+      - name: Prepare Quasar
+        run: bunx quasar prepare
       - name: Run tests
-        run: bun test
+        run: bun run test:ci
 
   build-pwa:
     name: Build pwa
