@@ -1,4 +1,4 @@
-import { nativeMobileOnly } from 'src/utils/platform-specific';
+import { clientOnly, nativeMobileOnly, electronOnly } from 'src/utils/platform-specific';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { getCssVar } from 'src/utils/css-utils';
 import { NavigationBar } from '@hugotomazi/capacitor-navigation-bar';
@@ -29,12 +29,23 @@ export const useBackgroundSettings = () => {
     });
   };
 
+  const setElectronBackground = electronOnly((bgColor?: string) => {
+    const backgroundColor = getCssVar(bgColor ?? 'bg');
+    if (backgroundColor) {
+      window.electron?.setHeaderColor(backgroundColor);
+    }
+  });
+
+  const setMobileBackground = nativeMobileOnly(async (bgColor?: string) => {
+    await Promise.all([setStatusBarBackground(bgColor), setBottomBarBackground(bgColor)]);
+  });
+
   const setBackground = async (bgColor?: string) => {
     setThemeColor(bgColor);
-    await Promise.all([setStatusBarBackground(bgColor), setBottomBarBackground(bgColor)]);
+    await Promise.all([setElectronBackground(bgColor), setMobileBackground(bgColor)]);
   };
 
-  function setThemeColor(bgColor?: string): void {
+  const setThemeColor = (bgColor?: string): void => {
     const backgroundColor = getCssVar(bgColor ?? 'bg');
     if (!backgroundColor) {
       return;
@@ -50,12 +61,12 @@ export const useBackgroundSettings = () => {
     newMeta.name = 'theme-color';
     newMeta.content = backgroundColor;
     document.head.appendChild(newMeta);
-  }
+  };
 
   const bgSettings: BackgroundSettings = {
     setBottomBarBackground: nativeMobileOnly(setBottomBarBackground),
     setStatusBarBackground: nativeMobileOnly(setStatusBarBackground),
-    setBackground: nativeMobileOnly(setBackground),
+    setBackground: clientOnly(setBackground),
   };
 
   return bgSettings;

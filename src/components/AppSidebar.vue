@@ -45,8 +45,8 @@ withDefaults(
     border-right: var(--sidebar-border-right);
     background: var(--sidebar-bg);
     position: relative;
-    height: calc(100vh - var(--device-padding-top, 0px) - env(safe-area-inset-top));
-    height: 100mvh;
+    height: 100dvh;
+    height: calc(var(--full-height) - var(--device-padding-top, 0px) - env(safe-area-inset-top));
 
     * {
       color: var(--sidebar-fg);
@@ -57,7 +57,8 @@ withDefaults(
     & {
       width: var(--sidebar-mini-width);
       height: 100vh;
-      height: 100mvh;
+      height: 100dvh;
+      height: var(--full-height);
       padding: var(--sidebar-padding);
     }
   }
