@@ -6,11 +6,12 @@
     "lib": ["es2022", "es2021", "DOM", "DOM.iterable"]
   },
   "exclude": [
-    "./../dist",
-    "./../node_modules",
-    "./../src-capacitor",
-    "./../src-cordova",
-    "./../quasar.config.*.temporary.compiled*",
+    "./dist",
+    "./node_modules",
+    "./src-capacitor",
+    "./src-cordova",
+    "./quasar.config.*.temporary.compiled*",
+    "./storybook-static",
     "vitest.config.ts"
   ]
 }

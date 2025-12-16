@@ -32,7 +32,7 @@
     "build:android:apk:sign": "bun run build:android:aab && ./sign-apk.sh",
     "build:ios": "env-cmd -f ./.env.prod quasar build -m capacitor -T ios",
     "report:duplicates": "jscpd ./src",
-    "lint": "NODE_OPTIONS=\"--max-old-space-size=4096\" && eslint -c ./eslint.config.js \"./src/**/*.{ts,js,cjs,mjs,vue}\"",
+    "lint": "NODE_OPTIONS='--max-old-space-size=8192' eslint -c ./eslint.config.js \"./src/**/*.{ts,js,cjs,mjs,vue}\"",
     "test": "vitest",
     "test:ci": "vitest run",
     "generate:icons": "icongenie generate --skip-trim -i images/modern-unicorn.png --png-color 9356E8 --splashscreen-color 9356E8 && icongenie generate --padding 70,70 -m capacitor -i images/modern-unicorn-round.png --png-color 9356E8 --splashscreen-color 9356E8",

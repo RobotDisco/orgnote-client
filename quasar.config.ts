@@ -135,10 +135,13 @@ export default defineConfig((ctx) => {
     devServer: {
       // https: true,
       host: '0.0.0.0',
-      https: {
-        key: fs.readFileSync('.certs/key.pem'),
-        cert: fs.readFileSync('.certs/cert.pem'),
-      },
+      https:
+        fs.existsSync('.certs/key.pem') && fs.existsSync('.certs/cert.pem')
+          ? {
+              key: fs.readFileSync('.certs/key.pem'),
+              cert: fs.readFileSync('.certs/cert.pem'),
+            }
+          : undefined,
       port: 3001,
       open: {
         app: { name: 'arc' },
