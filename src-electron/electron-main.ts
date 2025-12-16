@@ -1,10 +1,13 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
 
-// needed in case process is undefined under Linux
 const platform = process.platform || os.platform();
+
+const TITLE_BAR_HEIGHT = 30;
+const TITLE_BAR_SYMBOL_COLOR = '#ffffff';
+const TRAFFIC_LIGHT_POSITION = { x: 10, y: 10 };
 
 const currentDir = fileURLToPath(new URL('.', import.meta.url));
 
@@ -19,6 +22,8 @@ function createWindow() {
     width: 1000,
     height: 600,
     useContentSize: true,
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: TRAFFIC_LIGHT_POSITION,
     webPreferences: {
       contextIsolation: true,
       // More info: https://v2.quasar.dev/quasar-cli-vite/developing-electron-apps/electron-preload-script
@@ -50,6 +55,20 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = undefined;
+  });
+
+  ipcMain.handle('setHeaderColor', (_, color: string) => {
+    if (!mainWindow) {
+      return;
+    }
+    mainWindow.setBackgroundColor(color);
+    if (process.platform === 'win32') {
+      mainWindow.setTitleBarOverlay({
+        color,
+        symbolColor: TITLE_BAR_SYMBOL_COLOR,
+        height: TITLE_BAR_HEIGHT,
+      });
+    }
   });
 }
 
