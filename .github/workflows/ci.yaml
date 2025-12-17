@@ -97,8 +97,8 @@ jobs:
         run: |
           cat <<EOT > .env.prod
           DEBUG=${{ inputs.environment == 'dev' && 'true' || 'false' }}
-          API_URL=${{ secrets.API_URL }}
-          AUTH_URL=${{ secrets.AUTH_URL }}
+          VITE_API_URL=${{ secrets.API_URL }}
+          VITE_AUTH_URL=${{ secrets.AUTH_URL }}
           EOT
       - name: Build ssr
         run: bun run build -m ssr

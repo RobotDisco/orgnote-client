@@ -4,11 +4,6 @@ import type { RouteRecordRaw } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
   {
-    path: '/:pathMatch(.*)*',
-    name: RouteNames.NotFound,
-    redirect: { name: RouteNames.Home },
-  },
-  {
     path: '/error',
     name: RouteNames.Error,
     component: () => import('pages/ErrorPage.vue'),
@@ -63,6 +58,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/PanesPage.vue'),
       },
     ],
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: RouteNames.NotFound,
+    redirect: { name: RouteNames.Home },
   },
 ];
 

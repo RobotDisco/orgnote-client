@@ -209,11 +209,6 @@ const findStackTrace = (primary: unknown, extras: unknown[]): string | undefined
   return undefined;
 };
 
-const logStackTraceInDev = (stack?: string): void => {
-  if (!process.env.DEV || !stack) return;
-  console.error(stack);
-};
-
 const shouldRecordLogs = (): boolean => !!process.env.CLIENT;
 
 const createLoggerAdapter = (base: SpectralLoggerWeb, bindings: Bindings = {}): Logger => {
