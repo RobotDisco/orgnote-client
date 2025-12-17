@@ -167,7 +167,9 @@ export default defineBoot(async ({ app, store, router }) => {
   app.provide(ORGNOTE_API_PROVIDER_TOKEN, api);
   logger.info('Start synchronizing configurations');
   await syncConfigurations(api);
-  window.orgnote = api;
+  if (typeof window !== 'undefined') {
+    window.orgnote = api;
+  }
   logger.info('Configurations synchronized');
 
   splashScreen.hide();
