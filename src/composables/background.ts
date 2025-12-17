@@ -1,7 +1,5 @@
 import { nativeMobileOnly } from 'src/utils/platform-specific';
-import { StatusBar, Style } from '@capacitor/status-bar';
 import { getCssVar } from 'src/utils/css-utils';
-import { NavigationBar } from '@hugotomazi/capacitor-navigation-bar';
 import type { BackgroundSettings } from 'orgnote-api';
 import { useConfigStore } from 'src/stores/config';
 
@@ -13,6 +11,7 @@ export const useBackgroundSettings = () => {
     if (!backgroundColor) {
       return;
     }
+    const { StatusBar, Style } = await import('@capacitor/status-bar');
     const style = config.ui.theme === 'dark' ? Style.Dark : Style.Light;
     await StatusBar.setBackgroundColor({ color: backgroundColor });
     StatusBar.setStyle({ style });
@@ -23,7 +22,7 @@ export const useBackgroundSettings = () => {
     if (!backgroundColor) {
       return;
     }
-
+    const { NavigationBar } = await import('@hugotomazi/capacitor-navigation-bar');
     await NavigationBar.setColor({
       color: backgroundColor,
     });

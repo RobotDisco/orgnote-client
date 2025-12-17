@@ -9,7 +9,6 @@ import type {
 } from 'orgnote-api';
 import { version } from '../../package.json';
 import { api } from 'src/boot/api';
-import { Device } from '@capacitor/device';
 
 const isClientEnvironment = (): boolean => (process.env.CLIENT ?? '').toString() === 'true';
 const hasNavigator = (): boolean => isClientEnvironment() && typeof navigator !== 'undefined';
@@ -93,6 +92,7 @@ const getDeviceInfo = async (): Promise<DeviceInfo | undefined> => {
   if (!$q?.platform?.is?.nativeMobile) return undefined;
 
   try {
+    const { Device } = await import('@capacitor/device');
     const info = await Device.getInfo();
     return {
       model: info.model,

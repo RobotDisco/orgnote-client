@@ -1,5 +1,3 @@
-import { registerPlugin } from '@capacitor/core';
-
 export interface SafPlugin {
   openDirectoryPicker(): Promise<{ uri: string }>;
   readFile(options: { uri: string; path: string[] }): Promise<{ data: string }>;
@@ -23,4 +21,12 @@ export interface SafPlugin {
   mkdir(options: { uri: string; path: string[] }): Promise<{ uri: string }>;
 }
 
-export const AndroidSaf = registerPlugin<SafPlugin>('SafPlugin');
+let androidSafInstance: SafPlugin | null = null;
+
+export const getAndroidSaf = async (): Promise<SafPlugin> => {
+  if (!androidSafInstance) {
+    const { registerPlugin } = await import('@capacitor/core');
+    androidSafInstance = registerPlugin<SafPlugin>('SafPlugin');
+  }
+  return androidSafInstance;
+};

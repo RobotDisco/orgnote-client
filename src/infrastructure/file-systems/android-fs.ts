@@ -1,5 +1,5 @@
 import { splitPath, type DiskFile, type FileSystem, type FileSystemParams } from 'orgnote-api';
-import { AndroidSaf } from 'src/plugins/saf.plugin';
+import { getAndroidSaf, type SafPlugin } from 'src/plugins/saf.plugin';
 import { isPresent } from 'orgnote-api/utils';
 import { to } from 'orgnote-api/utils';
 
@@ -7,6 +7,14 @@ export const ANDROID_SAF_FS_NAME = 'SAF android file system';
 
 export const useAndroidFs = (): FileSystem => {
   let rootUri = '';
+  let saf: SafPlugin | undefined;
+
+  const ensureSaf = async (): Promise<SafPlugin> => {
+    if (!saf) {
+      saf = await getAndroidSaf();
+    }
+    return saf;
+  };
 
   const init: FileSystem['init'] = async (params?: FileSystemParams): Promise<FileSystemParams> => {
     const root = params?.root ?? (await pickFolder());
@@ -23,7 +31,8 @@ export const useAndroidFs = (): FileSystem => {
   };
 
   const pickFolder = async (): Promise<string> => {
-    const res = await AndroidSaf.openDirectoryPicker();
+    const safInstance = await ensureSaf();
+    const res = await safInstance.openDirectoryPicker();
     return res.uri;
   };
 
@@ -62,7 +71,11 @@ export const useAndroidFs = (): FileSystem => {
     path: string,
     encoding: T = 'utf8' as T,
   ) => {
-    const file = await to(AndroidSaf.readFile)({ uri: rootUri, path: splitPath(path) });
+    const safInstance = await ensureSaf();
+    const file = await to(safInstance.readFile.bind(safInstance))({
+      uri: rootUri,
+      path: splitPath(path),
+    });
     if (file.isErr()) {
       throw file.error;
     }
@@ -72,31 +85,37 @@ export const useAndroidFs = (): FileSystem => {
   };
 
   const writeFile: FileSystem['writeFile'] = async (path, content) => {
+    const safInstance = await ensureSaf();
     const data = typeof content === 'string' ? content : new TextDecoder().decode(content);
-    await AndroidSaf.writeFile({ uri: rootUri, path: splitPath(path), data });
+    await safInstance.writeFile({ uri: rootUri, path: splitPath(path), data });
   };
 
   const readDir: FileSystem['readDir'] = async (path) => {
-    const { files } = await AndroidSaf.readDir({ uri: rootUri, path: splitPath(path) });
+    const safInstance = await ensureSaf();
+    const { files } = await safInstance.readDir({ uri: rootUri, path: splitPath(path) });
     const normalizedFiles = files.map(toDiskFile).filter((f) => isPresent(f));
     return normalizedFiles;
   };
 
   const fileInfo: FileSystem['fileInfo'] = async (path) => {
-    const file = await AndroidSaf.fileInfo({ uri: rootUri, path: splitPath(path) });
+    const safInstance = await ensureSaf();
+    const file = await safInstance.fileInfo({ uri: rootUri, path: splitPath(path) });
     return toDiskFile(file);
   };
 
   const mkdir: FileSystem['mkdir'] = async (path) => {
-    await AndroidSaf.mkdir({ uri: rootUri, path: splitPath(path) });
+    const safInstance = await ensureSaf();
+    await safInstance.mkdir({ uri: rootUri, path: splitPath(path) });
   };
 
   const deleteFile: FileSystem['deleteFile'] = async (path) => {
-    await AndroidSaf.delete({ uri: rootUri, path: splitPath(path) });
+    const safInstance = await ensureSaf();
+    await safInstance.delete({ uri: rootUri, path: splitPath(path) });
   };
 
   const rename: FileSystem['rename'] = async (path, newPath) => {
-    await AndroidSaf.rename({
+    const safInstance = await ensureSaf();
+    await safInstance.rename({
       uri: rootUri,
       newPath: splitPath(newPath),
       oldPath: splitPath(path),
@@ -112,8 +131,9 @@ export const useAndroidFs = (): FileSystem => {
   };
 
   const utimeSync: FileSystem['utimeSync'] = async (path, _, mtime) => {
+    const safInstance = await ensureSaf();
     const timestamp = mtime ? new Date(mtime).getTime() : Date.now();
-    await AndroidSaf.utime({ uri: rootUri, path: splitPath(path), mtime: timestamp });
+    await safInstance.utime({ uri: rootUri, path: splitPath(path), mtime: timestamp });
   };
 
   const rmdir: FileSystem['rmdir'] = async (path) => {
@@ -146,8 +166,7 @@ export const useAndroidFs = (): FileSystem => {
       }
     }
 
-    // Если формат неизвестен, возвращаем исходный URI (или выбрасываем ошибку)
-    throw new Error('Неизвестный формат URI: ' + uri);
+    throw new Error(`Unknown SAF URI format: ${uri}`);
   };
 
   return {

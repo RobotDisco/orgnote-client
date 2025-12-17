@@ -1,6 +1,6 @@
 import { watch, onScopeDispose } from 'vue';
 import { useRoute, useRouter, type LocationQueryValue } from 'vue-router';
-import { App, type URLOpenListenerEvent } from '@capacitor/app';
+import type { URLOpenListenerEvent } from '@capacitor/app';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { api } from 'src/boot/api';
 import { nativeMobileOnly } from 'src/utils/platform-specific';
@@ -59,6 +59,7 @@ function setupMobileDeepLinkHandler(): void {
   let listenerHandle: PluginListenerHandle | undefined;
 
   nativeMobileOnly(async () => {
+    const { App } = await import('@capacitor/app');
     listenerHandle = await App.addListener('appUrlOpen', handleDeepLink);
   })();
 
