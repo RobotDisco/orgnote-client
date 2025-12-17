@@ -47,7 +47,7 @@ export const useAuthStore = defineStore<'auth', AuthStore>(
 
     const getAuthUrl = (authProvider: string, state: AuthState): string => {
       const strState = encodeURIComponent(encodeAuthState(state));
-      const baseUrl = import.meta.env.VITE_AUTH_URL || '';
+      const baseUrl = process.env.AUTH_URL || '';
       return `${baseUrl}/${RoutePaths.AUTH_LOGIN}/${authProvider}?state=${strState}`;
     };
 
