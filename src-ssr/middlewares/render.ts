@@ -19,6 +19,8 @@ export default defineSsrMiddleware(({ app, resolve, render, serve }) => {
       })
       .catch((err: RenderError) => {
         // oops, we had an error while rendering the page
+        console.error('[SSR ERROR]', err);
+        console.error('[SSR STACK]', err.stack);
 
         // we were told to redirect to another URL
         if (err.url) {
