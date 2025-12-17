@@ -221,9 +221,11 @@ const createLoggerAdapter = (base: SpectralLoggerWeb, bindings: Bindings = {}): 
     const method = spectralMethodMap[level];
     const spectralMessage = toMessage(primary);
     const target = base[method] as (message: string) => void;
-    const stackTrace = process.env.DEV ? findStackTrace(primary, extras) : undefined;
+    const stackTrace = findStackTrace(primary, extras);
     target.call(base, spectralMessage);
-    logStackTraceInDev(stackTrace);
+    if (stackTrace && (level === 'error' || process.env.DEV)) {
+      console.error(stackTrace);
+    }
     if (!shouldRecordLogs()) return;
     const record = buildRecord(level, primary, extras, bindings);
     submitLogRecord(record);
