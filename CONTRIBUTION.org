@@ -9,6 +9,7 @@
 
 * Intall certificates to work with HTTPS locally
 
+Macos:
 #+BEGIN_SRC bash
     brew install mkcert
     mkcert -install

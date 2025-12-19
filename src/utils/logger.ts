@@ -2,7 +2,7 @@ import type { OrgNoteApi, LogLevel, LogRecord } from 'orgnote-api';
 import { SpectralLoggerWeb } from 'spectrallogs/web';
 import createRedact from '@pinojs/redact';
 import { submitLogRecord } from 'src/stores/log-dispatcher';
-import { isPresent, isNullable } from 'orgnote-api/utils';
+import { isPresent, isNullable, to } from 'orgnote-api/utils';
 
 type Logger = OrgNoteApi['utils']['logger'];
 type Bindings = Record<string, unknown>;
@@ -104,11 +104,10 @@ const maskPhone = (value: string): string =>
 const sanitizeString = (value: string): string => maskPhone(maskEmail(value));
 
 const cloneObject = (value: Record<string, unknown>): Record<string, unknown> => {
-  try {
-    return JSON.parse(JSON.stringify(value));
-  } catch {
-    return { ...value };
-  }
+  const safeClone = to(() => JSON.parse(JSON.stringify(value)) as Record<string, unknown>);
+  const result = safeClone();
+  if (result.isOk()) return result.value;
+  return { ...value };
 };
 
 const maskDeep = (value: unknown): unknown => {
@@ -129,14 +128,14 @@ const sanitizeObject = (value: Record<string, unknown>): Record<string, unknown>
   const clone = cloneObject(value);
   const redacted = pathRedactor(clone);
   const masked = maskDeep(redacted);
-  try {
-    return JSON.parse(JSON.stringify(masked));
-  } catch {
-    if (typeof masked === 'object' && isPresent(masked)) {
-      return { ...masked } as Record<string, unknown>;
-    }
-    return {};
+  const safeClone = to(() => JSON.parse(JSON.stringify(masked)) as Record<string, unknown>);
+  const result = safeClone();
+  if (result.isOk()) return result.value;
+
+  if (typeof masked === 'object' && isPresent(masked)) {
+    return { ...masked } as Record<string, unknown>;
   }
+  return {};
 };
 
 const toMessage = (value: unknown): string => {
@@ -147,11 +146,10 @@ const toMessage = (value: unknown): string => {
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value);
   if (typeof value === 'symbol') return value.toString();
   if (!isPresent(value)) return '';
-  try {
-    return sanitizeString(JSON.stringify(value));
-  } catch {
-    return sanitizeString(String(value));
-  }
+  const safeStringify = to(() => JSON.stringify(value));
+  const result = safeStringify();
+  if (result.isOk()) return sanitizeString(result.value);
+  return sanitizeString(String(value));
 };
 
 const errorContext = (error: Error): Record<string, unknown> => {

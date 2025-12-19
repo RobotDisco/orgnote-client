@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { LogRecord, LogLevel, LogStore } from 'orgnote-api';
-import { isPresent } from 'orgnote-api/utils';
+import { isPresent, to } from 'orgnote-api/utils';
 import { createLogSignature } from 'src/utils/log-signature';
 
 export const MAX_LOGS = 500;
@@ -150,11 +150,10 @@ export const useLogStore = defineStore('log', (): LogStore => {
     if (typeof message === 'string') return message;
     if (message instanceof Error) return message.message;
     if (typeof message === 'object' && isPresent(message)) {
-      try {
-        return JSON.stringify(message, null, 2);
-      } catch {
-        return String(message);
-      }
+      const safeStringify = to(() => JSON.stringify(message, null, 2));
+      const result = safeStringify();
+      if (result.isOk()) return result.value;
+      return String(message);
     }
     return String(message);
   };

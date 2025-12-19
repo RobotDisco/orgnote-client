@@ -1,5 +1,5 @@
 import type { LogRecord } from 'orgnote-api';
-import { isNullable } from 'orgnote-api/utils';
+import { isNullable, to } from 'orgnote-api/utils';
 
 const SECRET_PLACEHOLDER = '***';
 const EMAIL_REGEX = /([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/gi;
@@ -42,11 +42,10 @@ const sanitizeValue = (value: unknown): unknown => {
 
 const normalize = (value: unknown): string => {
   if (value === undefined || isNullable(value)) return '';
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
+  const safeStringify = to(() => JSON.stringify(value));
+  const result = safeStringify();
+  if (result.isOk()) return result.value;
+  return String(value);
 };
 
 const createLogSignature = (record: LogRecord): string => {

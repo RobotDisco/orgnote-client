@@ -43,6 +43,7 @@ import { copyToClipboard } from 'src/utils/clipboard';
 import { api } from 'src/boot/api';
 import { useI18n } from 'vue-i18n';
 import AppFlex from 'src/components/AppFlex.vue';
+import { to } from 'orgnote-api/utils';
 
 interface Props {
   log: LogRecord;
@@ -58,12 +59,10 @@ const props = withDefaults(defineProps<Props>(), {
 const formattedMessage = computed(() => {
   const msg = props.log.message;
 
-  try {
-    const parsed = JSON.parse(msg);
-    return JSON.stringify(parsed, null, 2);
-  } catch {
-    return msg;
-  }
+  const safeParse = to(() => JSON.parse(msg));
+  const parsed = safeParse();
+  if (parsed.isErr()) return msg;
+  return JSON.stringify(parsed.value, null, 2);
 });
 
 const extractContext = (context?: Record<string, unknown>): Record<string, unknown> => {

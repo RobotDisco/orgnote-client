@@ -158,7 +158,7 @@ const syncConfigurations = async (api: OrgNoteApi) => {
 export default defineBoot(async ({ app, store, router }) => {
   logger.info('Booting application and initializing API...');
   const splashScreen = useSplashScreen();
-  splashScreen.show();
+  await splashScreen.show();
   logger.info('Start initializing API');
   await initApi(app, router);
   logger.info('API initialized');
@@ -172,7 +172,7 @@ export default defineBoot(async ({ app, store, router }) => {
   }
   logger.info('Configurations synchronized');
 
-  splashScreen.hide();
+  await splashScreen.hide();
   logger.info('Application boot process finished');
 });
 

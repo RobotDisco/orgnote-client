@@ -9,8 +9,11 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
+    "src-electron/**/*.d.ts",
+    "src-electron/**/*.ts",
     "src-pwa/**/*.d.ts",
-    "src-pwa/**/*.ts"
+    "src-pwa/**/*.ts",
+    "src-ssr/**/*.ts"
   ],
   "exclude": [
     "dist",

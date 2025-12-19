@@ -1,5 +1,5 @@
 import { watch, onScopeDispose } from 'vue';
-import { useRoute, useRouter, type LocationQueryValue } from 'vue-router';
+import { useRoute, useRouter, type LocationQueryValue, type Router } from 'vue-router';
 import type { URLOpenListenerEvent } from '@capacitor/app';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { api } from 'src/boot/api';
@@ -8,6 +8,7 @@ import { ORGNOTE_SCHEME } from 'src/constants/orgnote-scheme';
 import { to } from 'orgnote-api/utils';
 import { isPresent } from 'orgnote-api/utils';
 import { reporter } from 'src/boot/report';
+import { RoutePaths } from 'orgnote-api';
 
 const EXECUTE_PARAM = 'execute';
 
@@ -56,11 +57,12 @@ async function setupRouteWatcher(): Promise<void> {
 }
 
 function setupMobileDeepLinkHandler(): void {
+  const router = useRouter();
   let listenerHandle: PluginListenerHandle | undefined;
 
   nativeMobileOnly(async () => {
     const { App } = await import('@capacitor/app');
-    listenerHandle = await App.addListener('appUrlOpen', handleDeepLink);
+    listenerHandle = await App.addListener('appUrlOpen', (event) => handleDeepLink(event, router));
   })();
 
   onScopeDispose(() => {
@@ -68,7 +70,12 @@ function setupMobileDeepLinkHandler(): void {
   });
 }
 
-async function handleDeepLink(event: URLOpenListenerEvent): Promise<void> {
+async function handleDeepLink(event: URLOpenListenerEvent, router: Router): Promise<void> {
+  if (isAuthCallback(event.url)) {
+    await handleAuthDeepLink(event.url, router);
+    return;
+  }
+
   const payload = parseDeepLink(event.url);
 
   if (!payload) {
@@ -76,6 +83,21 @@ async function handleDeepLink(event: URLOpenListenerEvent): Promise<void> {
   }
 
   await executeCommand(payload.command, payload.data ?? {});
+}
+
+function normalizeDeepLinkUrl(url: string): string {
+  return url.replace(`${ORGNOTE_SCHEME}/`, ORGNOTE_SCHEME);
+}
+
+function isAuthCallback(url: string): boolean {
+  const normalizedUrl = normalizeDeepLinkUrl(url);
+  return normalizedUrl.startsWith(`${ORGNOTE_SCHEME}${RoutePaths.AUTH_LOGIN}/login`);
+}
+
+async function handleAuthDeepLink(url: string, router: Router): Promise<void> {
+  const urlObj = new URL(normalizeDeepLinkUrl(url));
+  const route = '/' + urlObj.host + urlObj.pathname + urlObj.search;
+  await router.push(route);
 }
 
 function parseExecuteParam(

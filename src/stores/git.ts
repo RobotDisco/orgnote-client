@@ -10,6 +10,7 @@ import { computed, ref, shallowRef } from 'vue';
 import { createEsGitProviderInfo, ES_GIT_PROVIDER_ID } from 'src/infrastructure/git';
 import { useConfigStore } from './config';
 import { reporter } from 'src/boot/report';
+import { to } from 'orgnote-api/utils';
 
 export const useGitStore = defineStore<string, GitStore>('git', () => {
   const providers = shallowRef<Record<string, GitProviderInfo>>({});
@@ -62,12 +63,16 @@ export const useGitStore = defineStore<string, GitStore>('git', () => {
   };
 
   const openRepo: GitStore['openRepo'] = async (config: GitRepoConfig): Promise<GitRepoHandle> => {
-    try {
-      return await currentProvider.value.openRepo(config, providerOptions.value);
-    } catch (error) {
-      handleGitError(error);
-      throw error;
+    const safeOpenRepo = to(
+      () => currentProvider.value.openRepo(config, providerOptions.value),
+      (e) => e,
+    );
+    const result = await safeOpenRepo();
+    if (result.isErr()) {
+      handleGitError(result.error);
+      throw result.error;
     }
+    return result.value;
   };
 
   registerProvider(createEsGitProviderInfo());
