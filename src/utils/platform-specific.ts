@@ -31,3 +31,4 @@ export const nativeMobileOnly = platformSpecific(
   () => !!process.env.CLIENT && Platform.is.nativeMobile,
 );
 export const desktopOnly = platformSpecific(() => !Platform.is.mobile && !!process.env.CLIENT);
+export const electronOnly = platformSpecific(() => Platform.is.electron);

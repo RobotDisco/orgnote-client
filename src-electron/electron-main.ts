@@ -1,5 +1,5 @@
 import type { BrowserWindow } from 'electron';
-import { app } from 'electron';
+import { app, ipcMain } from 'electron';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import { ORGNOTE_PROTOCOL } from '../src/constants/orgnote-scheme';
@@ -10,6 +10,10 @@ import { createMainWindow } from './main-window';
 import { registerOAuthLoginIpc } from './oauth-login-ipc';
 
 const platform = process.platform || os.platform();
+
+const TITLE_BAR_HEIGHT = 30;
+const TITLE_BAR_SYMBOL_COLOR = '#ffffff';
+
 const currentDir = fileURLToPath(new URL('.', import.meta.url));
 
 const AUTH_CALLBACK_PORT = 17432;
@@ -62,6 +66,20 @@ app.whenReady().then(async () => {
     onClosed: () => {
       mainWindow = undefined;
     },
+  });
+
+  ipcMain.handle('setHeaderColor', (_, color: string) => {
+    if (!mainWindow) {
+      return;
+    }
+    mainWindow.setBackgroundColor(color);
+    if (process.platform === 'win32') {
+      mainWindow.setTitleBarOverlay({
+        color,
+        symbolColor: TITLE_BAR_SYMBOL_COLOR,
+        height: TITLE_BAR_HEIGHT,
+      });
+    }
   });
 });
 

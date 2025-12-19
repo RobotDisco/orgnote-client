@@ -33,6 +33,7 @@ vi.mock('quasar', () => ({
       nativeMobile: true,
       android: false,
       mobile: true,
+      electron: false,
     },
   },
 }));
@@ -140,4 +141,19 @@ test('setThemeColor does nothing if color is not found', () => {
 
   expect(document.querySelector('meta[name="theme-color"]')).toBeTruthy();
   expect(themeMeta.getAttribute('content')).toBeNull();
+});
+
+test('setBackground calls setMobileBackground for native mobile platform', async () => {
+  const bgSettings = useBackgroundSettings();
+  await bgSettings.setBackground('bg');
+
+  expect(StatusBar.setBackgroundColor).toHaveBeenCalledWith({ color: '#FFFFFF' });
+  expect(NavigationBar.setColor).toHaveBeenCalledWith({ color: '#FFFFFF' });
+});
+
+test('setBackground uses default bg color when no color provided', async () => {
+  const bgSettings = useBackgroundSettings();
+  await bgSettings.setBackground();
+
+  expect(getCssVar).toHaveBeenCalledWith('bg');
 });

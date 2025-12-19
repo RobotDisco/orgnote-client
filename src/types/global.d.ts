@@ -1,6 +1,7 @@
 import type { OrgNoteApi } from 'orgnote-api';
 
 export interface ElectronAPI {
+  setHeaderColor: (color: string) => Promise<void>;
   auth: (url: string) => Promise<{ redirectUrl: string; error?: string }>;
   onNavigate: (callback: (route: string) => void) => () => void;
 }

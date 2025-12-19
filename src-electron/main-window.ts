@@ -2,6 +2,8 @@ import type { BrowserWindow } from 'electron';
 import { BrowserWindow as ElectronBrowserWindow } from 'electron';
 import path from 'path';
 
+const TRAFFIC_LIGHT_POSITION = { x: 10, y: 10 };
+
 interface CreateMainWindowOptions {
   currentDir: string;
   protocolScheme: string;
@@ -34,6 +36,8 @@ export async function createMainWindow(options: CreateMainWindowOptions): Promis
     width: 1000,
     height: 600,
     useContentSize: true,
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: TRAFFIC_LIGHT_POSITION,
     webPreferences: {
       contextIsolation: true,
       preload: path.resolve(
