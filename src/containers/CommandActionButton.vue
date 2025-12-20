@@ -1,12 +1,15 @@
 <template>
   <action-button
-    @click="execute"
     v-if="command && !command.hide?.(api)"
-    :icon="resolvedIcon"
+    @click="execute"
+    :icon="iconString"
     :size="size"
     classes="action-btn"
     :alignment="alignment"
   >
+    <template v-if="iconComponent" #icon="{ size: iconSize }">
+      <component :is="iconComponent" :size="iconSize" />
+    </template>
     <template v-if="includeText || text" #text>{{
       text || camelCaseToWords(command.command)
     }}</template>
@@ -15,7 +18,7 @@
 
 <script lang="ts" setup>
 import ActionButton, { type ButtonAlignment } from 'src/components/ActionButton.vue';
-import type { CommandName, StyleSize } from 'orgnote-api';
+import type { CommandIcon, CommandName, StyleSize } from 'orgnote-api';
 import { useCommandsStore } from 'src/stores/command';
 import { computed, toValue } from 'vue';
 import { camelCaseToWords } from 'src/utils/camel-case-to-words';
@@ -40,7 +43,15 @@ const commandsStore = useCommandsStore();
 
 const command = computed(() => commandsStore.get(props.command));
 
-const resolvedIcon = computed(() => toValue(command.value?.icon));
+const resolvedIcon = computed<CommandIcon | undefined>(() => toValue(command.value?.icon));
+
+const iconString = computed(() =>
+  typeof resolvedIcon.value === 'string' ? resolvedIcon.value : undefined,
+);
+
+const iconComponent = computed(() =>
+  resolvedIcon.value && typeof resolvedIcon.value !== 'string' ? resolvedIcon.value : undefined,
+);
 
 const execute = () => {
   commandsStore.execute(props.command, props.data);
