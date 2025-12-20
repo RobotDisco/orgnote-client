@@ -149,8 +149,6 @@ const { bootstrapped } = useBootstrap();
 onMounted(() => {
   if (process.env.CLIENT) {
     document.body.style.height = viewportHeight.value + 'px';
-    // Trigger sync on initial app load
-    syncStore.sync();
   }
 });
 
