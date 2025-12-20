@@ -17,7 +17,7 @@
       :scroll-target="scrollTarget"
       v-slot="{ index }"
       class="full-width"
-      style="max-height: cacl(100svh - 66px)"
+      style="max-height: calc(100svh - 66px)"
     >
       <async-item-container :items-list="notes" :index="index" :height="height">
         <template #default="{ item }">
