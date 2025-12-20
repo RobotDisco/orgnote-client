@@ -84,3 +84,40 @@ test('useBodyClasses does not add platform-mac class on non-macOS', () => {
 
   expect(document.body.classList.contains('platform-mac')).toBe(false);
 });
+
+test('useBodyClasses handles undefined Platform.is during SSR', async () => {
+  vi.doMock('quasar', () => ({
+    Platform: {
+      is: undefined,
+    },
+  }));
+
+  const { useBodyClasses: useBodyClassesSSR } = await import('./use-body-classes');
+
+  expect(() => useBodyClassesSSR()).not.toThrow();
+  expect(document.body.classList.contains('platform-mac')).toBe(false);
+});
+
+test('useBodyClasses handles null Platform.is during SSR', async () => {
+  vi.doMock('quasar', () => ({
+    Platform: {
+      is: null,
+    },
+  }));
+
+  const { useBodyClasses: useBodyClassesSSR } = await import('./use-body-classes');
+
+  expect(() => useBodyClassesSSR()).not.toThrow();
+  expect(document.body.classList.contains('platform-mac')).toBe(false);
+});
+
+test('useBodyClasses handles empty Platform object during SSR', async () => {
+  vi.doMock('quasar', () => ({
+    Platform: {},
+  }));
+
+  const { useBodyClasses: useBodyClassesSSR } = await import('./use-body-classes');
+
+  expect(() => useBodyClassesSSR()).not.toThrow();
+  expect(document.body.classList.contains('platform-mac')).toBe(false);
+});
