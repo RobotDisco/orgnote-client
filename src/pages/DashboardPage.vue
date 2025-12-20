@@ -74,7 +74,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onBeforeMount, ref } from 'vue';
+import { onBeforeMount, ref, watch } from 'vue';
 
 import LoaderSpinner from 'src/components/LoaderSpinner.vue';
 import TagList from 'src/components/TagList.vue';
@@ -85,19 +85,29 @@ import { useNotesStore } from 'src/stores/notes';
 import { useNotesStatisticStore } from 'src/stores/notes-statistic';
 import { Note, NotePreview } from 'orgnote-api';
 import { useNoteCreatorStore } from 'src/stores/note-creator';
+import { useSyncStore } from 'src/stores/sync';
 
 const notesStore = useNotesStore();
+const syncStore = useSyncStore();
+const notesStatisticStore = useNotesStatisticStore();
 
 notesStore.loadTotal();
 const noteCreatorStore = useNoteCreatorStore();
+
+// Reload dashboard data when sync completes
+watch(
+  () => syncStore.lastSyncTime,
+  async () => {
+    await notesStore.loadTotal();
+    await notesStatisticStore.loadStatistic();
+  }
+);
 
 const creating = ref<boolean>();
 const createNote = async () => {
   creating.value = true;
   await noteCreatorStore.create();
 };
-
-const notesStatisticStore = useNotesStatisticStore();
 
 onBeforeMount(async () => {
   await notesStatisticStore.loadStatistic();
