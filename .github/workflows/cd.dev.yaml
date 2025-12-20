@@ -1,0 +1,15 @@
+name: CD orgnote client (dev)
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  ci-cd:
+    uses: ./.github/workflows/ci.yaml
+    with:
+      environment: dev
+      image_tag: dev
+      trigger_event: trigger-deploy-dev
+    secrets: inherit

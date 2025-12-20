@@ -5,9 +5,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, computed, onUnmounted } from 'vue';
+import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { decodeAuthState, type AuthState } from 'src/utils/decode-auth-state';
+import { decodeAuthState, type AuthState } from 'orgnote-api';
 import { extractAuthQueryInfo } from 'src/utils/extract-auth-query-info';
 import { RouteNames, RoutePaths, I18N } from 'orgnote-api';
 import { isValidAuthProvider } from 'src/utils/is-valid-auth-provider';
@@ -55,13 +55,15 @@ const handleError = (e: unknown): void => {
   router.push({ name: RouteNames.Home, query: { error: message } });
 };
 
+const hasExplicitState = computed(() => !!asString(route.query.state));
+
 const initiateOAuth = async (): Promise<void> => {
   if (!initialProvider.value) {
     return;
   }
   await authStore.auth({
     provider: initialProvider.value,
-    environment: stateFromQuery.value.environment,
+    environment: hasExplicitState.value ? stateFromQuery.value.environment : undefined,
     redirectUrl: stateFromQuery.value.redirectUrl ?? '',
   });
 };
@@ -96,7 +98,6 @@ const completeAuth = async (): Promise<void> => {
   const token = asString(route.query.token);
 
   await authStore.authUser(personalInfo, token);
-
   splashScreen.hide();
 
   const state = stateFromQuery.value;
@@ -123,13 +124,27 @@ const processAuth = async (): Promise<void> => {
   await setupUser();
 };
 
-onMounted(async () => {
+const handleAuth = async () => {
   splashScreen.show({ preparationText: t(I18N.AUTH_IDENTIFYING) });
 
   const result = await to(processAuth)();
   if (result.isErr()) {
     handleError(result.error);
   }
+};
+
+watch(
+  () => route.query.token,
+  (token) => {
+    if (token) {
+      handleAuth();
+    }
+  },
+  { immediate: false },
+);
+
+onMounted(() => {
+  handleAuth();
 });
 
 onUnmounted(() => {

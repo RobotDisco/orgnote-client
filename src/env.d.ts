@@ -5,9 +5,3 @@ declare namespace NodeJS {
     VUE_ROUTER_BASE: string | undefined;
   }
 }
-
-declare interface Window {
-  electron: {
-    setHeaderColor: (color: string) => Promise<void>;
-  };
-}

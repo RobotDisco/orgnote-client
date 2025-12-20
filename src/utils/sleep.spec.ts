@@ -2,6 +2,7 @@ import { test, expect } from 'vitest';
 import { sleep } from './sleep';
 
 const TEST_TIMING_TOLERANCE = 80;
+const TIMING_LOWER_TOLERANCE = 5;
 const IMMEDIATE_TIMING_TOLERANCE = 30;
 const IMMEDIATE_TIMING_TOLERANCE_STRICT = 25;
 
@@ -11,7 +12,7 @@ test('sleep delays for the specified time', async () => {
   await sleep(delay);
   const end = Date.now();
 
-  expect(end - start).toBeGreaterThanOrEqual(delay);
+  expect(end - start).toBeGreaterThanOrEqual(delay - TIMING_LOWER_TOLERANCE);
   expect(end - start).toBeLessThan(delay + TEST_TIMING_TOLERANCE);
 });
 

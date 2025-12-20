@@ -1,60 +1,71 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
-import path from 'path';
+import type { BrowserWindow } from 'electron';
+import { app, ipcMain } from 'electron';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import { ORGNOTE_PROTOCOL } from '../src/constants/orgnote-scheme';
+import { startAuthCallbackServer } from './auth-callback-server';
+import { registerDeepLinking } from './deeplink';
+import { registerHistoryFallbackProtocol } from './history-fallback-protocol';
+import { createMainWindow } from './main-window';
+import { registerOAuthLoginIpc } from './oauth-login-ipc';
 
 const platform = process.platform || os.platform();
 
 const TITLE_BAR_HEIGHT = 30;
 const TITLE_BAR_SYMBOL_COLOR = '#ffffff';
-const TRAFFIC_LIGHT_POSITION = { x: 10, y: 10 };
 
 const currentDir = fileURLToPath(new URL('.', import.meta.url));
 
-let mainWindow: BrowserWindow | undefined;
+const AUTH_CALLBACK_PORT = 17432;
+const AUTH_CALLBACK_HOST = '127.0.0.1';
+const ALLOWED_AUTH_ORIGINS = [
+  'http://localhost:8000',
+  'https://org-note.com',
+  'https://dev.org-note.com',
+];
 
-function createWindow() {
-  /**
-   * Initial window options
-   */
-  mainWindow = new BrowserWindow({
-    icon: path.resolve(currentDir, 'icons/icon.png'), // tray icon
-    width: 1000,
-    height: 600,
-    useContentSize: true,
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: TRAFFIC_LIGHT_POSITION,
-    webPreferences: {
-      contextIsolation: true,
-      // More info: https://v2.quasar.dev/quasar-cli-vite/developing-electron-apps/electron-preload-script
-      preload: path.resolve(
-        currentDir,
-        path.join(
-          process.env.QUASAR_ELECTRON_PRELOAD_FOLDER,
-          'electron-preload' + process.env.QUASAR_ELECTRON_PRELOAD_EXTENSION,
-        ),
-      ),
-    },
+let mainWindow: BrowserWindow | undefined;
+let stopAuthCallbackServer: (() => void) | undefined;
+
+const PROTOCOL_SCHEME = 'app';
+
+const sendNavigateEvent = (route: string): void => {
+  mainWindow?.webContents.send('navigate', route);
+};
+
+const focusMainWindow = (): void => {
+  mainWindow?.focus();
+};
+
+const restoreAndFocusMainWindow = (): void => {
+  if (!mainWindow) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.focus();
+};
+
+registerDeepLinking({
+  protocolName: ORGNOTE_PROTOCOL,
+  onRoute: sendNavigateEvent,
+  onSecondInstance: restoreAndFocusMainWindow,
+});
+
+app.whenReady().then(async () => {
+  registerHistoryFallbackProtocol({ scheme: PROTOCOL_SCHEME, baseDir: currentDir });
+  registerOAuthLoginIpc({ allowedOrigins: ALLOWED_AUTH_ORIGINS });
+
+  stopAuthCallbackServer = startAuthCallbackServer({
+    port: AUTH_CALLBACK_PORT,
+    host: AUTH_CALLBACK_HOST,
+    onRoute: sendNavigateEvent,
+    onFocus: focusMainWindow,
   });
 
-  if (process.env.DEV) {
-    mainWindow.loadURL(process.env.APP_URL);
-  } else {
-    mainWindow.loadFile('index.html');
-  }
-
-  if (process.env.DEBUGGING) {
-    // if on DEV or Production with debug enabled
-    mainWindow.webContents.openDevTools();
-  } else {
-    // we're on production; no access to devtools pls
-    mainWindow.webContents.on('devtools-opened', () => {
-      mainWindow?.webContents.closeDevTools();
-    });
-  }
-
-  mainWindow.on('closed', () => {
-    mainWindow = undefined;
+  mainWindow = await createMainWindow({
+    currentDir,
+    protocolScheme: PROTOCOL_SCHEME,
+    onClosed: () => {
+      mainWindow = undefined;
+    },
   });
 
   ipcMain.handle('setHeaderColor', (_, color: string) => {
@@ -70,9 +81,7 @@ function createWindow() {
       });
     }
   });
-}
-
-app.whenReady().then(createWindow);
+});
 
 app.on('window-all-closed', () => {
   if (platform !== 'darwin') {
@@ -80,8 +89,21 @@ app.on('window-all-closed', () => {
   }
 });
 
+app.on('before-quit', () => {
+  stopAuthCallbackServer?.();
+  stopAuthCallbackServer = undefined;
+});
+
 app.on('activate', () => {
   if (mainWindow === undefined) {
-    createWindow();
+    void createMainWindow({
+      currentDir,
+      protocolScheme: PROTOCOL_SCHEME,
+      onClosed: () => {
+        mainWindow = undefined;
+      },
+    }).then((window) => {
+      mainWindow = window;
+    });
   }
 });

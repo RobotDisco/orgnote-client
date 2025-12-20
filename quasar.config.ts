@@ -38,6 +38,7 @@ export default defineConfig((ctx) => {
       { path: 'file-guards', server: false },
       { path: 'files-watchers', server: false },
       { path: 'auth', server: false },
+      { path: 'electron-deeplink', server: false },
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
@@ -73,7 +74,7 @@ export default defineConfig((ctx) => {
         // extendTsConfig (tsConfig) {}
       },
 
-      vueRouterMode: 'hash', // available values: 'hash', 'history'
+      vueRouterMode: 'history',
       // vueRouterBase,
       // vueDevtools,
       // vueOptionsAPI: false,
@@ -82,7 +83,10 @@ export default defineConfig((ctx) => {
 
       // publicPath: '/',
       // analyze: true,
-      // env: {},
+      env: {
+        API_URL: process.env.VITE_API_URL ?? '',
+        AUTH_URL: process.env.VITE_AUTH_URL ?? '',
+      },
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
@@ -135,10 +139,13 @@ export default defineConfig((ctx) => {
     devServer: {
       // https: true,
       host: '0.0.0.0',
-      https: {
-        key: fs.readFileSync('.certs/key.pem'),
-        cert: fs.readFileSync('.certs/cert.pem'),
-      },
+      https:
+        fs.existsSync('.certs/key.pem') && fs.existsSync('.certs/cert.pem')
+          ? {
+              key: fs.readFileSync('.certs/key.pem'),
+              cert: fs.readFileSync('.certs/cert.pem'),
+            }
+          : undefined,
       port: 3001,
       open: {
         app: { name: 'arc' },
@@ -200,7 +207,7 @@ export default defineConfig((ctx) => {
 
     // https://v2.quasar.dev/quasar-cli-vite/developing-ssr/configuring-ssr
     ssr: {
-      prodPort: 3001, // The default port that the production server should use
+      prodPort: 3000,
       // (gets superseded if process.env.PORT is specified at runtime)
 
       middlewares: [
@@ -269,12 +276,19 @@ export default defineConfig((ctx) => {
         // protocol: 'myapp://path',
         // Windows only
         // win32metadata: { ... }
+        extraResource: ['src-electron/resources'],
       },
 
       builder: {
         // https://www.electron.build/configuration/configuration
 
         appId: 'orgnote-client',
+        extraResources: [
+          {
+            from: 'src-electron/resources',
+            to: 'resources',
+          },
+        ],
       },
     },
 

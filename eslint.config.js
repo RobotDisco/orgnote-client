@@ -13,14 +13,20 @@ import sonarjs from 'eslint-plugin-sonarjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const isCI = process.env.CI === 'true';
+
 export default [
-    {
-        plugins: { sonarjs },
-        rules: {
-            // TODO: feat/stable-beta enable before merge
-            'sonarjs/no-commented-code': 'off',
-        },
-    },
+    // SonarJS is memory-heavy, skip in CI
+    ...(isCI
+        ? []
+        : [
+              {
+                  plugins: { sonarjs },
+                  rules: {
+                      'sonarjs/no-commented-code': 'off',
+                  },
+              },
+          ]),
     {
         /**
          * Ignore the following files.
@@ -73,7 +79,7 @@ export default [
             parser: vueParser,
             parserOptions: {
                 parser: tsParser,
-                project: [path.join(__dirname, 'tsconfig.json')],
+                project: isCI ? undefined : [path.join(__dirname, 'tsconfig.eslint.json')],
                 tsconfigRootDir: __dirname,
                 extraFileExtensions: ['.vue'],
             },

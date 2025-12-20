@@ -11,30 +11,32 @@ const handleError = (error: unknown, meta: Record<string, unknown>, router: Rout
   });
 };
 
-export default defineBoot(({ app, router }) => {
-  window.addEventListener(
-    'error',
-    (event) => {
-      event.stopImmediatePropagation();
+export default defineBoot(({ app, router, ssrContext }) => {
+  if (!ssrContext && typeof window !== 'undefined') {
+    window.addEventListener(
+      'error',
+      (event) => {
+        event.stopImmediatePropagation();
 
-      handleError(
-        event.error,
-        { url: event.filename, line: event.lineno, col: event.colno },
-        router,
-      );
-    },
-    { capture: true },
-  );
+        handleError(
+          event.error,
+          { url: event.filename, line: event.lineno, col: event.colno },
+          router,
+        );
+      },
+      { capture: true },
+    );
 
-  window.addEventListener(
-    'unhandledrejection',
-    (event) => {
-      event.stopImmediatePropagation();
+    window.addEventListener(
+      'unhandledrejection',
+      (event) => {
+        event.stopImmediatePropagation();
 
-      handleError(event.reason, {}, router);
-    },
-    { capture: true },
-  );
+        handleError(event.reason, {}, router);
+      },
+      { capture: true },
+    );
+  }
 
   app.config.errorHandler = (err, instance, info): void => {
     reporter.reportCritical(err, {

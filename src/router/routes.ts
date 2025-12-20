@@ -59,6 +59,11 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+  {
+    path: '/:pathMatch(.*)*',
+    name: RouteNames.NotFound,
+    redirect: { name: RouteNames.Home },
+  },
 ];
 
 export default routes;

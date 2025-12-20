@@ -101,7 +101,7 @@ import type { Router } from 'vue-router';
 
 import ScopedRouterView from 'src/components/ScopedRouterView.vue';
 import { TAB_ROUTER_KEY } from 'src/constants/context-providers';
-import { isPresent } from 'orgnote-api/utils';
+import { isPresent, to } from 'orgnote-api/utils';
 
 const props = defineProps<{
   paneId: string;
@@ -235,7 +235,7 @@ const canGoForward = computed(() => {
 });
 
 const handleNavigation = (direction: 'back' | 'forward') => {
-  try {
+  const safeNavigate = to(() => {
     if (!tabRouter.value) {
       api.core.useNotifications().notify({
         message: 'Router not available',
@@ -251,8 +251,11 @@ const handleNavigation = (direction: 'back' | 'forward') => {
     }
     if (!canGoForward.value) return;
     tabRouter.value.forward();
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  });
+
+  const result = safeNavigate();
+  if (result.isErr()) {
+    const errorMessage = result.error instanceof Error ? result.error.message : 'Unknown error';
     api.core.useNotifications().notify({
       message: `Navigation failed: ${errorMessage}`,
       level: 'danger',

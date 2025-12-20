@@ -1,6 +1,6 @@
 {
   "name": "orgnote-client",
-  "version": "0.30.0",
+  "version": "0.40.1",
   "description": "Org Roam implementation for web and mobile devices.",
   "productName": "orgnote",
   "author": "OrgNote <app.orgnote@gmail.com>",
@@ -10,13 +10,14 @@
     "dev": "env-cmd -f ./.env quasar dev",
     "dev:no-cache": "rm -rf node_modules && bun install && bun run dev",
     "dev:remote": "env-cmd -f ./.env.prod quasar dev",
-    "dev:android": " env-cmd -f ./.env.prod quasar dev -m capacitor -T android",
+    "dev:android": "env-cmd -f ./.env quasar dev -m capacitor -T android",
+    "dev:android:local": "adb reverse tcp:8000 tcp:8000 && adb reverse tcp:3000 tcp:3000 && env-cmd -f ./.env quasar dev -m capacitor -T android",
     "dev:ssr": "env-cmd -f ./.env.ssr quasar dev -m ssr",
     "dev:android:remote": "env-cmd -f ./.env.prod quasar dev -m capacitor -T android -- -d",
     "dev:ios": "quasar dev -m capacitor -T ios",
     "dev:ios:remote": "env-cmd -f ./.env.prod quasar dev -m capacitor -T ios -- --target=\"iPhone-15-Pro\"",
     "dev:ios-tablet:remote": "env-cmd -f ./.env.prod quasar dev -m capacitor -T ios -- --target=\"iPad-10th-generation\"",
-    "dev:electron": "quasar dev -m electron",
+    "dev:electron": "env-cmd -f ./.env quasar dev -m electron",
     "dev:electron:remote": "env-cmd -f ./.env.prod quasar dev -m electron",
     "dev:ssr:build": "env-cmd -f ./.env.ssr node ./dist/ssr/index.js",
     "dev:pwa:remote": "npm run build:pwa && docker compose -f ./deploy/docker-compose.pwa.yaml up",
@@ -32,7 +33,7 @@
     "build:android:apk:sign": "bun run build:android:aab && ./sign-apk.sh",
     "build:ios": "env-cmd -f ./.env.prod quasar build -m capacitor -T ios",
     "report:duplicates": "jscpd ./src",
-    "lint": "eslint -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\"",
+    "lint": "NODE_OPTIONS='--max-old-space-size=8192' eslint -c ./eslint.config.js \"./src/**/*.{ts,js,cjs,mjs,vue}\"",
     "test": "vitest",
     "test:ci": "vitest run",
     "generate:icons": "icongenie generate --skip-trim -i images/modern-unicorn.png --png-color 9356E8 --splashscreen-color 9356E8 && icongenie generate --padding 70,70 -m capacitor -i images/modern-unicorn-round.png --png-color 9356E8 --splashscreen-color 9356E8",
@@ -65,7 +66,7 @@
     "fuse.js": "7.1.0",
     "neverthrow": "8.2.0",
     "notiwind": "^2.1.0",
-    "orgnote-api": "file:.yalc/orgnote-api",
+    "orgnote-api": "0.40.13",
     "partysocket": "1.1.6",
     "pinia": "3.0.2",
     "pinia-plugin-persistedstate": "4.2.0",
@@ -96,6 +97,7 @@
     "@intlify/unplugin-vue-i18n": "6.0.8",
     "@pinia/testing": "1.0.1",
     "@quasar/app-vite": "2.2.0",
+    "@storybook/addon-docs": "10.1.2",
     "@storybook/addon-onboarding": "^10.1.2",
     "@storybook/vue3-vite": "^10.1.2",
     "@types/better-queue": "3.8.6",
@@ -137,13 +139,17 @@
     "workbox-expiration": "^7.3.0",
     "workbox-precaching": "^7.3.0",
     "workbox-routing": "7.3.0",
-    "workbox-strategies": "7.3.0",
-    "@storybook/addon-docs": "10.1.2"
+    "workbox-strategies": "7.3.0"
   },
   "jscpd": {
     "threshold": 1.65,
-    "reporters": ["html", "console"],
-    "format": ["typescript"],
+    "reporters": [
+      "html",
+      "console"
+    ],
+    "format": [
+      "typescript"
+    ],
     "ignore": [
       "**/__snapshots__/**",
       "**/.git/**",
@@ -154,7 +160,10 @@
     ],
     "minLines": 3,
     "minTokens": 50,
-    "ignorePattern": ["import.*from\\s*'.*'", "export.*from\\s*'.*'"],
+    "ignorePattern": [
+      "import.*from\\s*'.*'",
+      "export.*from\\s*'.*'"
+    ],
     "output": "./dist/duplication-report/",
     "absolute": true,
     "blame": true,
@@ -166,6 +175,8 @@
     "yarn": ">= 1.21.1"
   },
   "eslintConfig": {
-    "extends": ["plugin:storybook/recommended"]
+    "extends": [
+      "plugin:storybook/recommended"
+    ]
   }
 }

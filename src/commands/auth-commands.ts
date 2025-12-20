@@ -36,7 +36,7 @@ export const createAuthCommands = (router: Router): Command[] => {
 
   const removeAccountCommand: Command = {
     command: DefaultCommands.REMOVE_ACCOUNT,
-    title: i18n.AUTH_REMOVE_ACCOUNT,
+    title: i18n.REMOVE_ACCOUNT,
     description: i18n.AUTH_REMOVE_ACCOUNT_DESCRIPTION,
     group: i18n.AUTH_GROUP,
     icon: 'person_remove',

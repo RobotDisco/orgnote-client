@@ -9,19 +9,24 @@ import {
   type OAuthProvider,
 } from 'orgnote-api';
 
-import { encodeAuthState, type AuthState } from 'src/utils/decode-auth-state';
+import { encodeAuthState, isAuthEnvironment, type AuthState } from 'orgnote-api';
 import { sdk } from 'src/boot/axios';
 import { to } from 'orgnote-api/utils';
 import { platformSpecificValue } from 'src/utils/platform-specific-value';
 import { platformMatch } from 'src/utils/platform-detection';
 import { reporter } from 'src/boot/report';
 
-declare const electron: { auth: (url: string) => Promise<{ redirectUrl: string }> } | undefined;
-
 interface AuthParams {
   provider: string;
   environment?: string;
   redirectUrl?: string;
+}
+
+class AuthRedirectUrlMissingError extends Error {
+  constructor() {
+    super('No redirect URL received from auth server');
+    this.name = 'AuthRedirectUrlMissingError';
+  }
 }
 
 export const useAuthStore = defineStore<'auth', AuthStore>(
@@ -38,37 +43,46 @@ export const useAuthStore = defineStore<'auth', AuthStore>(
       token.value = '';
     };
 
-    const getEnvironment = (): string =>
-      platformSpecificValue({
+    const getEnvironment = (): AuthState['environment'] =>
+      platformSpecificValue<{ data: AuthState['environment'] }>({
+        data: 'web',
         nativeMobile: 'mobile',
         electron: 'electron',
-        data: 'web',
       });
 
     const getAuthUrl = (authProvider: string, state: AuthState): string => {
       const strState = encodeURIComponent(encodeAuthState(state));
-      const baseUrl = import.meta.env.VITE_AUTH_URL || '';
-      return `${baseUrl}/${RoutePaths.AUTH_LOGIN}/${authProvider}?state=${strState}`;
+      const baseUrl = process.env.AUTH_URL || '';
+      return `${baseUrl}/${RoutePaths.AUTH_LOGIN}/${authProvider}/login?state=${strState}`;
     };
 
-    const authViaNativeMobile = (authUrl: string): void => {
-      window.open(authUrl, '_system');
+    const fetchAuthRedirectUrl = async (authProvider: string, state: AuthState): Promise<string> => {
+      const response = await sdk.auth.authProviderLoginGet(authProvider, encodeAuthState(state));
+      const redirectUrl = response.data.data?.redirectUrl;
+      if (!redirectUrl) {
+        throw new AuthRedirectUrlMissingError();
+      }
+      return redirectUrl;
+    };
+
+    const authViaNativeMobile = async (authProvider: string, state: AuthState): Promise<void> => {
+      const redirectUrl = await fetchAuthRedirectUrl(authProvider, state);
+      window.open(redirectUrl, '_system');
     };
 
     const authViaElectron = async (authUrl: string): Promise<void> => {
-      if (typeof electron === 'undefined') {
-        return;
+      if (!window.electron) {
+        throw new Error('Electron API not available');
       }
-      const { redirectUrl } = await electron.auth(authUrl);
-      router.push(redirectUrl);
+      const result = await window.electron.auth(authUrl);
+      if (result.error) {
+        throw new Error(result.error);
+      }
     };
 
     const authViaWeb = async (authProvider: string, state: AuthState): Promise<void> => {
-      const response = await sdk.auth.authProviderLoginGet(authProvider, encodeAuthState(state));
-      const redirectUrl = response.data.data?.redirectUrl;
-      if (redirectUrl) {
-        window.location.replace(redirectUrl);
-      }
+      const redirectUrl = await fetchAuthRedirectUrl(authProvider, state);
+      window.location.replace(redirectUrl);
     };
 
     const auth = async (params: AuthParams): Promise<void> => {
@@ -77,13 +91,13 @@ export const useAuthStore = defineStore<'auth', AuthStore>(
       }
 
       const state: AuthState = {
-        environment: params.environment ?? getEnvironment(),
+        environment: isAuthEnvironment(params.environment) ? params.environment : getEnvironment(),
         redirectUrl: params.redirectUrl,
       };
       const authUrl = getAuthUrl(params.provider, state);
 
       await platformMatch({
-        nativeMobile: () => authViaNativeMobile(authUrl),
+        nativeMobile: () => authViaNativeMobile(params.provider, state),
         electron: () => authViaElectron(authUrl),
         default: () => authViaWeb(params.provider, state),
       });

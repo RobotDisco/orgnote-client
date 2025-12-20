@@ -7,9 +7,9 @@ import type {
   EnvironmentInfo,
   PlatformInfo,
 } from 'orgnote-api';
+import { to } from 'orgnote-api/utils';
 import { version } from '../../package.json';
 import { api } from 'src/boot/api';
-import { Device } from '@capacitor/device';
 
 const isClientEnvironment = (): boolean => (process.env.CLIENT ?? '').toString() === 'true';
 const hasNavigator = (): boolean => isClientEnvironment() && typeof navigator !== 'undefined';
@@ -92,7 +92,8 @@ const getDeviceInfo = async (): Promise<DeviceInfo | undefined> => {
   const $q = api?.core?.useQuasar?.();
   if (!$q?.platform?.is?.nativeMobile) return undefined;
 
-  try {
+  const safeGetDeviceInfo = to(async () => {
+    const { Device } = await import('@capacitor/device');
     const info = await Device.getInfo();
     return {
       model: info.model,
@@ -100,9 +101,11 @@ const getDeviceInfo = async (): Promise<DeviceInfo | undefined> => {
       osVersion: info.osVersion,
       androidSDKVersion: $q.platform.is.android ? Number(info.androidSDKVersion) : undefined,
     };
-  } catch {
-    return undefined;
-  }
+  });
+
+  const result = await safeGetDeviceInfo();
+  if (result.isErr()) return undefined;
+  return result.value;
 };
 
 const getSystemInfo = async (): Promise<SystemInfo> => {
