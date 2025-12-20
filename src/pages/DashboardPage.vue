@@ -88,10 +88,16 @@ import { useNoteCreatorStore } from 'src/stores/note-creator';
 
 const notesStore = useNotesStore();
 
-// Load total from IndexedDB (fire-and-forget, will trigger re-render when complete)
-notesStore.loadTotal().then(() => {
-  console.log('[Dashboard] loadTotal completed, total:', notesStore.total);
-});
+// Load total from IndexedDB
+console.log('[Dashboard] calling loadTotal...');
+notesStore
+  .loadTotal()
+  .then(() => {
+    console.log('[Dashboard] loadTotal completed, total:', notesStore.total);
+  })
+  .catch((err) => {
+    console.error('[Dashboard] loadTotal failed:', err);
+  });
 
 const noteCreatorStore = useNoteCreatorStore();
 
