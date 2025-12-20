@@ -56,6 +56,6 @@ reloadNotes();
 <style lang="scss" scoped>
 .scroll-container {
   overflow: auto;
-  height: calc(100svh - var(--top-bar-height) - var(--footer-height));
+  height: calc(100svh - var(--top-bar-height));
 }
 </style>
