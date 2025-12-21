@@ -203,20 +203,9 @@ export class NoteRepository extends BaseRepository implements INoteRepository {
   }
 
   async count(searchText?: string, tags?: string[]): Promise<number> {
-    // Debug: check raw table count first
-    const rawCount = await this.store.count();
-    console.log('[NoteRepository] raw table count:', rawCount);
-
-    // Debug: log first note to see what deleted looks like
-    const firstNote = await this.store.toCollection().first();
-    console.log('[NoteRepository] first note deleted field:', firstNote?.deleted, 'type:', typeof firstNote?.deleted);
-
-    const filteredCount = await this.store
+    return this.store
       .filter((n) => !n.deleted && this.searchMath(n, searchText, tags))
       .count();
-    console.log('[NoteRepository] filtered count:', filteredCount);
-
-    return filteredCount;
   }
 
   async getFilePaths(): Promise<FilePathInfo[]> {
