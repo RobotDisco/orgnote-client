@@ -102,6 +102,7 @@ export const useSyncStore = defineStore<string, SyncStore>(
           },
           {
             signal: abortController.signal,
+            timeout: 120000, // 2 minutes for sync operations
           }
         );
 
