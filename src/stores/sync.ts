@@ -102,6 +102,7 @@ export const useSyncStore = defineStore<string, SyncStore>(
           },
           {
             signal: abortController.signal,
+            timeout: 120000, // TODO: syncs take ridiculously long to complete currently.
           }
         );
 
