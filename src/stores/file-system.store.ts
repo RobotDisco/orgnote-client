@@ -35,7 +35,7 @@ export const useFileSystemStore = defineStore(
     const currentFs = orgNoteApi.core.useFileSystem();
 
     const noVaultProvided = computed(
-      () => Platform.is.mobile && Platform.is.android && !config.vault.path
+      () => Platform.is.nativeMobile && Platform.is.android && !config.vault.path
     );
 
     const normalizePath = (path: string | string[]): string => {
