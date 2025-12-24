@@ -110,7 +110,17 @@ export const useSimpleFs = (): FileSystem => {
         const newFilePath = `${newPath}${relativePath}`;
         const fileName = extractFileNameFromPath(newFilePath);
 
-        await fs.update(filePath, {
+        // Get the existing file data
+        const existingFile = await fs.get(filePath);
+        if (!existingFile) {
+          return;
+        }
+
+        // Delete the old record and create a new one with the new path
+        // (Dexie's update() cannot change the primary key)
+        await fs.delete(filePath);
+        await fs.add({
+          ...existingFile,
           path: newFilePath,
           name: fileName,
           mtime: Date.now(),
@@ -120,16 +130,17 @@ export const useSimpleFs = (): FileSystem => {
   };
 
   const isFile = async (path: string) => {
-    return (await fs.get(path)).type === 'file';
+    const file = await fs.get(path);
+    return file?.type === 'file';
   };
 
   const deleteFile: FileSystem['deleteFile'] = async (path: string) => {
     path = normalizePath(path);
-    await fs.delete(path);
-    if (await isFile(path)) {
-      return;
+    const file = await fs.get(path);
+    if (!file || file.type !== 'file') {
+      throw new ErrorFileNotFound(path);
     }
-    throw new ErrorDirectoryNotFound(path);
+    await fs.delete(path);
   };
 
   const readDir: FileSystem['readDir'] = async (path: string) => {
