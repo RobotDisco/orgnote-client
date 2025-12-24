@@ -66,22 +66,9 @@ const { config } = useSettingsStore();
 const mobileUrl = ref<string>();
 
 const setupUser = async () => {
-  const isMobile = route.query.state !== 'desktop';
   if (config.developer.developerMode) {
     await sleep(10000);
   }
-  if (
-    !$q.platform.is.nativeMobile &&
-    $q.platform.is.mobile &&
-    isMobile &&
-    !window.navigator.standalone &&
-    !$q.platform.is.ios // Tmp disable opening mobile app for ios device
-  ) {
-    const mobileAppUrl = getMobileAppUrl(`auth/login${window.location.search}`);
-    window.location.assign(mobileAppUrl);
-    return;
-  }
-
   const state = decodeAuthState(route.query.state as string);
   const personalInfo = extractAuthQueryInfo(
     route.query as Record<string, string>
